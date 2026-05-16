@@ -27,8 +27,15 @@ export default function AppLayout() {
   const location = useLocation();
 
   useEffect(() => {
-    const saved = localStorage.getItem('xfit-theme') || 'midnight';
-    applyTheme(saved);
+    const saved = localStorage.getItem('xfit-theme');
+    // Auto-set based on time if user never manually picked a theme
+    if (!saved) {
+      const hour = new Date().getHours();
+      const autoTheme = (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
+      applyTheme(autoTheme);
+    } else {
+      applyTheme(saved);
+    }
   }, []);
 
   return (
