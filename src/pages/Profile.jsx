@@ -217,7 +217,7 @@ export default function Profile() {
             { key: 'midnight', label: 'Midnight', bg: 'bg-slate-900', accent: 'bg-blue-500',   desc: 'Dark' },
             { key: 'sunrise',  label: 'Sunrise',  bg: 'bg-orange-50', accent: 'bg-orange-500', desc: 'Light' },
           ].map(t => (
-            <button key={t.key} onClick={() => { setTheme(t.key); applyTheme(t.key); }}
+            <button key={t.key} onClick={() => { setTheme(t.key); applyTheme(t.key); localStorage.setItem('xfit-theme', t.key); }}
               className={`rounded-2xl p-4 flex flex-col items-center gap-2 border-2 transition-all ${theme === t.key ? 'border-primary bg-primary/10' : 'border-transparent bg-secondary/50 hover:bg-secondary'}`}>
               <div className={`w-12 h-8 rounded-lg ${t.bg} flex items-end justify-end p-1.5 border border-white/10`}>
                 <div className={`w-3 h-3 rounded-full ${t.accent}`} />
