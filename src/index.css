@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ── THEME: Midnight (deep dark, blue-indigo accent) ── */
+  :root, .theme-midnight {
+    --background: 222 25% 5%;
+    --foreground: 210 20% 94%;
+    --card: 222 22% 11%;
+    --card-foreground: 210 20% 94%;
+    --popover: 222 22% 11%;
+    --popover-foreground: 210 20% 94%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 210 15% 80%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 210 12% 52%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 217 91% 60%;
+    --gradient-start: 222 25% 7%;
+    --gradient-end: 230 30% 10%;
+    --card-glow: 217 91% 60%;
+    --radius: 0.875rem;
+  }
+
+    /* ── THEME: Sunrise (warm light, orange-coral) ── */
+  .theme-sunrise {
+    --background: 30 25% 97%;
+    --foreground: 20 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 15% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 15% 12%;
+    --primary: 22 95% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 20 12% 25%;
+    --muted: 30 20% 92%;
+    --muted-foreground: 20 10% 50%;
+    --accent: 22 95% 52%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 18% 86%;
+    --input: 30 18% 86%;
+    --ring: 22 95% 52%;
+    --gradient-start: 30 25% 97%;
+    --gradient-end: 35 30% 94%;
+    --card-glow: 22 95% 52%;
+    --radius: 0.875rem;
+  }
+
+  * { @apply border-border; }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-card/75 backdrop-blur-xl border border-border/60;
+  }
+  .glass-strong {
+    @apply bg-card/95 backdrop-blur-2xl border border-border;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:scale-[1.01] active:scale-[0.99];
+  }
+  .gradient-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)) 0%,
+      hsl(var(--gradient-end)) 100%
+    );
+  }
+  .primary-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+
+/* iOS safe area */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
