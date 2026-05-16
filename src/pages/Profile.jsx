@@ -30,7 +30,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme')||'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
   const [recentOpen, setRecentOpen] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
   const [editingGoal, setEditingGoal] = useState(null);
@@ -212,13 +212,26 @@ export default function Profile() {
           <Palette className="w-4 h-4 text-primary" />
           <div className="text-sm font-semibold">App Theme</div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { key: 'midnight', label: 'Midnight', bg: 'bg-slate-900', accent: 'bg-blue-500',   desc: 'Dark' },
             { key: 'sunrise',  label: 'Sunrise',  bg: 'bg-orange-50', accent: 'bg-orange-500', desc: 'Light' },
+            { key: 'auto',     label: 'Auto',     bg: 'bg-gradient-to-r from-slate-900 to-orange-50', accent: 'bg-yellow-400', desc: 'By time' },
           ].map(t => (
-            <button key={t.key} onClick={() => { setTheme(t.key); applyTheme(t.key); localStorage.setItem('xfit-theme', t.key); }}
-              className={`rounded-2xl p-4 flex flex-col items-center gap-2 border-2 transition-all ${theme === t.key ? 'border-primary bg-primary/10' : 'border-transparent bg-secondary/50 hover:bg-secondary'}`}>
+            <button key={t.key} onClick={() => {
+              if (t.key === 'auto') {
+                localStorage.removeItem('xfit-theme');
+                const hour = new Date().getHours();
+                const autoTheme = (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
+                applyTheme(autoTheme);
+                setTheme('auto');
+              } else {
+                setTheme(t.key);
+                applyTheme(t.key);
+                localStorage.setItem('xfit-theme', t.key);
+              }
+            }}
+              className={`rounded-2xl p-3 flex flex-col items-center gap-2 border-2 transition-all ${theme === t.key ? 'border-primary bg-primary/10' : 'border-transparent bg-secondary/50 hover:bg-secondary'}`}>
               <div className={`w-12 h-8 rounded-lg ${t.bg} flex items-end justify-end p-1.5 border border-white/10`}>
                 <div className={`w-3 h-3 rounded-full ${t.accent}`} />
               </div>
