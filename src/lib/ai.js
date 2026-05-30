@@ -1,6 +1,5 @@
 // Shared AI helper — uses Google Gemini
-// gemini-1.5-flash has the most generous free tier
-const GEMINI_MODEL = 'gemini-1.5-flash-8b';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 
 export async function callAI({ system, messages, maxTokens = 1000 }) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -8,19 +7,32 @@ export async function callAI({ system, messages, maxTokens = 1000 }) {
     throw new Error('Add your Gemini API key to the .env file as VITE_GEMINI_API_KEY');
   }
 
-  // Gemini uses "user" and "model" roles
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }));
+  // Build contents — filter out any empty messages
+  const contents = messages
+    .filter(m => m.content && m.content.trim())
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
 
-  // Ensure conversation starts with "user" role (Gemini requirement)
-  if (contents.length > 0 && contents[0].role !== 'user') {
-    contents.unshift({ role: 'user', parts: [{ text: '.' }] });
+  // Gemini requires conversation to start with 'user' role
+  if (contents.length === 0 || contents[0].role !== 'user') {
+    contents.unshift({ role: 'user', parts: [{ text: 'Hello' }] });
+  }
+
+  // Gemini cannot have two consecutive same-role messages — interleave if needed
+  const fixed = [contents[0]];
+  for (let i = 1; i < contents.length; i++) {
+    if (contents[i].role === fixed[fixed.length - 1].role) {
+      // Insert a filler message of opposite role
+      const filler = contents[i].role === 'user' ? 'model' : 'user';
+      fixed.push({ role: filler, parts: [{ text: '...' }] });
+    }
+    fixed.push(contents[i]);
   }
 
   const body = {
-    contents,
+    contents: fixed,
     ...(system && { system_instruction: { parts: [{ text: system }] } }),
     generationConfig: {
       maxOutputTokens: maxTokens,
