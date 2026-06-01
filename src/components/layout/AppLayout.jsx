@@ -1,18 +1,16 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, MessageCircle, TrendingUp, User, Heart, Trophy, Footprints } from 'lucide-react';
+import { Home, Dumbbell, MessageCircle, User, Heart, BarChart2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 
 const navItems = [
-  { path: '/',         icon: Home,          label: 'Home'     },
-  { path: '/health',   icon: Heart,         label: 'Health'   },
-  { path: '/workouts', icon: Dumbbell,      label: 'Workouts' },
-  { path: '/run',      icon: Footprints,    label: 'Run'      },
-  { path: '/coach',    icon: MessageCircle, label: 'Coach'    },
-  { path: '/ranks',    icon: Trophy,        label: 'Ranks'    },
-  { path: '/progress', icon: TrendingUp,    label: 'Progress' },
-  { path: '/profile',  icon: User,          label: 'Profile'  },
+  { path: '/',          icon: Home,           label: 'Home'     },
+  { path: '/health',    icon: Heart,          label: 'Health'   },
+  { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
+  { path: '/coach',     icon: MessageCircle,  label: 'Coach'    },
+  { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
+  { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
 
 function applyTheme(theme) {
@@ -28,7 +26,6 @@ export default function AppLayout() {
 
   useEffect(() => {
     const saved = localStorage.getItem('xfit-theme');
-    // Auto-set based on time if user never manually picked a theme
     if (!saved) {
       const hour = new Date().getHours();
       const autoTheme = (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
