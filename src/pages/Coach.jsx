@@ -50,7 +50,7 @@ Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, la
       const reply = await callAI({ system: systemPrompt, messages: [...recentMsgs, {role:'user',content:text}], maxTokens: 1000 });
       await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:reply, timestamp:serverTimestamp() });
     } catch(e) {
-      await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:'Sorry, I had trouble connecting. Please check your API key and try again.', timestamp:serverTimestamp() });
+      await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:'Coach X is taking a quick breather 😤 Give it a moment and try again!', timestamp:serverTimestamp() });
     }
     setIsThinking(false);
     queryClient.invalidateQueries({queryKey:['chat-messages',user.uid]});
