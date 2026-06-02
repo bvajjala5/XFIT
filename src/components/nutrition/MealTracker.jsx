@@ -18,7 +18,7 @@ const GOALS = { calories: 2000, protein: 150, carbs: 250, fat: 65 }
 async function searchFood(searchQuery) {
   try {
     const res = await fetch(
-      `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(searchQuery)}&pageSize=20&dataType=Branded,SR%20Legacy,Foundation&api_key=DEMO_KEY`
+      `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(searchQuery)}&pageSize=20&dataType=Branded,SR%20Legacy,Foundation&api_key=qAkDMMdFYkMv0AScbdvNiioKRHkb8MoLneTSaLnZ`
     )
     if (!res.ok) throw new Error('Search failed')
     const data = await res.json()

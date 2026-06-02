@@ -251,13 +251,21 @@ export default function Home() {
                       <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Signature Workout</span>
                       <h3 className="text-xl font-black text-white mt-0.5">{lockedIn.title}</h3>
                       <p className="text-white/60 text-xs mt-1">{(() => {
-                        const stored = localStorage.getItem(`xfit_durations_locked-in`);
-                        if (stored) {
-                          const durations = JSON.parse(stored);
-                          const totalSecs = Object.values(durations).reduce((s, v) => s + (Number(v)||0), 0);
-                          if (totalSecs > 0) return `${Math.round(totalSecs/60)} min`;
-                        }
-                        return `${lockedIn.duration} min`;
+                        try {
+                          const stored = localStorage.getItem('xfit_durations_locked-in');
+                          if (stored) {
+                            const durations = JSON.parse(stored);
+                            const keys = Object.keys(durations);
+                            if (keys.length > 0) {
+                              const totalSecs = keys.reduce((s, k) => s + (Number(durations[k]) || 0), 0);
+                              if (totalSecs > 60) return Math.round(totalSecs / 60) + ' min';
+                            }
+                          }
+                          // Fall back to summing default Locked In timings
+                          const CORE_BASE = Math.floor(180 / 7);
+                          const defaultTotal = (6 * 180) + (6 * CORE_BASE) + (CORE_BASE + 60) + 180;
+                          return Math.round(defaultTotal / 60) + ' min';
+                        } catch(e) { return lockedIn.duration + ' min'; }
                       })()} · {lockedIn.trainer}</p>
                     </div>
                     <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
