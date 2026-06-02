@@ -73,9 +73,9 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/70">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-md bg-card rounded-t-3xl md:rounded-2xl border border-border"
-        style={{ maxHeight: '92vh', overflowY: 'auto' }}>
+        style={{ maxHeight: '85vh', overflowY: 'auto' }}>
         
         {/* Sticky header */}
         <div className="sticky top-0 bg-card border-b border-border/50 px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
