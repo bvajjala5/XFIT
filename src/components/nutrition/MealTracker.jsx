@@ -18,34 +18,25 @@ const GOALS = { calories: 2000, protein: 150, carbs: 250, fat: 65 }
 async function searchFood(searchQuery) {
   try {
     const res = await fetch(
-      `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(searchQuery)}&pageSize=20&dataType=Branded,SR%20Legacy,Foundation&api_key=qAkDMMdFYkMv0AScbdvNiioKRHkb8MoLneTSaLnZ`
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,serving_size,code&nocache=1`
     )
     if (!res.ok) throw new Error('Search failed')
     const data = await res.json()
-    return (data.foods || [])
-      .filter(f => f.description && f.foodNutrients?.length)
-      .map(f => {
-        const getNutrient = (nums) => {
-          for (const num of nums) {
-            const n = f.foodNutrients?.find(n => n.nutrientNumber == num || n.nutrientId == num)
-            if (n?.value) return Math.round(n.value * 10) / 10
-          }
-          return 0
+    return (data.products || [])
+      .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g'])
+      .map(p => ({
+        id: p.code || String(Math.random()),
+        name: p.product_name,
+        brand: p.brands || '',
+        image: '',
+        serving_size: p.serving_size || '100g',
+        per100: {
+          calories: Math.round(p.nutriments['energy-kcal_100g'] || 0),
+          protein:  Math.round((p.nutriments['proteins_100g'] || 0) * 10) / 10,
+          carbs:    Math.round((p.nutriments['carbohydrates_100g'] || 0) * 10) / 10,
+          fat:      Math.round((p.nutriments['fat_100g'] || 0) * 10) / 10,
         }
-        return {
-          id: String(f.fdcId),
-          name: f.description,
-          brand: f.brandOwner || f.brandName || '',
-          image: '',
-          serving_size: f.servingSize ? `${f.servingSize}${f.servingSizeUnit||'g'}` : '100g',
-          per100: {
-            calories: getNutrient([208, 1008]),
-            protein:  getNutrient([203, 1003]),
-            carbs:    getNutrient([205, 1005]),
-            fat:      getNutrient([204, 1004]),
-          }
-        }
-      })
+      }))
       .filter(f => f.per100.calories > 0)
   } catch (err) {
     console.error('Food search error:', err)
@@ -119,10 +110,10 @@ function FoodSearchModal({ open, onClose, onAdd }) {
   const nutrition = selected ? calcNutrition(selected.per100, grams) : null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <motion.div initial={{ y:100, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:100, opacity:0 }}
         className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl"
-        style={{ maxHeight: '92vh', overflowY: 'auto' }}>
+        style={{ maxHeight: '85vh', overflowY: 'auto' }}>
 
         {/* Header */}
         <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
