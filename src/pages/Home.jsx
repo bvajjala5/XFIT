@@ -252,20 +252,14 @@ export default function Home() {
                       <h3 className="text-xl font-black text-white mt-0.5">{lockedIn.title}</h3>
                       <p className="text-white/60 text-xs mt-1">{(() => {
                         try {
-                          const stored = localStorage.getItem('xfit_durations_locked-in');
+                          const stored = localStorage.getItem('xfit_durations_' + lockedIn.id);
                           if (stored) {
-                            const durations = JSON.parse(stored);
-                            const keys = Object.keys(durations);
-                            if (keys.length > 0) {
-                              const totalSecs = keys.reduce((s, k) => s + (Number(durations[k]) || 0), 0);
-                              if (totalSecs > 60) return Math.round(totalSecs / 60) + ' min';
-                            }
+                            const d = JSON.parse(stored);
+                            const total = Object.values(d).reduce((s,v) => s+(Number(v)||0), 0);
+                            if (total > 60) return Math.round(total/60) + ' min';
                           }
-                          // Fall back to summing default Locked In timings
-                          const CORE_BASE = Math.floor(180 / 7);
-                          const defaultTotal = (6 * 180) + (6 * CORE_BASE) + (CORE_BASE + 60) + 180;
-                          return Math.round(defaultTotal / 60) + ' min';
-                        } catch(e) { return lockedIn.duration + ' min'; }
+                        } catch(e) {}
+                        return lockedIn.duration + ' min';
                       })()} · {lockedIn.trainer}</p>
                     </div>
                     <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
