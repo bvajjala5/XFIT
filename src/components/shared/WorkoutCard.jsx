@@ -54,10 +54,6 @@ export default function WorkoutCard({ workout, index = 0 }) {
                     if (total > 60) return Math.round(total/60) + 'm';
                   }
                 } catch(e) {}
-                if (workout.exercises?.length) {
-                  const total = workout.exercises.reduce((s,ex) => s+(ex.duration||(ex.sets?ex.sets*(ex.reps||10)*3:30)), 0);
-                  return Math.round(total/60) + 'm';
-                }
                 return workout.duration + 'm';
               })()}</span>
               <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-400" />{workout.calories_estimate || '—'}</span>
