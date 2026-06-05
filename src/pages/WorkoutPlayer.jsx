@@ -140,19 +140,25 @@ export default function WorkoutPlayer() {
         calories_burned: calories,
         exercises_completed: currentEx+1,
       });
-      const lbRef = doc(db, 'leaderboard', user.uid);
-      const lbSnap = await getDoc(lbRef);
-      const today = new Date().toISOString().split('T')[0];
-      if (!lbSnap.exists()) {
-        await setDoc(lbRef, { displayName: user.displayName?.split(' ')[0]||user.email?.split('@')[0]||'Athlete', email: user.email, totalWorkouts: 1, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, updatedAt: new Date() });
-      } else {
-        const data = lbSnap.data();
-        const last = data.lastWorkoutDate || '';
-        const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
-        const newStreak = last===today ? (data.streak||1) : last===yesterday ? (data.streak||0)+1 : 1;
-        const daysSince = last ? Math.floor((Date.now()-new Date(last+'T12:00:00').getTime())/86400000) : 999;
-        const newWeekly = daysSince>=7 ? 1 : (data.weeklyWorkouts||0)+(last===today?0:1);
-        await updateDoc(lbRef, { totalWorkouts: increment(1), weeklyWorkouts: newWeekly, streak: newStreak, lastWorkoutDate: today, updatedAt: new Date() });
+      // Check leaderboard privacy settings
+      const privacyStr = localStorage.getItem('xfit_lb_privacy');
+      const privacy = privacyStr ? JSON.parse(privacyStr) : { joined: true, name: null };
+      if (privacy.joined !== false) {
+        const lbRef = doc(db, 'leaderboard', user.uid);
+        const lbSnap = await getDoc(lbRef);
+        const today = new Date().toISOString().split('T')[0];
+        const displayName = privacy.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete';
+        if (!lbSnap.exists()) {
+          await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: 1, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, updatedAt: new Date() });
+        } else {
+          const data = lbSnap.data();
+          const last = data.lastWorkoutDate || '';
+          const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+          const newStreak = last===today ? (data.streak||1) : last===yesterday ? (data.streak||0)+1 : 1;
+          const daysSince = last ? Math.floor((Date.now()-new Date(last+'T12:00:00').getTime())/86400000) : 999;
+          const newWeekly = daysSince>=7 ? 1 : (data.weeklyWorkouts||0)+(last===today?0:1);
+          await updateDoc(lbRef, { displayName, totalWorkouts: increment(1), weeklyWorkouts: newWeekly, streak: newStreak, lastWorkoutDate: today, updatedAt: new Date() });
+        }
       }
     } catch(e) { console.error('handleLogWorkout error:', e); }
     navigate('/');
