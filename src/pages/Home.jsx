@@ -257,12 +257,8 @@ export default function Home() {
                       <h3 className="text-xl font-black text-white mt-0.5">{lockedIn.title}</h3>
                       <p className="text-white/60 text-xs mt-1">{(() => {
                         try {
-                          const stored = localStorage.getItem('xfit_durations_' + lockedIn.id);
-                          if (stored) {
-                            const d = JSON.parse(stored);
-                            const total = Object.values(d).reduce((s,v) => s+(Number(v)||0), 0);
-                            if (total > 60) return Math.round(total/60) + ' min';
-                          }
+                          const saved = localStorage.getItem('xfit_total_duration_' + lockedIn.id);
+                          if (saved) return saved + ' min';
                         } catch(e) {}
                         return lockedIn.duration + ' min';
                       })()} · {lockedIn.trainer}</p>
@@ -313,7 +309,13 @@ export default function Home() {
               {customWorkouts.map(w => (
                 <div key={w.id} className="flex-shrink-0 bg-card border border-border/60 rounded-2xl p-4 w-44">
                   <p className="font-semibold text-sm truncate">{w.name}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{w.estimated_duration || '—'} min · {w.exercises?.length || 0} exercises</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{(() => {
+                    try {
+                      const saved = localStorage.getItem('xfit_total_duration_' + w.id);
+                      if (saved) return saved;
+                    } catch(e) {}
+                    return w.duration || w.estimated_duration || '—';
+                  })()} min · {w.exercises?.length || 0} exercises</p>
                   <Link to={`/player/custom/${w.id}`}>
                     <button className="mt-3 w-full h-8 rounded-xl primary-gradient text-white text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
                       <Play className="w-3 h-3 fill-white" /> Start
