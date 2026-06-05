@@ -12,6 +12,10 @@ import { Pencil, ChevronRight, Flame, Calendar, Clock, Play, CheckCircle2, Dumbb
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { seedWorkouts } from '@/lib/seedWorkouts'
+import DailyCheckIn from '@/components/home/DailyCheckIn'
+import WaterTracker from '@/components/home/WaterTracker'
+import DailyGoals from '@/components/home/DailyGoals'
+import DailyQuote from '@/components/home/DailyQuote'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -129,6 +133,7 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto pb-28">
+      <DailyCheckIn userId={user?.uid} />
 
       {/* ── HERO HEADER ── */}
       <div className="relative px-5 pt-8 pb-6 overflow-hidden">
@@ -319,6 +324,20 @@ export default function Home() {
             </div>
           </motion.div>
         )}
+
+        {/* ── DAILY QUOTE ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+          <DailyQuote />
+        </motion.div>
+
+        {/* ── WATER + GOALS ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <WaterTracker />
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+          <DailyGoals />
+        </motion.div>
 
         {/* ── WORKOUT LIBRARY ── */}
         {workouts.length > 0 && (
