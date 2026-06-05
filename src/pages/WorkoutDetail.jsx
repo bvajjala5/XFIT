@@ -98,17 +98,8 @@ export default function WorkoutDetail() {
 
   // Reset a single exercise to its default
   const handleReset = (ex, i) => {
-    setCustomDurations(prev => {
-      const next = { ...prev };
-      delete next[i];
-      return next;
-    });
-    // Mark as having unsaved changes so Save button appears
-    setSavedDurations(prev => {
-      const next = { ...prev };
-      next[i] = -1; // sentinel to force hasUnsavedChanges = true
-      return next;
-    });
+    const defaultDur = getDefaultDuration(ex, i);
+    setCustomDurations(prev => ({ ...prev, [i]: defaultDur }));
   };
 
   // Reset ALL exercises to defaults
