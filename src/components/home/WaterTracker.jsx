@@ -3,14 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { localDateStr } from '@/lib/utils'
 import { Droplets, Plus, Minus } from 'lucide-react'
 
-function getDailyGoal() {
-  try {
-    const saved = localStorage.getItem('xfit_water_goal');
-    if (saved) return Number(saved);
-  } catch(e) {}
+const DAILY_GOAL = (() => {
+  try { const s = localStorage.getItem('xfit_water_goal'); if (s) return Number(s); } catch(e) {}
   return 8;
-}
-const DAILY_GOAL = getDailyGoal();
+})()
 
 export default function WaterTracker() {
   const [glasses, setGlasses] = useState(0)
