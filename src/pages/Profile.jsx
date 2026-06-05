@@ -244,7 +244,35 @@ export default function Profile() {
           ))}
         </div>
       </GlassCard>
-      <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
+      <Button variant="GlassCard className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">Join Leaderboard</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Show your stats on the Ranks tab</p>
+              </div>
+              <button onClick={() => saveLbPrivacy({ joined: !lbPrivacy.joined })}
+                className={`relative w-12 h-6 rounded-full transition-colors ${lbPrivacy.joined ? 'bg-primary' : 'bg-secondary'}`}>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${lbPrivacy.joined ? 'translate-x-6' : 'translate-x-0'}`}/>
+              </button>
+            </div>
+            {lbPrivacy.joined && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Display name (leave blank for real name)</p>
+                <div className="flex gap-2">
+                  <input value={lbNameInput} onChange={e => setLbNameInput(e.target.value)}
+                    placeholder={user?.displayName?.split(' ')[0] || 'Your name'}
+                    className="flex-1 bg-secondary/40 border border-border/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
+                  <button onClick={() => saveLbPrivacy({ name: lbNameInput.trim() || null })}
+                    className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary/80 transition-colors">
+                    Save
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Use a nickname to stay anonymous 🕵️</p>
+              </div>
+            )}
+          </GlassCard>
+
+          <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>
         <AlertDialogTrigger asChild><Button variant="ghost" className="w-full rounded-xl h-12 text-destructive/60 hover:text-destructive hover:bg-destructive/10 text-sm"><Trash2 className="w-4 h-4 mr-2"/>Delete Account</Button></AlertDialogTrigger>
         <AlertDialogContent className="bg-card border-border">

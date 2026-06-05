@@ -47,26 +47,20 @@ export default function WaterTracker() {
             key={i}
             onClick={() => update(i < glasses ? i : i + 1)}
             whileTap={{ scale: 0.85 }}
-            className="relative"
+            className="flex flex-col items-center gap-1"
           >
-            <div className={`w-7 h-9 rounded-b-xl rounded-t-lg border-2 transition-all overflow-hidden ${i < glasses ? 'border-blue-400 bg-blue-400/20' : 'border-border bg-secondary/30'}`}>
-              <AnimatePresence>
-                {i < glasses && (
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: '100%' }}
-                    exit={{ height: 0 }}
-                    className="absolute bottom-0 left-0 right-0 bg-blue-400/40 rounded-b-lg"
-                  />
-                )}
-              </AnimatePresence>
-              <span className="relative z-10 flex items-center justify-center h-full text-sm">
-                {i < glasses ? '💧' : ''}
-              </span>
+            <div className={`relative w-8 h-10 flex items-end justify-center pb-1 rounded-b-2xl rounded-t-lg border-2 overflow-hidden transition-all ${i < glasses ? 'border-blue-400' : 'border-white/10'}`}
+              style={{ background: i < glasses ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)' }}>
+              {i < glasses && (
+                <motion.div
+                  initial={{ height: 0 }} animate={{ height: '65%' }}
+                  className="absolute bottom-0 left-0 right-0 bg-blue-400/40 rounded-b-xl"
+                />
+              )}
+              <span className="relative z-10 text-base leading-none">{i < glasses ? '💧' : ''}</span>
             </div>
           </motion.button>
-        ))}
-      </div>
+        ))}</div>
 
       {/* Progress bar */}
       <div className="h-2 bg-secondary rounded-full overflow-hidden mb-3">
