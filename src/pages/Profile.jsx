@@ -107,6 +107,7 @@ export default function Profile() {
     if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
     if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
     if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
+    if (id === 'active_calories') localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
     if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
     if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
     if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));

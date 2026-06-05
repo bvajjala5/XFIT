@@ -189,7 +189,7 @@ export default function Home() {
             <div className="flex items-center justify-around">
               <StatRing value={weekWorkouts} max={Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7} color="hsl(var(--primary))" label="Workouts" display={`${weekWorkouts}/${Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7}`} />
               <StatRing value={weekMinutes} max={Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150} color="#4ade80" label="Minutes" display={`${weekMinutes}/${Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150}m`} />
-              <StatRing value={weekCalories} max={2000} color="#fb923c" label="Calories" display={weekCalories} />
+              <StatRing value={weekCalories} max={Number(localStorage.getItem('xfit_goals_weekly_calories'))||2000} color="#fb923c" label="Calories" display={`${weekCalories}/${Number(localStorage.getItem('xfit_goals_weekly_calories'))||2000}`} />
             </div>
 
             {/* 14-day streak dots */}
