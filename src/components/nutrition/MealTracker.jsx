@@ -19,7 +19,6 @@ function getGoals() {
   } catch(e) {}
   return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 }
-const GOALS = getGoals();
 
 // Use USDA FoodData Central API — no CORS issues, very reliable
 async function searchFood(searchQuery) {
@@ -232,6 +231,15 @@ function FoodSearchModal({ open, onClose, onAdd }) {
 }
 
 export default function MealTracker({ userId }) {
+  const [GOALS, setGOALS] = useState(getGoals)
+
+  useEffect(() => {
+    const handler = () => setGOALS(getGoals())
+    window.addEventListener('storage', handler)
+    // Also re-read on mount in case profile was updated
+    setGOALS(getGoals())
+    return () => window.removeEventListener('storage', handler)
+  }, [])
   const [modalOpen, setModalOpen] = useState(false)
   const [expandedMeal, setExpandedMeal] = useState(null)
   const queryClient = useQueryClient()
