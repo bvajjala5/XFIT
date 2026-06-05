@@ -244,7 +244,7 @@ export default function Profile() {
           ))}
         </div>
       </GlassCard>
-      <Button variant="GlassCard className="space-y-4">
+      <GlassCard className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold">Join Leaderboard</p>
