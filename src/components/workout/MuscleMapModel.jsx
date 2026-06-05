@@ -17,8 +17,10 @@ function getMuscles(exerciseName = '') {
     return { front: [], back: ['hamstring', 'gluteal', 'lower-back', 'upper-back'] };
   if (n.includes('lunge')) 
     return { front: ['quadriceps'], back: ['gluteal', 'hamstring'] };
-  if (n.includes('shoulder') || n.includes('overhead') || n.includes('lateral raise')) 
-    return { front: ['deltoids'], back: ['trapezius'] };
+  if (n.includes('lateral raise')) 
+    return { front: ['deltoids'], back: [] };
+  if (n.includes('shoulder') || n.includes('overhead press')) 
+    return { front: ['deltoids', 'triceps'], back: ['trapezius'] };
   if (n.includes('plank') || n.includes('ab') || n.includes('crunch') || n.includes('russian twist')) 
     return { front: ['abs', 'obliques'], back: [] };
   if (n.includes('calf')) 
@@ -39,15 +41,8 @@ function getMuscles(exerciseName = '') {
 export default function MuscleMapModel({ exerciseName = '', showLabel = true }) {
   const { front, back } = getMuscles(exerciseName);
 
-  const frontData = front.map(muscle => ({
-    slug: muscle,
-    intensity: 2,
-  }));
-
-  const backData = back.map(muscle => ({
-    slug: muscle,
-    intensity: 2,
-  }));
+  const frontData = front.length > 0 ? [{ name: 'Exercise', muscles: front }] : [];
+  const backData = back.length > 0 ? [{ name: 'Exercise', muscles: back }] : [];
 
   const allMuscles = [...front, ...back];
   const muscleLabels = {
