@@ -102,6 +102,18 @@ export default function Profile() {
     setGoalData(updated);
     setEditingGoal(null);
     await updateUserData({goals:updated});
+    // Sync to localStorage so WaterTracker, MealTracker, HealthHub pick up changes
+    const v = Number(newVal);
+    if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
+    if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
+    if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
+    if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
+    if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
+      const ng = JSON.parse(localStorage.getItem('xfit_nutrition_goals') || '{"calories":2000,"protein":150,"carbs":250,"fat":65}');
+      const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
+      ng[km[id]] = v;
+      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
+    }
   };
 
   const handleDeleteAccount = async () => {
