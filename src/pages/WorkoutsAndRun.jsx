@@ -18,7 +18,8 @@ export default function WorkoutsAndRun() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [type, setType] = useState('All');
-  const [difficulty, setDifficulty] = useState('All');
+  const [difficulty, setDifficulty] = useState('All')
+  const [muscleGroup, setMuscleGroup] = useState('All');
   const [runSummary, setRunSummary] = useState(null);
   const [showingRun, setShowingRun] = useState(false);
 
@@ -30,11 +31,26 @@ export default function WorkoutsAndRun() {
     },
   });
 
+  const MUSCLE_MAP = {
+    Chest: ['chest','push','press','fly'],
+    Back: ['back','row','pull','lat','deadlift'],
+    Shoulders: ['shoulder','overhead','lateral','delt'],
+    Arms: ['bicep','tricep','curl','arm'],
+    Core: ['core','ab','plank','crunch','twist'],
+    Legs: ['squat','lunge','leg','quad','hamstring'],
+    Glutes: ['glute','hip raise','bridge','bulgarian'],
+  }
+
   const filtered = workouts.filter(w => {
     const matchSearch = !search || w.title?.toLowerCase().includes(search.toLowerCase()) || w.trainer?.toLowerCase().includes(search.toLowerCase());
     const matchType = type === 'All' || w.type === type;
     const matchDiff = difficulty === 'All' || w.difficulty === difficulty;
-    return matchSearch && matchType && matchDiff;
+    const matchMuscle = muscleGroup === 'All' || (MUSCLE_MAP[muscleGroup] || []).some(kw =>
+      w.title?.toLowerCase().includes(kw) ||
+      w.category?.toLowerCase().includes(kw) ||
+      w.exercises?.some(e => e.name?.toLowerCase().includes(kw))
+    );
+    return matchSearch && matchType && matchDiff && matchMuscle;
   });
 
   return (
@@ -79,6 +95,16 @@ export default function WorkoutsAndRun() {
           <button key={d} onClick={() => setDifficulty(d)}
             className={`flex-1 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${difficulty===d?'bg-primary/20 text-primary border border-primary/30':'bg-secondary/50 text-muted-foreground hover:text-foreground border border-transparent'}`}>
             {d}
+          </button>
+        ))}
+      </div>
+
+      {/* Muscle group filter */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {['All','Chest','Back','Shoulders','Arms','Core','Legs','Glutes'].map(mg => (
+          <button key={mg} onClick={() => setMuscleGroup(mg)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${muscleGroup===mg?'bg-primary/20 text-primary border border-primary/30':'bg-secondary/50 text-muted-foreground hover:text-foreground border border-transparent'}`}>
+            {mg === 'All' ? '💪 All' : mg}
           </button>
         ))}
       </div>
