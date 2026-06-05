@@ -31,6 +31,17 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
+  const [lbPrivacy, setLbPrivacy] = useState(() => {
+    try { const s = localStorage.getItem('xfit_lb_privacy'); return s ? JSON.parse(s) : { joined: true, name: null }; } catch(e) { return { joined: true, name: null }; }
+  });
+  const [lbNameInput, setLbNameInput] = useState(() => {
+    try { const s = localStorage.getItem('xfit_lb_privacy'); return s ? (JSON.parse(s).name || '') : ''; } catch(e) { return ''; }
+  });
+  const saveLbPrivacy = (update) => {
+    const next = { ...lbPrivacy, ...update };
+    setLbPrivacy(next);
+    localStorage.setItem('xfit_lb_privacy', JSON.stringify(next));
+  };
   const [recentOpen, setRecentOpen] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
   const [editingGoal, setEditingGoal] = useState(null);
