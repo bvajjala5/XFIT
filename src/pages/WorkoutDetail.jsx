@@ -107,7 +107,9 @@ export default function WorkoutDetail() {
     setCustomDurations({});
     localStorage.removeItem(storageKey);
     localStorage.removeItem('xfit_total_duration_' + id);
-    setSavedDurations({});
+    // Set savedDurations to sentinel so hasUnsavedChanges becomes true
+    // and Save button appears so user can confirm the reset
+    setSavedDurations({ _reset: true });
   };
 
   const totalCustomMins = workout
