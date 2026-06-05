@@ -106,6 +106,9 @@ export default function Profile() {
     const v = Number(newVal);
     if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
     if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
+    if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
+    if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
+    if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
     if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
     if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
     if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
