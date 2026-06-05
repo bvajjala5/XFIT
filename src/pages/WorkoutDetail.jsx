@@ -103,12 +103,19 @@ export default function WorkoutDetail() {
       delete next[i];
       return next;
     });
+    // Mark as having unsaved changes so Save button appears
+    setSavedDurations(prev => {
+      const next = { ...prev };
+      next[i] = -1; // sentinel to force hasUnsavedChanges = true
+      return next;
+    });
   };
 
   // Reset ALL exercises to defaults
   const handleResetAll = () => {
     setCustomDurations({});
     localStorage.removeItem(storageKey);
+    localStorage.removeItem('xfit_total_duration_' + id);
     setSavedDurations({});
   };
 
