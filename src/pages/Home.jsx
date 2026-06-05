@@ -187,8 +187,8 @@ export default function Home() {
           <div className="bg-card border border-border/60 rounded-3xl p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4">This week</p>
             <div className="flex items-center justify-around">
-              <StatRing value={weekWorkouts} max={5} color="hsl(var(--primary))" label="Workouts" display={`${weekWorkouts}/5`} />
-              <StatRing value={weekMinutes} max={150} color="#4ade80" label="Minutes" display={`${weekMinutes}m`} />
+              <StatRing value={weekWorkouts} max={Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7} color="hsl(var(--primary))" label="Workouts" display={`${weekWorkouts}/${Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7}`} />
+              <StatRing value={weekMinutes} max={Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150} color="#4ade80" label="Minutes" display={`${weekMinutes}/${Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150}m`} />
               <StatRing value={weekCalories} max={2000} color="#fb923c" label="Calories" display={weekCalories} />
             </div>
 
