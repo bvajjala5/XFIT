@@ -45,7 +45,21 @@ export default function WorkoutCard({ workout, index = 0 }) {
             <h3 className="font-bold text-sm leading-tight truncate">{workout.title}</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{workout.trainer}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{workout.duration}m</span>
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(() => {
+                try {
+                  const stored = localStorage.getItem('xfit_durations_' + workout.id);
+                  if (stored) {
+                    const d = JSON.parse(stored);
+                    const total = Object.values(d).reduce((s,v) => s+(Number(v)||0), 0);
+                    if (total > 60) return Math.round(total/60) + 'm';
+                  }
+                } catch(e) {}
+                if (workout.exercises?.length) {
+                  const total = workout.exercises.reduce((s,ex) => s+(ex.duration||(ex.sets?ex.sets*(ex.reps||10)*3:30)), 0);
+                  return Math.round(total/60) + 'm';
+                }
+                return workout.duration + 'm';
+              })()}</span>
               <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-400" />{workout.calories_estimate || '—'}</span>
             </div>
           </div>

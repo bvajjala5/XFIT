@@ -12,7 +12,14 @@ import { localDateStr } from '@/lib/utils'
 import { toast } from 'sonner'
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack']
-const GOALS = { calories: 2000, protein: 150, carbs: 250, fat: 65 }
+function getGoals() {
+  try {
+    const stored = localStorage.getItem('xfit_nutrition_goals');
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
+}
+const GOALS = getGoals();
 
 // Use USDA FoodData Central API — no CORS issues, very reliable
 async function searchFood(searchQuery) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Model from 'react-body-highlighter';
 
 // Maps exercise names to ExerciseDB GIF IDs
@@ -83,18 +83,8 @@ export default function MuscleMapModel({ exerciseName = '', showLabel = true }) 
     "lower-back": "Lower Back",
   };
 
-  const gifUrl = getExerciseGif(exerciseName);
-
   return (
     <div className="flex flex-col items-center gap-3">
-      {gifUrl && (
-        <div className="rounded-2xl overflow-hidden border border-border/40 bg-secondary/20">
-          <img src={gifUrl} alt={exerciseName}
-            className="w-40 h-40 object-cover"
-            onError={e => e.target.style.display='none'}
-          />
-        </div>
-      )}
       <div className="flex gap-2 items-start justify-center">
         <div className="flex flex-col items-center gap-1">
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Front</p>
