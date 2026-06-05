@@ -85,6 +85,12 @@ export default function WorkoutDetail() {
 
   const handleSave = () => {
     localStorage.setItem(storageKey, JSON.stringify(customDurations));
+    // Also save total duration so workout cards can display it correctly
+    const totalSecs = workout?.exercises?.reduce((s, ex, i) => {
+      const d = customDurations[i] !== undefined ? customDurations[i] : getDefaultDuration(ex, i);
+      return s + d;
+    }, 0) || 0;
+    localStorage.setItem('xfit_total_duration_' + id, String(Math.round(totalSecs / 60)));
     setSavedDurations({ ...customDurations });
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
