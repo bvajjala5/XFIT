@@ -1,5 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Model from 'react-body-highlighter';
+
+// Maps exercise names to ExerciseDB GIF IDs
+const EXERCISE_GIFS = {
+  'bicep curl': 'https://media.giphy.com/media/l0MYGb1LuZ3n7dRnO/giphy.gif',
+  'hammer curl': 'https://media.giphy.com/media/l0MYGb1LuZ3n7dRnO/giphy.gif',
+  'lateral raise': 'https://media.giphy.com/media/3oEjHV0z8S7WM4MwnS/giphy.gif',
+  'push-up': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'pushup': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'squat': 'https://media.giphy.com/media/3o7TKqnN349PBUtGFO/giphy.gif',
+  'deadlift': 'https://media.giphy.com/media/l0MYAs5E2oIDCq9So/giphy.gif',
+  'plank': 'https://media.giphy.com/media/l0MYJnJQ4sMN7KYWI/giphy.gif',
+  'lunge': 'https://media.giphy.com/media/l0MYC0LajbaPoEADu/giphy.gif',
+  'pull-up': 'https://media.giphy.com/media/l0MYEqEzwMWFCg8rm/giphy.gif',
+  'russian twist': 'https://media.giphy.com/media/l0MYJnJQ4sMN7KYWI/giphy.gif',
+  'mountain climber': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'burpee': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'jumping jack': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'overhead press': 'https://media.giphy.com/media/3oEjHV0z8S7WM4MwnS/giphy.gif',
+  'bench press': 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+  'hip raise': 'https://media.giphy.com/media/l0MYJnJQ4sMN7KYWI/giphy.gif',
+  'crunch': 'https://media.giphy.com/media/l0MYJnJQ4sMN7KYWI/giphy.gif',
+};
+
+function getExerciseGif(name = '') {
+  const n = name.toLowerCase();
+  for (const [key, url] of Object.entries(EXERCISE_GIFS)) {
+    if (n.includes(key)) return url;
+  }
+  return null;
+}
 
 function getMuscles(exerciseName = '') {
   const n = exerciseName.toLowerCase();
@@ -53,8 +83,18 @@ export default function MuscleMapModel({ exerciseName = '', showLabel = true }) 
     "lower-back": "Lower Back",
   };
 
+  const gifUrl = getExerciseGif(exerciseName);
+
   return (
     <div className="flex flex-col items-center gap-3">
+      {gifUrl && (
+        <div className="rounded-2xl overflow-hidden border border-border/40 bg-secondary/20">
+          <img src={gifUrl} alt={exerciseName}
+            className="w-40 h-40 object-cover"
+            onError={e => e.target.style.display='none'}
+          />
+        </div>
+      )}
       <div className="flex gap-2 items-start justify-center">
         <div className="flex flex-col items-center gap-1">
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Front</p>
