@@ -204,7 +204,7 @@ export default function WorkoutDetail() {
                   </button>
                 )}
                 {/* Save button */}
-                {(hasUnsavedChanges || justSaved) && (
+                {true && (
                   <button onClick={handleSave}
                     className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${justSaved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary hover:bg-primary/30'}`}>
                     {justSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
