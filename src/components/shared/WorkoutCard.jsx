@@ -48,10 +48,14 @@ export default function WorkoutCard({ workout, index = 0 }) {
               <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(() => {
                 try {
                   const stored = localStorage.getItem('xfit_durations_' + workout.id);
-                  if (stored) {
+                  if (stored && workout.exercises?.length) {
                     const d = JSON.parse(stored);
-                    const total = Object.values(d).reduce((s,v) => s+(Number(v)||0), 0);
-                    if (total > 60) return Math.round(total/60) + 'm';
+                    const total = workout.exercises.reduce((s, ex, i) => {
+                      const custom = d[i];
+                      const def = ex.duration || (ex.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
+                      return s + (custom !== undefined ? Number(custom) : def);
+                    }, 0);
+                    if (total > 0) return Math.round(total/60) + 'm';
                   }
                 } catch(e) {}
                 return workout.duration + 'm';
