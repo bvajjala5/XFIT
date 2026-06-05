@@ -47,17 +47,17 @@ export default function WaterTracker() {
             key={i}
             onClick={() => update(i < glasses ? i : i + 1)}
             whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1"
           >
-            <div className={`relative w-8 h-10 flex items-end justify-center pb-1 rounded-b-2xl rounded-t-lg border-2 overflow-hidden transition-all ${i < glasses ? 'border-blue-400' : 'border-white/10'}`}
-              style={{ background: i < glasses ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.03)' }}>
+            <div className={`relative w-9 h-11 flex items-center justify-center rounded-2xl border-2 overflow-hidden transition-all ${i < glasses ? 'border-blue-400 bg-blue-400/20' : 'border-gray-400/40 bg-gray-400/10'}`}>
               {i < glasses && (
                 <motion.div
-                  initial={{ height: 0 }} animate={{ height: '65%' }}
-                  className="absolute bottom-0 left-0 right-0 bg-blue-400/40 rounded-b-xl"
+                  initial={{ height: 0 }} animate={{ height: '70%' }}
+                  className="absolute bottom-0 left-0 right-0 bg-blue-400/50 rounded-b-xl"
                 />
               )}
-              <span className="relative z-10 text-base leading-none">{i < glasses ? '💧' : ''}</span>
+              <span className="relative z-10 text-lg leading-none select-none">
+                {i < glasses ? '💧' : '○'}
+              </span>
             </div>
           </motion.button>
         ))}</div>

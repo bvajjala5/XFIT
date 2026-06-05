@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
-import WorkoutModel from '@/components/workout/WorkoutModel';
+import MuscleMapModel from '@/components/workout/MuscleMapModel';
 
 function cleanForSpeech(text) {
   return text.replace(/\bSpO2\b/gi,'blood oxygen').replace(/(\d+)\s*x\s*(\d+)/gi,'$1 by $2').replace(/\blbs\b/gi,'pounds').replace(/\breps\b/gi,'repetitions').replace(/\bmin\b/gi,'minutes').replace(/\bsec\b/gi,'seconds').replace(/\b([A-Z]{2,})\b/g,m=>m.toLowerCase());
@@ -208,10 +208,10 @@ export default function WorkoutPlayer() {
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
             <div className="hidden md:flex justify-center w-full">
-              <div className="w-full max-w-xs"><WorkoutModel exerciseName={currentExercise?.name} showModified={true} /></div>
+              <div className="w-full max-w-xs"><MuscleMapModel exerciseName={currentExercise?.name} showModified={true} /></div>
             </div>
             <div className="flex md:hidden justify-center">
-              <WorkoutModel exerciseName={currentExercise?.name} showModified={false} />
+              <MuscleMapModel exerciseName={currentExercise?.name} showModified={false} />
             </div>
           </motion.div>
         </AnimatePresence>
