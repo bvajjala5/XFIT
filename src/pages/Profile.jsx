@@ -37,10 +37,21 @@ export default function Profile() {
   const [lbNameInput, setLbNameInput] = useState(() => {
     try { const s = localStorage.getItem('xfit_lb_privacy'); return s ? (JSON.parse(s).name || '') : ''; } catch(e) { return ''; }
   });
-  const saveLbPrivacy = (update) => {
+  const saveLbPrivacy = async (update) => {
     const next = { ...lbPrivacy, ...update };
     setLbPrivacy(next);
     localStorage.setItem('xfit_lb_privacy', JSON.stringify(next));
+    // Sync with Firestore
+    if (user) {
+      const lbRef = doc(db, 'leaderboard', user.uid);
+      if (next.joined === false) {
+        // Remove from leaderboard
+        try { await deleteDoc(lbRef); } catch(e) {}
+      } else if (next.name !== undefined) {
+        // Update display name
+        try { await setDoc(lbRef, { displayName: next.name || user.displayName?.split(' ')[0] || 'Athlete' }, { merge: true }); } catch(e) {}
+      }
+    }
   };
   const [recentOpen, setRecentOpen] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
