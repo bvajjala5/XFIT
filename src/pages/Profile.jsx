@@ -113,7 +113,9 @@ export default function Profile() {
       const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
       ng[km[id]] = v;
       localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
+      window.dispatchEvent(new Event('storage'));
     }
+    if (id === 'daily_water') window.dispatchEvent(new Event('storage'));
   };
 
   const handleDeleteAccount = async () => {
