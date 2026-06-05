@@ -193,10 +193,10 @@ export default function HealthHub() {
   });
 
   const metrics = [
-    { key:'steps',   label:'Steps',        icon:Footprints, color:'hsl(211,100%,52%)', colorClass:'text-blue-400',   value:todayLog.steps||0,                                       target:10000, format:v=>v?.toLocaleString()||'0' },
+    { key:'steps',   label:'Steps',        icon:Footprints, color:'hsl(211,100%,52%)', colorClass:'text-blue-400',   value:todayLog.steps||0,                                       target:Number(localStorage.getItem('xfit_steps_goal')||10000), format:v=>v?.toLocaleString()||'0' },
     { key:'heart',   label:'Heart Rate',   icon:Heart,      color:'hsl(0,84%,60%)',    colorClass:'text-red-400',    value:todayLog.heart_rate_current||todayLog.heart_rate_resting||0, target:100,   format:v=>v?`${v} bpm`:'—', subtitle:todayLog.heart_rate_resting?`Resting: ${todayLog.heart_rate_resting} bpm`:null },
-    { key:'sleep',   label:'Sleep',        icon:Moon,       color:'hsl(270,65%,60%)',  colorClass:'text-purple-400', value:todayLog.sleep_duration_hours||0,                         target:8,     format:v=>v?`${v}h`:'—', subtitle:todayLog.sleep_quality?`Quality: ${todayLog.sleep_quality}/5 ★`:null },
-    { key:'calories',label:'Cal Burned',   icon:Flame,      color:'hsl(35,100%,55%)',  colorClass:'text-orange-400', value:todayLog.calories_burned||0,                              target:500,   format:v=>v?.toLocaleString()||'0' },
+    { key:'sleep',   label:'Sleep',        icon:Moon,       color:'hsl(270,65%,60%)',  colorClass:'text-purple-400', value:todayLog.sleep_duration_hours||0,                         target:Number(localStorage.getItem('xfit_sleep_goal')||8),     format:v=>v?`${v}h`:'—', subtitle:todayLog.sleep_quality?`Quality: ${todayLog.sleep_quality}/5 ★`:null },
+    { key:'calories',label:'Cal Burned',   icon:Flame,      color:'hsl(35,100%,55%)',  colorClass:'text-orange-400', value:todayLog.calories_burned||0,                              target:Number(localStorage.getItem('xfit_calories_goal')||500), format:v=>v?.toLocaleString()||'0' },
     { key:'spo2',    label:'Blood Oxygen', icon:Wind,       color:'hsl(175,70%,45%)',  colorClass:'text-teal-400',   value:todayLog.spo2||0,                                         target:100,   format:v=>v?`${v}%`:'—' },
   ];
 
