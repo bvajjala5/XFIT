@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, MessageCircle, User, Heart, BarChart2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
+import InstallBanner from '@/components/shared/InstallBanner';
 
 const navItems = [
   { path: '/',          icon: Home,           label: 'Home'     },
@@ -38,6 +39,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
+      <InstallBanner />
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
         <div className="w-10 h-10 rounded-2xl primary-gradient flex items-center justify-center mb-6 shadow-lg">
