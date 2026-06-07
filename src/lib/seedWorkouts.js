@@ -49,7 +49,15 @@ const LOCKED_IN = {
   ]
 };
 
-export async function seedWorkouts() {
+const SEEDED_KEY = 'xfit_workouts_seeded_v2';
+
+export async function seedWorkouts(uid) {
+  // Only attempt seeding for the dev account — regular users can't write to /workouts
+  const devUid = import.meta.env.VITE_DEV_UID;
+  if (!uid || uid !== devUid) return;
+  // Only run once per browser session
+  if (sessionStorage.getItem(SEEDED_KEY)) return;
+  sessionStorage.setItem(SEEDED_KEY, '1');
   try {
     const allWorkouts = [...WORKOUTS, LOCKED_IN];
     for (const w of allWorkouts) {
@@ -58,7 +66,6 @@ export async function seedWorkouts() {
       if (!snap.exists()) {
         await setDoc(ref, w);
       } else if (w.id === 'locked-in') {
-        // Always update the locked-in image in case it changed
         await setDoc(ref, { image_url: w.image_url }, { merge: true });
       }
     }

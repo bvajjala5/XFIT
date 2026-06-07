@@ -143,7 +143,7 @@ export default function Home() {
         window.addEventListener('terms_agreed', handler, { once: true });
       }
     }
-    seedWorkouts()
+    seedWorkouts(user?.uid)
   }, [userDoc])
 
   const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
