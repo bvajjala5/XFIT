@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/AuthContext'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
@@ -8,11 +8,14 @@ import WorkoutCard from '@/components/shared/WorkoutCard'
 import GlassCard from '@/components/shared/GlassCard'
 import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
-import { Pencil, ChevronRight, Flame, Calendar, Clock, Play, CheckCircle2, Dumbbell, Zap } from 'lucide-react'
+import { Pencil, ChevronRight, Flame, Calendar, Clock, Play, CheckCircle2, Dumbbell, Zap, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
 import WeeklyRecap from '@/components/shared/WeeklyRecap'
+import StreakProtection from '@/components/shared/StreakProtection'
+import NotificationSetup from '@/components/shared/NotificationSetup'
+import { shareWorkout, unshareWorkout, isShared } from '@/lib/shareWorkout'
 import { seedWorkouts } from '@/lib/seedWorkouts'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import WaterTracker from '@/components/home/WaterTracker'
@@ -74,7 +77,29 @@ function WorkoutCardSkeleton() {
 
 export default function Home() {
   const { user, userDoc, refreshUserDoc } = useAuth()
+  const qc = useQueryClient()
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [sharingId, setSharingId] = useState(null)
+
+  async function handleShare(w) {
+    if (!user) return
+    setSharingId(w.id)
+    try {
+      const already = await isShared(w.id)
+      if (already) {
+        await unshareWorkout(w.id)
+        toast.success('Workout removed from community')
+      } else {
+        const name = userDoc?.full_name || user.displayName || 'Anonymous'
+        await shareWorkout(user.uid, name, w)
+        toast.success('Workout shared with community! 🎉')
+      }
+    } catch (err) {
+      toast.error('Could not share workout')
+    } finally {
+      setSharingId(null)
+    }
+  }
 
   useEffect(() => {
     if (userDoc && userDoc.onboarding_complete === false) {
@@ -162,6 +187,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto pb-28">
       <TermsModal userId={user?.uid} />
       <WeeklyRecap logs={logs} />
+      <NotificationSetup userId={user?.uid} />
       <DailyCheckIn userId={user?.uid} />
 
       {/* ── HERO HEADER ── */}
@@ -174,11 +200,14 @@ export default function Home() {
           <h1 className="text-3xl font-black mt-0.5 tracking-tight">{firstName}</h1>
         </motion.div>
 
-        {/* Streak pill */}
+        {/* Streak pill + freeze button */}
         {streak > 0 && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
-            className="absolute top-8 right-5 flex items-center gap-1.5 bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full">
-            <Flame className="w-3.5 h-3.5" /> {streak} day streak
+            className="absolute top-8 right-5 flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5 bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full">
+              <Flame className="w-3.5 h-3.5" /> {streak} day streak
+            </div>
+            <StreakProtection streak={streak} userId={user?.uid} onUseFreeze={() => {}} />
           </motion.div>
         )}
       </div>
@@ -333,10 +362,13 @@ export default function Home() {
         {/* ── MY CUSTOM WORKOUTS ── */}
         {customWorkouts.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">My Workouts</p>
+            <div className="flex items-center justify-between mb-2.5 px-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">My Workouts</p>
+              <Link to="/community" className="text-xs text-primary font-semibold">Community →</Link>
+            </div>
             <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
               {customWorkouts.map(w => (
-                <div key={w.id} className="flex-shrink-0 bg-card border border-border/60 rounded-2xl p-4 w-44">
+                <div key={w.id} className="flex-shrink-0 bg-card border border-border/60 rounded-2xl p-4 w-48">
                   <p className="font-semibold text-sm truncate">{w.name}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{(() => {
                     try {
@@ -345,11 +377,21 @@ export default function Home() {
                     } catch(e) {}
                     return w.duration || w.estimated_duration || '—';
                   })()} min · {w.exercises?.length || 0} exercises</p>
-                  <Link to={`/player/custom/${w.id}`}>
-                    <button className="mt-3 w-full h-8 rounded-xl primary-gradient text-white text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
-                      <Play className="w-3 h-3 fill-white" /> Start
+                  <div className="flex gap-1.5 mt-3">
+                    <Link to={`/player/custom/${w.id}`} className="flex-1">
+                      <button className="w-full h-8 rounded-xl primary-gradient text-white text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-transform">
+                        <Play className="w-3 h-3 fill-white" /> Start
+                      </button>
+                    </Link>
+                    <button
+                      onClick={() => handleShare(w)}
+                      disabled={sharingId === w.id}
+                      title="Share with community"
+                      className="w-8 h-8 rounded-xl bg-secondary/60 flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
                     </button>
-                  </Link>
+                  </div>
                 </div>
               ))}
             </div>

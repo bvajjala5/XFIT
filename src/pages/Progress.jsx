@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { Trophy, Flame, Target, Award, Zap, Calendar, Clock, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { localDateStr, calcStreak } from '@/lib/utils';
+import { localDateStr, calcStreak } from '@/lib/utils'
+import ProgressPhotos from '@/components/shared/ProgressPhotos';
 
 const RANGE_OPTIONS = [
   { key: '1W', days: 7 },
@@ -152,6 +153,9 @@ export default function Progress() {
         <StatCard label="Total Minutes" value={totalMins}  color="text-blue-400"   icon={Clock}      />
         <StatCard label="Total Calories" value={totalCals} color="text-orange-400" icon={TrendingUp}  />
       </div>
+
+      {/* Progress Photos */}
+      <ProgressPhotos userId={user?.uid} />
 
       {/* Activity chart */}
       <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-4">
