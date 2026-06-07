@@ -73,6 +73,8 @@ export default function App() {
         <Route path="ranks" element={<Navigate to="/stats" replace />} />
         <Route path="progress" element={<Navigate to="/stats" replace />} />
         <Route path="run" element={<Navigate to="/workouts" replace />} />
+        <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
+        <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

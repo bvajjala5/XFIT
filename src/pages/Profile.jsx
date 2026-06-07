@@ -319,28 +319,29 @@ export default function Profile() {
 
           <GlassCard className="space-y-3">
             <div className="flex items-center justify-between">
-              <div><p className="text-sm font-semibold">Support XFit</p><p className="text-xs text-muted-foreground mt-0.5">Help keep the app growing</p></div>
+              <div><p className="text-sm font-semibold">Support XFit 💪</p><p className="text-xs text-muted-foreground mt-0.5">Help keep the app free & growing</p></div>
               <button onClick={() => setShowSupportInfo(s => !s)} className="w-6 h-6 rounded-full bg-secondary/60 text-muted-foreground text-xs font-bold flex items-center justify-center hover:bg-secondary transition-colors">i</button>
             </div>
             {showSupportInfo && (
               <div className="bg-secondary/30 rounded-2xl p-3 text-xs text-muted-foreground space-y-1">
-                <p>All donations go directly to Bhanu Vajjala to fund:</p>
+                <p className="font-medium text-foreground">About XFit Dev</p>
+                <p>I created XFit for free because I believe everyone deserves access to great fitness tools. If you find it helpful, please consider supporting — every little bit helps me keep this project going!</p>
                 <p>• Server and hosting costs</p>
                 <p>• New features and improvements</p>
                 <p>• Eventually turning XFit into a mobile app</p>
-                <p className="text-primary font-medium mt-1">100% voluntary — thank you for your support!</p>
+                <p className="text-primary font-medium mt-1">100% voluntary — thank you so much! 🙏</p>
               </div>
             )}
             <a href="https://buymeacoffee.com/xfit" target="_blank" rel="noopener noreferrer"
               className="w-full h-11 rounded-2xl bg-yellow-500/20 text-yellow-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-yellow-500/30 active:scale-[0.98] transition-all">
-              Buy Me a Coffee ☕
+              ❤️ Support XFit
             </a>
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>
-            <a href="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><span>→</span></a>
+            <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><span>→</span></Link>
             <div className="border-t border-border/30" />
-            <a href="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><span>→</span></a>
+            <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><span>→</span></Link>
           </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>
