@@ -157,7 +157,7 @@ export default function Profile() {
   };
 
   const streak = calcStreak(logs);
-  const rank = getRank(streak);
+  const rank = getRank(logs.length);
   const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
   const totalCals = logs.reduce((s,l)=>s+(l.calories_burned||0),0);
 
