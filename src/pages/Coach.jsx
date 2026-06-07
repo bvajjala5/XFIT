@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Brain, Loader2, Trash2 } from 'lucide-react';
+import { Send, Brain, Loader2, Trash2, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { callAI } from '@/lib/ai';
@@ -18,6 +18,8 @@ export default function Coach() {
   const [isThinking, setIsThinking] = useState(false);
   const [failedMessage, setFailedMessage] = useState(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
   const { user, userData } = useAuth();
@@ -80,9 +82,34 @@ Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, la
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><div className="w-1.5 h-1.5 rounded-full bg-green-400" /> Online</div>
             </div>
           </div>
-          {messages.length>0 && <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={() => setShowClearDialog(true)}><Trash2 className="w-4 h-4" /></Button>}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className={`h-8 w-8 transition-colors ${showSearch ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => { setShowSearch(s => !s); setSearchQuery(''); }}>
+              <Search className="w-4 h-4" />
+            </Button>
+            {messages.length>0 && <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={() => setShowClearDialog(true)}><Trash2 className="w-4 h-4" /></Button>}
+          </div>
         </div>
       </div>
+      {/* Search bar */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="px-4 pb-2 border-b border-border/40 overflow-hidden">
+            <div className="relative max-w-3xl mx-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search messages…"
+                className="w-full h-9 pl-8 pr-8 bg-secondary/40 border border-border/40 rounded-xl text-sm focus:outline-none focus:border-primary/50" />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader><AlertDialogTitle>Clear Chat History</AlertDialogTitle><AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
@@ -91,7 +118,10 @@ Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, la
       </AlertDialog>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
         <div className="max-w-3xl mx-auto space-y-4">
-          {messages.length===0 && !isThinking && (
+          {searchQuery && messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+            <div className="text-center py-10 text-muted-foreground text-sm">No messages matching "{searchQuery}"</div>
+          )}
+          {!searchQuery && messages.length===0 && !isThinking && (
             <div className="text-center py-16 space-y-6">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Brain className="w-8 h-8 text-primary" /></div>
               <div><h2 className="text-xl font-bold">Hey{userData?.full_name?`, ${userData.full_name.split(' ')[0]}`:''}! 👋</h2><p className="text-muted-foreground text-sm mt-1">I'm Coach X, your AI fitness coach. How can I help?</p></div>
@@ -101,7 +131,10 @@ Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, la
             </div>
           )}
           <AnimatePresence>
-            {messages.map((msg,i) => (
+            {(searchQuery
+              ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+              : messages
+            ).map((msg,i) => (
               <motion.div key={msg.id||i} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.role==='user'?'bg-primary text-primary-foreground':'glass'}`}>
                   {msg.role==='user' ? (

@@ -8,6 +8,7 @@ import { Trophy, Flame, Calendar, Clock, TrendingUp, Zap, Award, Target, Plus, W
 import { motion } from 'framer-motion';
 import { localDateStr, calcStreak } from '@/lib/utils';
 import GlassCard from '@/components/shared/GlassCard';
+import Badges from '@/components/shared/Badges';
 import RankBadge, { getRank, RANKS } from '@/components/shared/RankBadge';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
@@ -419,24 +420,8 @@ export default function Stats() {
         </div>
       )}
 
-      {/* Milestones */}
-      <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-3">
-        <h3 className="font-bold text-sm">Milestones</h3>
-        <div className="grid grid-cols-5 gap-2">
-          {MILESTONES.map((m, i) => {
-            const unlocked = m.isStreak ? streak >= m.threshold : logs.length >= m.threshold;
-            const MIcon = m.icon;
-            return (
-              <motion.div key={m.id} initial={{opacity:0,scale:0.85}} animate={{opacity:1,scale:1}} transition={{delay:i*0.06}}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl ${unlocked?'bg-primary/10':'opacity-35'}`}>
-                <MIcon className={`w-5 h-5 ${unlocked?'text-primary':'text-muted-foreground'}`}/>
-                <p className="text-[9px] text-center font-medium leading-tight">{m.label}</p>
-                {unlocked && <div className="w-1 h-1 rounded-full bg-primary"/>}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Badges */}
+      <Badges logs={logs} streak={streak} />
     </div>
   );
 }
