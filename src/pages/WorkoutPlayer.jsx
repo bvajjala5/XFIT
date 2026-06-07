@@ -73,10 +73,13 @@ export default function WorkoutPlayer() {
     enabled: !!workoutId
   });
 
-  const exercises = useMemo(() => (workout?.exercises||[]).map((ex,i) => {
-    if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i]};
-    return ex;
-  }), [workout?.id]);
+  const exercises = useMemo(() => {
+    if (!workout?.exercises) return [];
+    return workout.exercises.map((ex,i) => {
+      if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i]};
+      return ex;
+    });
+  }, [workout?.id, workout?.exercises, customDurations]);
 
   useEffect(() => {
     if (!exercises.length || isComplete) return;
