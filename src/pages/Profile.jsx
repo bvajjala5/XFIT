@@ -52,6 +52,7 @@ export default function Profile() {
     }
   };
   const [recentOpen, setRecentOpen] = useState(false);
+  const [showSupportInfo, setShowSupportInfo] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
   const [editingGoal, setEditingGoal] = useState(null);
   const [editGoalVal, setEditGoalVal] = useState('');
@@ -316,6 +317,31 @@ export default function Profile() {
             )}
           </GlassCard>
 
+          <GlassCard className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div><p className="text-sm font-semibold">Support XFit</p><p className="text-xs text-muted-foreground mt-0.5">Help keep the app growing</p></div>
+              <button onClick={() => setShowSupportInfo(s => !s)} className="w-6 h-6 rounded-full bg-secondary/60 text-muted-foreground text-xs font-bold flex items-center justify-center hover:bg-secondary transition-colors">i</button>
+            </div>
+            {showSupportInfo && (
+              <div className="bg-secondary/30 rounded-2xl p-3 text-xs text-muted-foreground space-y-1">
+                <p>All donations go directly to Bhanu Vajjala to fund:</p>
+                <p>• Server and hosting costs</p>
+                <p>• New features and improvements</p>
+                <p>• Eventually turning XFit into a mobile app</p>
+                <p className="text-primary font-medium mt-1">100% voluntary — thank you for your support!</p>
+              </div>
+            )}
+            <a href="https://buymeacoffee.com/xfit" target="_blank" rel="noopener noreferrer"
+              className="w-full h-11 rounded-2xl bg-yellow-500/20 text-yellow-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-yellow-500/30 active:scale-[0.98] transition-all">
+              Buy Me a Coffee ☕
+            </a>
+          </GlassCard>
+          <GlassCard className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>
+            <a href="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><span>→</span></a>
+            <div className="border-t border-border/30" />
+            <a href="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><span>→</span></a>
+          </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>
         <AlertDialogTrigger asChild><Button variant="ghost" className="w-full rounded-xl h-12 text-destructive/60 hover:text-destructive hover:bg-destructive/10 text-sm"><Trash2 className="w-4 h-4 mr-2"/>Delete Account</Button></AlertDialogTrigger>
