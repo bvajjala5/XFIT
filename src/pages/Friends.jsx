@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc, orderBy, updateDoc, increment } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc, orderBy, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { UserPlus, UserMinus, Search, Users, Flame, Dumbbell, Trophy } from "lucide-react";
@@ -55,18 +55,17 @@ export default function Friends() {
 
   const handleToggle = async (profile) => {
     const followingRef = doc(db, "users", user.uid, "following", profile.uid);
-    const theirLbRef = doc(db, "leaderboard", profile.uid);
+    // Also track following UIDs on our OWN leaderboard doc so others can count our followers
+    const myLbRef = doc(db, "leaderboard", user.uid);
     if (following.includes(profile.uid)) {
       await deleteDoc(followingRef);
-      // Decrement their follower count on the leaderboard doc (safe — leaderboard is public)
-      try { await updateDoc(theirLbRef, { followerCount: increment(-1) }); } catch (e) {}
+      try { await updateDoc(myLbRef, { followingUids: arrayRemove(profile.uid) }); } catch (e) {}
     } else {
       await setDoc(followingRef, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() });
-      // Increment their follower count
-      try { await updateDoc(theirLbRef, { followerCount: increment(1) }); } catch (e) {}
+      try { await updateDoc(myLbRef, { followingUids: arrayUnion(profile.uid) }); } catch (e) {}
     }
     qc.invalidateQueries({ queryKey: ["following"] });
-    qc.invalidateQueries({ queryKey: ["follower-count", profile.uid] });
+    qc.invalidateQueries({ queryKey: ["follower-count", user.uid] });
   };
 
   const filtered = leaderboard.filter(u =>

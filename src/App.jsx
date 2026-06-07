@@ -6,7 +6,7 @@ import Login from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
 // Force-clear stale PWA service worker cache on version bump
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 if (typeof window !== 'undefined' && localStorage.getItem('xfit_cache_version') !== CACHE_VERSION) {
   localStorage.setItem('xfit_cache_version', CACHE_VERSION);
   if ('serviceWorker' in navigator) {

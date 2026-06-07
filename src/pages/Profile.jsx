@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '@/lib/firebase';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { applyTheme } from '@/components/layout/AppLayout';
@@ -98,9 +98,10 @@ export default function Profile() {
   const { data: followerCount = 0 } = useQuery({
     queryKey: ['follower-count', user?.uid],
     queryFn: async () => {
-      // Read followerCount field from leaderboard doc — written by Friends.jsx on follow/unfollow
-      const snap = await getDoc(doc(db, 'leaderboard', user.uid));
-      return snap.exists() ? (snap.data().followerCount || 0) : 0;
+      // Count leaderboard docs where followingUids contains this user's uid
+      // Each user writes to their OWN leaderboard doc, so no security rule issues
+      const snap = await getDocs(query(collection(db, 'leaderboard'), where('followingUids', 'array-contains', user.uid)));
+      return snap.size;
     },
     enabled: !!user,
   });
