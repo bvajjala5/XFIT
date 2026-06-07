@@ -10,8 +10,7 @@ function getAutoTheme() {
 }
 
 function getThemeMode() {
-  const saved = localStorage.getItem('xfit-theme');
-  if (saved === 'sunrise' || saved === 'midnight') return saved;
+  // Always default to auto on login screen
   return 'auto';
 }
 
