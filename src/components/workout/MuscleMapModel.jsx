@@ -25,6 +25,55 @@ function getMuscles(name = '') {
   return { primary: ['chest_l','chest_r','lat_l','lat_r','quad_l','quad_r','glute_l','glute_r'], secondary: [] };
 }
 
+const FORM_CUES = {
+  'bicep curl': ['Elbows pinned to sides', 'Squeeze at the top', 'Slow on the way down'],
+  'hammer curl': ['Neutral grip throughout', 'Control the descent', 'No swinging'],
+  'tricep': ['Lock elbows at sides', 'Full extension at bottom', 'Squeeze at lockout'],
+  'push-up': ['Chest to floor', 'Elbows at 45°', 'Core tight throughout'],
+  'diamond push': ['Hands form a diamond', 'Elbows track back', 'Full range of motion'],
+  'bench press': ['Bar to lower chest', 'Drive feet into floor', 'Arch naturally'],
+  'chest': ['Squeeze at the top', 'Control the negative', 'Full stretch at bottom'],
+  'pull-up': ['Dead hang to start', 'Drive elbows to hips', 'Chin over the bar'],
+  'lat pulldown': ['Lean back slightly', 'Pull to upper chest', 'Squeeze shoulder blades'],
+  'row': ['Chest up, back flat', 'Pull to lower chest', 'Squeeze shoulder blades'],
+  'squat': ['Knees track over toes', 'Drive hips back first', 'Chest tall throughout'],
+  'bulgarian': ['Front knee over ankle', 'Rear knee drops straight down', 'Drive through front heel'],
+  'deadlift': ['Bar over mid-foot', 'Push the floor away', 'Hips and shoulders rise together'],
+  'lunge': ['Step far enough forward', 'Back knee hovers floor', 'Drive through front heel'],
+  'lateral raise': ['Slight bend in elbows', 'Raise to shoulder height only', 'Control the descent'],
+  'overhead press': ['Brace your core', 'Press straight up', 'Full lockout at top'],
+  'ground to overhead': ['Squat deep first', 'Drive through legs', 'Press at the top'],
+  'plank': ['Hips level with shoulders', 'Squeeze glutes and abs', 'Breathe steadily'],
+  'ab hold': ['Lower back pressed flat', 'Legs at 45°', 'Breathe through it'],
+  'crunch': ['Lower back stays down', 'Exhale as you curl up', 'Slow and controlled'],
+  'russian twist': ['Feet off the floor', 'Rotate from your core', 'Touch the floor each side'],
+  'dead bug': ['Lower back flat always', 'Opposite arm and leg', 'Exhale on extension'],
+  'ab rollout': ['Start from knees', 'Brace hard before moving', 'Use abs to pull back'],
+  'bicycle crunch': ['Elbow to opposite knee', 'Extend other leg fully', 'Keep neck relaxed'],
+  'hip raise': ['Squeeze glutes at top', 'Drive through heels', 'Hold 1 second at peak'],
+  'bridge': ['Squeeze glutes at top', 'Drive through heels', 'Keep knees together'],
+  'calf raise': ['Full range of motion', 'Pause at the top', 'Slow on the way down'],
+  'burpee': ['Jump feet back together', 'Chest to floor', 'Explosive jump at top'],
+  'mountain climber': ['Hips stay level', 'Drive knees to chest fast', 'Keep core tight'],
+  'jump squat': ['Soft landing', 'Land with bent knees', 'Immediate next rep'],
+  'jump lunge': ['Alternate legs each rep', 'Soft landing always', 'Stay low between reps'],
+  'high knees': ['Drive knees to hip height', 'Pump arms with legs', 'Stay on balls of feet'],
+  'jumping jack': ['Arms fully extend overhead', 'Land softly', 'Keep steady rhythm'],
+  'sprint': ['Drive arms hard', 'High knee lift', 'Push off each step'],
+  'box jump': ['Land softly with bent knees', 'Step down — don't jump', 'Full hip extension at top'],
+  'foam rolling': ['Slow controlled rolls', 'Pause on tight spots', 'Breathe and relax'],
+  'hip flexor stretch': ['Sink into the stretch', 'Keep torso upright', 'Hold and breathe'],
+  'pigeon pose': ['Square your hips', 'Sink into the stretch', 'Breathe deeply'],
+};
+
+function getFormCues(name = '') {
+  const n = name.toLowerCase();
+  for (const [key, cues] of Object.entries(FORM_CUES)) {
+    if (n.includes(key)) return cues;
+  }
+  return ['Focus on form over speed', 'Breathe steadily', 'Full range of motion'];
+}
+
 const PRIMARY = '#ef4444';
 const SECONDARY = '#f97316';
 const BASE = 'hsl(var(--secondary, #1e293b))';
@@ -190,6 +239,16 @@ export default function MuscleMapModel({ exerciseName = '', showLabel = true }) 
             }}>
               {label}
             </span>
+          ))}
+        </div>
+      )}
+      {showLabel && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', maxWidth: '220px' }}>
+          {getFormCues(exerciseName).map((cue, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#60a5fa', flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground, #94a3b8))', lineHeight: 1.4 }}>{cue}</span>
+            </div>
           ))}
         </div>
       )}
