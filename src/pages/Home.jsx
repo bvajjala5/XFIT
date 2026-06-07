@@ -75,11 +75,42 @@ function WorkoutCardSkeleton() {
   );
 }
 
+// Determine which popup should show next after `after` (or from scratch)
+function computeNextPopup(after, uid) {
+  if (!uid) return null;
+  const steps = ['terms', 'checkin', 'recap', 'notifications'];
+  const startIdx = after ? steps.indexOf(after) + 1 : 0;
+  for (let i = startIdx; i < steps.length; i++) {
+    const s = steps[i];
+    if (s === 'terms' && !localStorage.getItem('xfit_terms_agreed_' + uid)) return 'terms';
+    if (s === 'checkin' && localStorage.getItem('xfit_checkin_date') !== localDateStr()) return 'checkin';
+    if (s === 'recap') {
+      const today = new Date();
+      if (today.getDay() === 0) {
+        const thisWeek = `${today.getFullYear()}-W${Math.ceil(today.getDate()/7)}`;
+        if (localStorage.getItem('xfit_recap_shown') !== thisWeek) return 'recap';
+      }
+    }
+    if (s === 'notifications') {
+      if ('Notification' in window && Notification.permission === 'default' && !localStorage.getItem('xfit_notif_dismissed_' + uid)) return 'notifications';
+    }
+  }
+  return null;
+}
+
 export default function Home() {
   const { user, userDoc, refreshUserDoc } = useAuth()
   const qc = useQueryClient()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [sharingId, setSharingId] = useState(null)
+  const [currentPopup, setCurrentPopup] = useState(null)
+
+  // Initialize state machine once user is known
+  useEffect(() => {
+    if (user?.uid) setCurrentPopup(computeNextPopup(null, user.uid));
+  }, [user?.uid]);
+
+  const advancePopup = (from) => setCurrentPopup(computeNextPopup(from, user?.uid));
 
   async function handleShare(w) {
     if (!user) return
@@ -185,10 +216,10 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto pb-28">
-      <TermsModal userId={user?.uid} />
-      <WeeklyRecap logs={logs} />
-      <NotificationSetup userId={user?.uid} />
-      <DailyCheckIn userId={user?.uid} />
+      <TermsModal userId={user?.uid} onDismiss={() => advancePopup('terms')} />
+      <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin'} onDismiss={() => advancePopup('checkin')} />
+      <WeeklyRecap logs={logs} open={currentPopup === 'recap'} onDismiss={() => advancePopup('recap')} />
+      <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
       {/* ── HERO HEADER ── */}
       <div className="relative px-5 pt-8 pb-6 overflow-hidden">
