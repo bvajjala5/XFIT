@@ -20,24 +20,27 @@ const ENERGY_LEVELS = [
   { value: 5, label: 'High', color: 'bg-emerald-400' },
 ]
 
-export default function DailyCheckIn({ userId, onComplete }) {
-  const [visible, setVisible] = useState(false)
+export default function DailyCheckIn({ userId, onComplete, open, onDismiss }) {
+  const controlled = open !== undefined
+  const [visible, setVisible] = useState(controlled ? open : false)
   const [step, setStep] = useState(1) // 1=mood, 2=energy, 3=workout
   const [mood, setMood] = useState(null)
   const [energy, setEnergy] = useState(null)
   const [workedOut, setWorkedOut] = useState(null)
 
+  // Controlled mode: sync visibility with open prop
   useEffect(() => {
-    if (!userId) return
-    const checkIfDone = async () => {
-      const today = localDateStr()
-      const lastCheckin = localStorage.getItem('xfit_checkin_date')
-      if (lastCheckin === today) return // already done today
-      // Show after 1.5 seconds
-      setTimeout(() => setVisible(true), 1500)
-    }
-    checkIfDone()
-  }, [userId])
+    if (controlled) setVisible(open)
+  }, [open, controlled])
+
+  // Uncontrolled mode: self-manage with localStorage check + delay
+  useEffect(() => {
+    if (controlled || !userId) return
+    const today = localDateStr()
+    const lastCheckin = localStorage.getItem('xfit_checkin_date')
+    if (lastCheckin === today) return
+    setTimeout(() => setVisible(true), 1500)
+  }, [userId, controlled])
 
   const handleMood = (m) => {
     setMood(m)
@@ -66,13 +69,15 @@ export default function DailyCheckIn({ userId, onComplete }) {
     } catch (e) { console.error('Checkin save error:', e) }
     setTimeout(() => {
       setVisible(false)
-      if (onComplete) onComplete({ mood, energy, workedOut: did })
+      onComplete?.({ mood, energy, workedOut: did })
+      onDismiss?.()
     }, 800)
   }
 
   const dismiss = () => {
     localStorage.setItem('xfit_checkin_date', localDateStr())
     setVisible(false)
+    onDismiss?.()
   }
 
   return (

@@ -3,17 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
 import { registerPushNotifications } from '@/lib/notifications';
 
-export default function NotificationSetup({ userId }) {
+export default function NotificationSetup({ userId, open, onDismiss }) {
+  const controlled = open !== undefined;
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Controlled mode: show with 5 s delay when open becomes true
   useEffect(() => {
-    if (!userId) return;
+    if (!controlled) return;
+    if (!open) { setShow(false); return; }
+    const t = setTimeout(() => setShow(true), 5000);
+    return () => clearTimeout(t);
+  }, [open, controlled]);
+
+  // Uncontrolled mode: self-manage with 3 s delay
+  useEffect(() => {
+    if (controlled || !userId) return;
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'default') return;
     const dismissed = localStorage.getItem('xfit_notif_dismissed_' + userId);
     if (!dismissed) setTimeout(() => setShow(true), 3000);
-  }, [userId]);
+  }, [userId, controlled]);
 
   async function handleEnable() {
     setLoading(true);
@@ -25,6 +35,12 @@ export default function NotificationSetup({ userId }) {
   function handleDismiss() {
     localStorage.setItem('xfit_notif_dismissed_' + userId, '1');
     setShow(false);
+    onDismiss?.();
+  }
+
+  async function handleEnableAndDismiss() {
+    await handleEnable();
+    onDismiss?.();
   }
 
   return (
@@ -47,7 +63,7 @@ export default function NotificationSetup({ userId }) {
               </p>
               <div className="flex gap-2 mt-3">
                 <button
-                  onClick={handleEnable}
+                  onClick={handleEnableAndDismiss}
                   disabled={loading}
                   className="flex-1 h-8 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
                 >

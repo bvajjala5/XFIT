@@ -2,10 +2,18 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Flame, Clock, Dumbbell } from "lucide-react";
 
-export default function WeeklyRecap({ logs = [] }) {
-  const [show, setShow] = useState(false);
+export default function WeeklyRecap({ logs = [], open, onDismiss }) {
+  const controlled = open !== undefined;
+  const [show, setShow] = useState(controlled ? open : false);
 
+  // Controlled mode: sync with open prop
   useEffect(() => {
+    if (controlled) setShow(open);
+  }, [open, controlled]);
+
+  // Uncontrolled mode: self-manage (Sundays only, once per week)
+  useEffect(() => {
+    if (controlled) return;
     const today = new Date();
     if (today.getDay() !== 0) return;
     const lastShown = localStorage.getItem("xfit_recap_shown");
@@ -14,7 +22,7 @@ export default function WeeklyRecap({ logs = [] }) {
       setTimeout(() => setShow(true), 2000);
       localStorage.setItem("xfit_recap_shown", thisWeek);
     }
-  }, []);
+  }, [controlled]);
 
   const weekLogs = logs.filter(l => {
     const d = l.completedAt?.toDate?.();
@@ -35,7 +43,7 @@ export default function WeeklyRecap({ logs = [] }) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5">
-            <button onClick={() => setShow(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            <button onClick={() => { setShow(false); onDismiss?.(); }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             <div className="space-y-1">
               <p className="text-xs font-bold text-primary uppercase tracking-wider">Weekly Recap 🎉</p>
               <h2 className="text-2xl font-black">Great week!</h2>
@@ -54,7 +62,7 @@ export default function WeeklyRecap({ logs = [] }) {
                 </div>
               ))}
             </div>
-            <button onClick={() => setShow(false)}
+            <button onClick={() => { setShow(false); onDismiss?.(); }}
               className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all">
               Keep it up! 💪
             </button>

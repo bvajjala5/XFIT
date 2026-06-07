@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 
-export default function TermsModal({ userId }) {
+export default function TermsModal({ userId, onDismiss }) {
   const [show, setShow] = useState(false);
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
@@ -17,8 +17,8 @@ export default function TermsModal({ userId }) {
     if (!checkedTerms || !checkedPrivacy) return;
     localStorage.setItem("xfit_terms_agreed_" + userId, "true");
     setShow(false);
-    // Fire event so Home.jsx knows to show onboarding now
     window.dispatchEvent(new Event('terms_agreed'));
+    onDismiss?.();
   };
 
   const canAgree = checkedTerms && checkedPrivacy;
