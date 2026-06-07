@@ -16,6 +16,7 @@ const suggestedPrompts = ['Plan my week','What should I eat today?','Help me wit
 export default function Coach() {
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [failedMessage, setFailedMessage] = useState(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
@@ -42,18 +43,24 @@ export default function Coach() {
     await addDoc(collection(db,'users',user.uid,'messages'), { role:'user', content:text, timestamp:serverTimestamp() });
     queryClient.invalidateQueries({queryKey:['chat-messages',user.uid]});
     setIsThinking(true);
-    try {
-      const systemPrompt = `You are Coach X, an elite personal trainer and nutritionist for XFit. Provide science-backed, motivating, personalized fitness advice. Be concise, actionable, and encouraging. Use markdown formatting.
+    const systemPrompt = `You are Coach X, an elite personal trainer and nutritionist for XFit. Provide science-backed, motivating, personalized fitness advice. Be concise, actionable, and encouraging. Use markdown formatting.
 User: ${userData?.full_name||'Athlete'}, Goal: ${userData?.fitness_goal||'not set'}, Level: ${userData?.experience_level||'not set'}.
 Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, lateral raises 40 reps, hammer curls 25 reps, ground-to-overhead 25 reps, push-ups 50 reps, 7-round core circuit, squats/Bulgarian split squats. All comfortable weight, 21 min, 300 cal, Advanced.`;
+    try {
       const recentMsgs = messages.slice(-8).map(m=>({role:m.role,content:m.content}));
       const reply = await callAI({ system: systemPrompt, messages: [...recentMsgs, {role:'user',content:text}], maxTokens: 1000 });
       await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:reply, timestamp:serverTimestamp() });
+      setFailedMessage(null);
     } catch(e) {
-      await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:'Coach X is taking a quick breather 😤 Give it a moment and try again!', timestamp:serverTimestamp() });
+      setFailedMessage(text);
+      await addDoc(collection(db,'users',user.uid,'messages'), { role:'assistant', content:'__RETRY__', timestamp:serverTimestamp() });
     }
     setIsThinking(false);
     queryClient.invalidateQueries({queryKey:['chat-messages',user.uid]});
+  };
+
+  const handleRetry = () => {
+    if (failedMessage) sendMessage(failedMessage);
   };
 
   const handleClearChat = async () => {
@@ -97,7 +104,19 @@ Their signature workout is Locked In: 105 jumps warm-up, bicep curls 25 reps, la
             {messages.map((msg,i) => (
               <motion.div key={msg.id||i} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.role==='user'?'bg-primary text-primary-foreground':'glass'}`}>
-                  {msg.role==='user' ? <p className="text-sm">{msg.content}</p> : <ReactMarkdown className="text-sm prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">{msg.content}</ReactMarkdown>}
+                  {msg.role==='user' ? (
+                    <p className="text-sm">{msg.content}</p>
+                  ) : msg.content === '__RETRY__' ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">😤 Coach X hit a limit. Try again?</p>
+                      <button onClick={handleRetry} disabled={isThinking}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-all disabled:opacity-50">
+                        {isThinking ? 'Retrying...' : '🔄 Retry'}
+                      </button>
+                    </div>
+                  ) : (
+                    <ReactMarkdown className="text-sm prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">{msg.content}</ReactMarkdown>
+                  )}
                 </div>
               </motion.div>
             ))}
