@@ -155,6 +155,13 @@ export default function Stats() {
   const addDevWorkout = async () => {
     try {
       const ref = await ensureEntry();
+      const snap = await getDoc(ref);
+      const cur = snap.data()?.totalWorkouts || 0;
+      const next = cur + 1;
+      if (getRank(next) !== getRank(cur)) {
+        setRankUpBanner({ ...RANKS[getRank(next)] });
+        setTimeout(() => setRankUpBanner(null), 4000);
+      }
       await updateDoc(ref, { totalWorkouts: increment(1), weeklyWorkouts: increment(1) });
       queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
     } catch (err) { console.error(err); }
@@ -163,14 +170,7 @@ export default function Stats() {
   const addDevStreak = async () => {
     try {
       const ref = await ensureEntry();
-      const snap = await getDoc(ref);
-      const cur = snap.data()?.streak || 0;
-      const next = cur + 1;
-      if (getRank(next) !== getRank(cur)) {
-        setRankUpBanner({ ...RANKS[getRank(next)] });
-        setTimeout(() => setRankUpBanner(null), 4000);
-      }
-      await updateDoc(ref, { streak: next });
+      await updateDoc(ref, { streak: increment(1) });
       queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
     } catch (err) { console.error(err); }
   };
@@ -210,11 +210,11 @@ export default function Stats() {
       {/* My rank card */}
       {myEntry && (
         <GlassCard className="flex items-center gap-4 border border-primary/30 bg-primary/5">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">{RANKS[getRank(myEntry.streak||0)]?.emoji}</div>
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">{RANKS[getRank(myEntry.totalWorkouts||0)]?.emoji}</div>
           <div className="flex-1">
             <p className="font-bold">{getDisplayName()} <span className="text-primary text-xs">(You)</span></p>
             <div className="flex items-center gap-3 mt-0.5">
-              <RankBadge rank={getRank(myEntry.streak||0)}/>
+              <RankBadge rank={getRank(myEntry.totalWorkouts||0)}/>
               <span className="text-xs text-muted-foreground">{myEntry.streak||0} day streak</span>
               <span className="text-xs text-muted-foreground">{myEntry.totalWorkouts||0} workouts</span>
             </div>
@@ -243,7 +243,7 @@ export default function Stats() {
           const isMe = entry.id === user?.uid;
           const val = lbTab==='streaks'?(entry.streak||0):lbTab==='weekly'?(entry.weeklyWorkouts||0):(entry.totalWorkouts||0);
           const lbl = lbTab==='streaks'?'day streak':lbTab==='weekly'?'this week':'total';
-          const rank = getRank(entry.streak||0);
+          const rank = getRank(entry.totalWorkouts||0);
           return (
             <motion.div key={entry.id} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.04}}>
               <GlassCard className={`flex items-center gap-3 py-3 px-4 ${isMe?'border border-primary/50 bg-primary/5':''}`}>
