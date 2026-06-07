@@ -16,6 +16,9 @@ const HealthHub = lazy(() => import('@/pages/HealthHub'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
+const PersonalRecords = lazy(() => import('@/pages/PersonalRecords'))
+const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
+const Friends = lazy(() => import('@/pages/Friends'))
 
 function LoadingScreen() {
   return (
@@ -77,6 +80,9 @@ export default function App() {
         <Route path="run" element={<Navigate to="/workouts" replace />} />
         <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
         <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
+        <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />
+        <Route path="history" element={<Suspense fallback={<PageLoader />}><WorkoutHistory /></Suspense>} />
+        <Route path="friends" element={<Suspense fallback={<PageLoader />}><Friends /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

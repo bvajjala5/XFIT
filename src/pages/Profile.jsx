@@ -340,6 +340,14 @@ export default function Profile() {
             </a>
           </GlassCard>
           <GlassCard className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
+            <Link to="/history" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>🏋️ Workout History</span><span>→</span></Link>
+            <div className="border-t border-border/30" />
+            <Link to="/records" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>🏆 Personal Records</span><span>→</span></Link>
+            <div className="border-t border-border/30" />
+            <Link to="/friends" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>👥 Friends & Following</span><span>→</span></Link>
+          </GlassCard>
+          <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>
             <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><span>→</span></Link>
             <div className="border-t border-border/30" />
