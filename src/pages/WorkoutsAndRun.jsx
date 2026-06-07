@@ -23,7 +23,7 @@ export default function WorkoutsAndRun() {
   const [runSummary, setRunSummary] = useState(null);
   const [showingRun, setShowingRun] = useState(false);
 
-  const { data: workouts = [] } = useQuery({
+  const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(collection(db, 'workouts'));
@@ -109,8 +109,21 @@ export default function WorkoutsAndRun() {
         ))}
       </div>
 
+      {workoutsLoading && (
+        <div className="grid grid-cols-2 gap-3">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+              <div className="w-full h-36 animate-pulse bg-secondary/60" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 w-3/4 animate-pulse bg-secondary/60 rounded-xl" />
+                <div className="h-3 w-1/2 animate-pulse bg-secondary/60 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Workout grid */}
-      {filtered.length === 0 ? (
+      {!workoutsLoading && filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Dumbbell className="w-10 h-10 mx-auto mb-3 opacity-30"/>
           <p>No workouts found</p>
