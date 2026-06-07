@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -285,6 +285,17 @@ export default function Stats() {
 
   const myEntry = allEntries.find(e => e.id === user?.uid);
   const getDisplayName = () => userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Athlete';
+
+  // Sync real workout count to leaderboard if out of sync
+  useEffect(() => {
+    if (!user || !logs.length || !myEntry) return;
+    const realCount = logs.length;
+    const storedCount = myEntry.totalWorkouts || 0;
+    if (realCount !== storedCount) {
+      const ref = doc(db, 'leaderboard', user.uid);
+      updateDoc(ref, { totalWorkouts: realCount, rank: getRank(realCount) }).catch(() => {});
+    }
+  }, [logs.length, myEntry, user]);
 
   const sorted = [...allEntries].sort((a, b) =>
     lbTab === 'streaks' ? (b.streak||0)-(a.streak||0) :
