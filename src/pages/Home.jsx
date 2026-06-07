@@ -76,7 +76,16 @@ export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
-    if (userDoc && userDoc.onboarding_complete === false) setShowOnboarding(true)
+    if (userDoc && userDoc.onboarding_complete === false) {
+      const agreed = localStorage.getItem('xfit_terms_agreed_' + user?.uid);
+      if (agreed) {
+        setShowOnboarding(true);
+      } else {
+        // Wait for terms to be agreed then show onboarding
+        const handler = () => setShowOnboarding(true);
+        window.addEventListener('terms_agreed', handler, { once: true });
+      }
+    }
     seedWorkouts()
   }, [userDoc])
 

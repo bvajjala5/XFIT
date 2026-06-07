@@ -17,6 +17,8 @@ export default function TermsModal({ userId }) {
     if (!checkedTerms || !checkedPrivacy) return;
     localStorage.setItem("xfit_terms_agreed_" + userId, "true");
     setShow(false);
+    // Fire event so Home.jsx knows to show onboarding now
+    window.dispatchEvent(new Event('terms_agreed'));
   };
 
   const canAgree = checkedTerms && checkedPrivacy;
