@@ -1,21 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
 import MealTracker from '@/components/nutrition/MealTracker';
-import { Footprints, Heart, Moon, Flame, Wind, Plus, Activity } from 'lucide-react';
+import { Footprints, Heart, Moon, Flame, Wind, Plus, Activity, Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 import { localDateStr } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const today = () => localDateStr();
+
+// ── WEIGHT TRACKER ────────────────────────────────────────────────────────
+function WeightTracker({ userId }) {
+  const [input, setInput] = useState('');
+  const [unit, setUnit] = useState(() => localStorage.getItem('xfit_weight_unit') || 'lbs');
+  const qc = useQueryClient();
+
+  const { data: weightLogs = [], isLoading } = useQuery({
+    queryKey: ['weight-logs', userId],
+    queryFn: async () => {
+      const snap = await getDocs(
+        query(collection(db, 'users', userId, 'weightLogs'), orderBy('date', 'desc'), limit(30))
+      );
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
+    },
+    enabled: !!userId,
+  });
+
+  async function logWeight() {
+    const val = parseFloat(input);
+    if (!val || val < 50 || val > 700) { toast.error('Enter a valid weight'); return; }
+    await addDoc(collection(db, 'users', userId, 'weightLogs'), {
+      value: val, unit, date: today(),
+    });
+    qc.invalidateQueries({ queryKey: ['weight-logs', userId] });
+    setInput('');
+    toast.success('Weight logged!');
+  }
+
+  const chartData = weightLogs.map(l => ({
+    date: l.date ? new Date(l.date + 'T12:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
+    weight: l.value,
+  }));
+
+  const latest = weightLogs[weightLogs.length - 1];
+  const prev = weightLogs[weightLogs.length - 2];
+  const diff = latest && prev ? (latest.value - prev.value).toFixed(1) : null;
+  const TrendIcon = diff === null ? null : diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
+  const trendColor = diff === null ? '' : diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-muted-foreground';
+
+  return (
+    <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Scale className="w-4 h-4 text-primary" />
+          <h3 className="font-bold text-sm">Body Weight</h3>
+        </div>
+        {latest && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-lg font-black">{latest.value}</span>
+            <span className="text-xs text-muted-foreground">{latest.unit}</span>
+            {TrendIcon && diff !== null && (
+              <span className={`flex items-center gap-0.5 text-xs font-semibold ${trendColor}`}>
+                <TrendIcon className="w-3.5 h-3.5" />{Math.abs(diff)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Log input */}
+      <div className="flex gap-2">
+        <div className="flex-1 flex gap-1">
+          <Input
+            type="number"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder={`Weight in ${unit}`}
+            className="rounded-xl bg-secondary/40 border-border/40 h-10 text-sm"
+            onKeyDown={e => e.key === 'Enter' && logWeight()}
+          />
+          <button onClick={() => { const next = unit === 'lbs' ? 'kg' : 'lbs'; setUnit(next); localStorage.setItem('xfit_weight_unit', next); }}
+            className="h-10 px-3 rounded-xl bg-secondary/50 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            {unit}
+          </button>
+        </div>
+        <button onClick={logWeight}
+          className="h-10 px-4 rounded-xl primary-gradient text-white text-sm font-bold shrink-0">
+          Log
+        </button>
+      </div>
+
+      {/* Chart */}
+      {isLoading && <div className="h-36 animate-pulse bg-secondary/40 rounded-2xl" />}
+      {!isLoading && chartData.length === 0 && (
+        <div className="h-28 flex items-center justify-center text-muted-foreground text-xs">
+          Log your first weigh-in to see the trend
+        </div>
+      )}
+      {chartData.length > 0 && (
+        <ResponsiveContainer width="100%" height={140}>
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+            <defs>
+              <linearGradient id="weightGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="hsl(var(--primary))" />
+                <stop offset="100%" stopColor="#a855f7" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
+            <Tooltip
+              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
+              formatter={v => [`${v} ${unit}`, 'Weight']}
+            />
+            <Line type="monotone" dataKey="weight" stroke="url(#weightGrad)" strokeWidth={2.5}
+              dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 0 }}
+              activeDot={{ r: 6, fill: 'hsl(var(--primary))', strokeWidth: 0 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}
 
 // ── METRIC CARD — bigger ring, better visual ──────────────────────────────
 function HealthMetricCard({ metric, onClick }) {
@@ -216,7 +331,7 @@ export default function HealthHub() {
 
       {/* Tab switcher */}
       <div className="flex gap-2">
-        {[{ key:'overview', label:'📊 Overview' },{ key:'nutrition', label:'🍽️ Nutrition' }].map(t => (
+        {[{ key:'overview', label:'📊 Overview' },{ key:'weight', label:'⚖️ Weight' },{ key:'nutrition', label:'🍽️ Nutrition' }].map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab===t.key?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
             {t.label}
@@ -246,6 +361,7 @@ export default function HealthHub() {
         </>
       )}
 
+      {activeTab === 'weight' && <WeightTracker userId={user?.uid} />}
       {activeTab === 'nutrition' && <MealTracker userId={user?.uid} />}
 
       <HealthLogModal

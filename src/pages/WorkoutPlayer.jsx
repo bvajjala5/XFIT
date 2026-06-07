@@ -6,10 +6,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import MuscleMapModel from '@/components/workout/MuscleMapModel';
+import { toast } from 'sonner';
 
 function cleanForSpeech(text) {
   return text.replace(/\bSpO2\b/gi,'blood oxygen').replace(/(\d+)\s*x\s*(\d+)/gi,'$1 by $2').replace(/\blbs\b/gi,'pounds').replace(/\breps\b/gi,'repetitions').replace(/\bmin\b/gi,'minutes').replace(/\bsec\b/gi,'seconds').replace(/\b([A-Z]{2,})\b/g,m=>m.toLowerCase());
@@ -33,6 +34,81 @@ function speakText(text, enabled=true) {
 
 const motivations = ["You're crushing it! 💪","Push through the burn!","Almost there, don't give up!","You're stronger than yesterday!","Feel the power! 🔥","Every rep counts!","Let's go, champion!"];
 
+async function generateShareCard({ workoutTitle, duration, calories, rating, difficulty }) {
+  const size = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, size, size);
+  bg.addColorStop(0, '#07071a'); bg.addColorStop(1, '#120824');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+
+  // Subtle grid pattern
+  ctx.strokeStyle = 'rgba(99,102,241,0.07)'; ctx.lineWidth = 1;
+  for (let x = 0; x < size; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, size); ctx.stroke(); }
+  for (let y = 0; y < size; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke(); }
+
+  // Glow
+  const glow = ctx.createRadialGradient(200, 200, 0, 200, 200, 500);
+  glow.addColorStop(0, 'rgba(99,102,241,0.18)'); glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, size, size);
+
+  // Logo bar
+  const accentGrad = ctx.createLinearGradient(80, 0, 500, 0);
+  accentGrad.addColorStop(0, '#6366f1'); accentGrad.addColorStop(1, '#a855f7');
+  ctx.fillStyle = accentGrad;
+  ctx.beginPath(); ctx.roundRect(80, 80, 300, 56, 16); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui, sans-serif';
+  ctx.fillText('⚡ XFit', 105, 118);
+
+  // Accent line
+  ctx.fillStyle = accentGrad;
+  ctx.fillRect(80, 176, 460, 5);
+
+  // Workout title
+  ctx.fillStyle = '#f0f0ff'; ctx.font = 'bold 72px system-ui, sans-serif';
+  const title = workoutTitle.length > 18 ? workoutTitle.slice(0, 17) + '…' : workoutTitle;
+  ctx.fillText(title, 80, 290);
+
+  // Stats
+  const drawStat = (emoji, label, val, y) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.beginPath(); ctx.roundRect(80, y, 420, 86, 20); ctx.fill();
+    ctx.font = '40px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(emoji, 110, y + 55);
+    ctx.font = 'bold 40px system-ui, sans-serif'; ctx.fillStyle = '#c7d2fe'; ctx.fillText(val, 175, y + 55);
+    ctx.font = '28px system-ui, sans-serif'; ctx.fillStyle = '#6366f1'; ctx.fillText(label, 175, y + 80);
+  };
+  drawStat('⏱', 'Duration', duration, 330);
+  drawStat('🔥', 'Calories burned', `${calories} cal`, 440);
+
+  // Stars
+  if (rating > 0) {
+    ctx.font = '52px system-ui, sans-serif';
+    ctx.fillText('★'.repeat(rating) + '☆'.repeat(5 - rating), 80, 600);
+  }
+
+  // Difficulty badge
+  if (difficulty) {
+    const diffColor = difficulty === 'Hard' ? '#f87171' : difficulty === 'Medium' ? '#fbbf24' : '#4ade80';
+    ctx.fillStyle = diffColor + '30';
+    ctx.beginPath(); ctx.roundRect(80, 625, 200, 52, 14); ctx.fill();
+    ctx.fillStyle = diffColor; ctx.font = 'bold 32px system-ui, sans-serif';
+    ctx.fillText(difficulty, 110, 660);
+  }
+
+  // Date
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '32px system-ui, sans-serif';
+  ctx.fillText(new Date().toLocaleDateString('en', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }), 80, 740);
+
+  // Watermark
+  ctx.fillStyle = 'rgba(99,102,241,0.5)'; ctx.font = '26px system-ui, sans-serif';
+  ctx.fillText('xfit-bpe.pages.dev', 80, size - 60);
+
+  return canvas.toDataURL('image/png');
+}
+
 export default function WorkoutPlayer() {
   const { id } = useParams();
   const isCustom = id?.startsWith('custom/');
@@ -50,6 +126,18 @@ export default function WorkoutPlayer() {
   const [totalTime, setTotalTime] = useState(0);
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
+
+  // Rest timer
+  const [isResting, setIsResting] = useState(false);
+  const [restTimeLeft, setRestTimeLeft] = useState(30);
+
+  // Post-workout modal
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [logDifficulty, setLogDifficulty] = useState('');
+  const [workoutNotes, setWorkoutNotes] = useState('');
+  const [sharing, setSharing] = useState(false);
+
   const timerRef = useRef(null);
   const announcedRef = useRef({ exIndex:-1, countdown:false });
 
@@ -81,6 +169,7 @@ export default function WorkoutPlayer() {
     });
   }, [workout?.id, workout?.exercises, customDurations]);
 
+  // Set duration when exercise changes
   useEffect(() => {
     if (!exercises.length || isComplete) return;
     const ex = exercises[currentEx];
@@ -97,18 +186,18 @@ export default function WorkoutPlayer() {
     }
   }, [currentEx, exercises, isComplete]);
 
+  // Exercise countdown
   useEffect(() => {
-    if (isPaused||isComplete||!exercises.length) return;
+    if (isPaused || isComplete || !exercises.length || isResting) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev===5 && !announcedRef.current.countdown) { announcedRef.current.countdown=true; speakText('5... 4... 3... 2... 1...', voiceEnabled); }
         if (prev<=1) {
           if (currentEx < exercises.length-1) {
-            const nextEx = exercises[currentEx+1];
-            if (nextEx) speakText(`Great work! Coming up next — ${nextEx.name}.`, voiceEnabled);
-            setCurrentEx(c=>c+1);
-            setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
-            setTimeout(() => setMotivation(''), 3000);
+            const restDur = exercises[currentEx]?.rest_seconds || 30;
+            speakText(`Nice work! Rest for ${restDur} seconds.`, voiceEnabled);
+            setIsResting(true);
+            setRestTimeLeft(restDur);
             return 0;
           } else {
             speakText('Workout complete! You crushed it today. See you tomorrow.', voiceEnabled);
@@ -122,12 +211,37 @@ export default function WorkoutPlayer() {
       setTotalTime(t=>t+1);
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx, exercises]);
+  }, [isPaused, isComplete, currentEx, exercises, isResting]);
+
+  // Rest countdown
+  useEffect(() => {
+    if (!isResting || isPaused) return;
+    const t = setInterval(() => {
+      setRestTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(t);
+          setIsResting(false);
+          setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
+          setTimeout(() => setMotivation(''), 3000);
+          setCurrentEx(c => c + 1);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [isResting, isPaused]);
 
   const skipExercise = useCallback(() => {
-    if (currentEx < exercises.length-1) setCurrentEx(c=>c+1);
-    else setIsComplete(true);
-  }, [currentEx, exercises]);
+    if (isResting) {
+      setIsResting(false);
+      setCurrentEx(c => c + 1);
+    } else if (currentEx < exercises.length-1) {
+      setCurrentEx(c=>c+1);
+    } else {
+      setIsComplete(true);
+    }
+  }, [currentEx, exercises, isResting]);
 
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
@@ -142,8 +256,10 @@ export default function WorkoutPlayer() {
         duration_seconds: totalTime,
         calories_burned: calories,
         exercises_completed: currentEx+1,
+        rating: rating || null,
+        difficulty: logDifficulty || null,
+        notes: workoutNotes.trim() || null,
       });
-      // Check leaderboard privacy settings
       const privacyStr = localStorage.getItem('xfit_lb_privacy');
       const privacy = privacyStr ? JSON.parse(privacyStr) : { joined: true, name: null };
       if (privacy.joined !== false) {
@@ -167,6 +283,33 @@ export default function WorkoutPlayer() {
     navigate('/');
   };
 
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
+      const dataUrl = await generateShareCard({
+        workoutTitle: workout?.title || workout?.name || 'Workout',
+        duration: formatTime(totalTime),
+        calories,
+        rating,
+        difficulty: logDifficulty,
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'xfit-workout.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'XFit Workout Complete!', text: `Just crushed a workout on XFit! 💪` });
+      } else {
+        const a = document.createElement('a');
+        a.href = dataUrl; a.download = 'xfit-workout.png'; a.click();
+        toast.success('Image saved!');
+      }
+    } catch(e) {
+      if (e?.name !== 'AbortError') toast.error('Could not share');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   if (!workout) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
 
   const currentExercise = exercises[currentEx] || exercises[0] || {};
@@ -176,6 +319,61 @@ export default function WorkoutPlayer() {
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
   const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
 
+  // ── REST SCREEN ──────────────────────────────────────────────────────────
+  if (isResting) {
+    const nextExercise = exercises[currentEx + 1];
+    const restTotal = exercises[currentEx]?.rest_seconds || 30;
+    const restPct = (restTimeLeft / restTotal) * 100;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center space-y-8">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+          <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Rest Time</p>
+          <h2 className="text-4xl font-black">Catch your breath 😮‍💨</h2>
+        </motion.div>
+
+        {/* Rest ring */}
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-44 h-44">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
+            <circle cx="100" cy="100" r="88" fill="none" stroke="hsl(211,100%,52%)" strokeWidth="8"
+              strokeLinecap="round" strokeDasharray={2*Math.PI*88}
+              strokeDashoffset={2*Math.PI*88*(1-restPct/100)}
+              style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-5xl font-black tabular-nums">{restTimeLeft}</span>
+            <span className="text-xs text-muted-foreground">seconds</span>
+          </div>
+        </motion.div>
+
+        {nextExercise && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="bg-card border border-border/60 rounded-2xl px-6 py-4 space-y-1 max-w-xs w-full">
+            <p className="text-xs text-muted-foreground uppercase tracking-widest">Up Next</p>
+            <p className="font-bold text-lg">{nextExercise.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {nextExercise.reps ? `${nextExercise.reps} reps` : `${nextExercise.duration || 30}s`}
+              {nextExercise.sets ? ` · ${nextExercise.sets} sets` : ''}
+            </p>
+          </motion.div>
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={() => setIsPaused(p => !p)}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-secondary/60 text-sm font-semibold">
+            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            {isPaused ? 'Resume' : 'Pause'}
+          </button>
+          <button onClick={() => { setIsResting(false); setCurrentEx(c => c + 1); }}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl primary-gradient text-white text-sm font-bold">
+            <SkipForward className="w-4 h-4" /> Skip Rest
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── COMPLETION SCREEN ────────────────────────────────────────────────────
   if (isComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
@@ -189,13 +387,93 @@ export default function WorkoutPlayer() {
             <GlassCard className="text-center"><div className="text-xl font-bold">{calories}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
             <GlassCard className="text-center"><div className="text-xl font-bold">{exercises.length}</div><div className="text-[10px] text-muted-foreground">Exercises</div></GlassCard>
           </div>
-          <Button className="w-full h-14 rounded-2xl text-lg font-bold" onClick={handleLogWorkout}>Log Workout <ArrowRight className="w-5 h-5 ml-2" /></Button>
+          <div className="flex gap-3">
+            <Button className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowLogModal(true)}>
+              Log Workout <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl shrink-0" onClick={handleShare} disabled={sharing}>
+              {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+            </Button>
+          </div>
           <Button variant="ghost" className="w-full" onClick={() => navigate('/')}>Skip</Button>
         </motion.div>
+
+        {/* ── LOG MODAL ── */}
+        <AnimatePresence>
+          {showLogModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+                transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6">
+                <div className="text-center">
+                  <h2 className="text-xl font-black">How was it?</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Rate your workout before logging</p>
+                </div>
+
+                {/* Star rating */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Rating</p>
+                  <div className="flex items-center justify-center gap-2">
+                    {[1,2,3,4,5].map(s => (
+                      <button key={s} onClick={() => setRating(s)} className="transition-transform active:scale-90">
+                        <Star className={`w-9 h-9 transition-colors ${s <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/40'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Difficulty */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">Difficulty</p>
+                  <div className="flex gap-2">
+                    {['Easy','Medium','Hard'].map(d => (
+                      <button key={d} onClick={() => setLogDifficulty(d)}
+                        className={`flex-1 h-10 rounded-xl text-sm font-bold transition-all border ${
+                          logDifficulty === d
+                            ? d === 'Easy' ? 'bg-green-500/20 text-green-400 border-green-500/40'
+                              : d === 'Medium' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40'
+                              : 'bg-red-500/20 text-red-400 border-red-500/40'
+                            : 'bg-secondary/40 text-muted-foreground border-transparent hover:bg-secondary'
+                        }`}>
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Notes (optional)</p>
+                  <textarea
+                    value={workoutNotes}
+                    onChange={e => setWorkoutNotes(e.target.value)}
+                    placeholder="How did it feel? Any PRs?"
+                    rows={3}
+                    maxLength={500}
+                    className="w-full bg-secondary/40 border border-border/50 rounded-2xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/50"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => setShowLogModal(false)}
+                    className="flex-1 h-11 rounded-2xl bg-secondary/50 text-sm font-semibold hover:bg-secondary transition-colors">
+                    Back
+                  </button>
+                  <button onClick={handleLogWorkout}
+                    className="flex-1 h-11 rounded-2xl primary-gradient text-white text-sm font-bold active:scale-[0.98] transition-transform">
+                    Save & Log 🏆
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
 
+  // ── ACTIVE WORKOUT ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex items-center justify-between p-4">
