@@ -34,7 +34,7 @@ export default function WeeklyRecap({ logs = [] }) {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5">
+            className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5">
             <button onClick={() => setShow(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             <div className="space-y-1">
               <p className="text-xs font-bold text-primary uppercase tracking-wider">Weekly Recap 🎉</p>
