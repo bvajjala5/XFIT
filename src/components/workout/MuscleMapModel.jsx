@@ -60,7 +60,7 @@ const FORM_CUES = {
   'high knees': ['Drive knees to hip height', 'Pump arms with legs', 'Stay on balls of feet'],
   'jumping jack': ['Arms fully extend overhead', 'Land softly', 'Keep steady rhythm'],
   'sprint': ['Drive arms hard', 'High knee lift', 'Push off each step'],
-  'box jump': ['Land softly with bent knees', 'Step down — don't jump', 'Full hip extension at top'],
+  'box jump': ['Land softly with bent knees', 'Step down, do not jump', 'Full hip extension at top'],
   'foam rolling': ['Slow controlled rolls', 'Pause on tight spots', 'Breathe and relax'],
   'hip flexor stretch': ['Sink into the stretch', 'Keep torso upright', 'Hold and breathe'],
   'pigeon pose': ['Square your hips', 'Sink into the stretch', 'Breathe deeply'],
