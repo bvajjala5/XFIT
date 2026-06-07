@@ -31,16 +31,14 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
-  const [lbPrivacy, setLbPrivacy] = useState(() => {
-    try { const s = localStorage.getItem('xfit_lb_privacy'); return s ? JSON.parse(s) : { joined: true, name: null }; } catch(e) { return { joined: true, name: null }; }
-  });
-  const [lbNameInput, setLbNameInput] = useState(() => {
-    try { const s = localStorage.getItem('xfit_lb_privacy'); return s ? (JSON.parse(s).name || '') : ''; } catch(e) { return ''; }
-  });
+  const [lbPrivacy, setLbPrivacy] = useState({ joined: true, name: null });
+  const [lbNameInput, setLbNameInput] = useState('');
   const saveLbPrivacy = async (update) => {
     const next = { ...lbPrivacy, ...update };
     setLbPrivacy(next);
     localStorage.setItem('xfit_lb_privacy', JSON.stringify(next));
+    // Save to Firestore so it's user-specific
+    await updateUserData({ lbPrivacy: next });
     // Sync with Firestore
     if (user) {
       const lbRef = doc(db, 'leaderboard', user.uid);
@@ -63,6 +61,12 @@ export default function Profile() {
   useEffect(() => {
     if (userData) {
       setForm({fitness_goal:userData.fitness_goal||'',experience_level:userData.experience_level||'',preferred_types:userData.preferred_types||[],distance_unit:userData.distance_unit||'miles'});
+      // Load leaderboard privacy from Firestore (user-specific)
+      if (userData.lbPrivacy) {
+        setLbPrivacy(userData.lbPrivacy);
+        setLbNameInput(userData.lbPrivacy.name || '');
+        localStorage.setItem('xfit_lb_privacy', JSON.stringify(userData.lbPrivacy));
+      }
       const saved = userData.goals||{};
       const result = {};
       GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
