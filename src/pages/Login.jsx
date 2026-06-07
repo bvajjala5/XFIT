@@ -1,121 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
+import AnimatedBackground from '@/components/layout/AnimatedBackground';
+import { applyTheme } from '@/components/layout/AppLayout';
 
 function getAutoTheme() {
   const hour = new Date().getHours();
   return (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
 }
 
-function getTheme() {
+function getThemeMode() {
   const saved = localStorage.getItem('xfit-theme');
-  if (saved === 'sunrise') return 'sunrise';
-  if (saved === 'midnight') return 'midnight';
-  return getAutoTheme(); // auto by default
-}
-
-const THEMES = {
-  sunrise: {
-    bg: 'linear-gradient(160deg, #fff7ed 0%, #fed7aa 40%, #fde68a 100%)',
-    blob1: 'rgba(251,146,60,0.25)',
-    blob2: 'rgba(252,211,77,0.2)',
-    cardBg: 'rgba(255,255,255,0.85)',
-    cardBorder: 'rgba(251,146,60,0.2)',
-    textPrimary: '#1c1917',
-    textMuted: '#78716c',
-    scene: 'sunrise',
-  },
-  midnight: {
-    bg: 'linear-gradient(160deg, #0f0f1a 0%, #1a1a2e 50%, #0d1117 100%)',
-    blob1: 'rgba(99,102,241,0.2)',
-    blob2: 'rgba(139,92,246,0.15)',
-    cardBg: 'rgba(15,15,26,0.9)',
-    cardBorder: 'rgba(99,102,241,0.2)',
-    textPrimary: '#f8fafc',
-    textMuted: '#94a3b8',
-    scene: 'midnight',
-  },
-};
-
-function SunriseScene() {
-  return (
-    <svg width="100%" height="140" viewBox="0 0 390 140" fill="none" style={{position:'absolute',bottom:0,left:0,right:0,pointerEvents:'none'}}>
-      {/* Sun glow pulse */}
-      <circle cx="195" cy="65" r="50" fill="rgba(251,191,36,0.08)">
-        <animate attributeName="r" values="45;55;45" dur="3s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values="0.08;0.15;0.08" dur="3s" repeatCount="indefinite"/>
-      </circle>
-      <circle cx="195" cy="65" r="36" fill="rgba(251,191,36,0.15)">
-        <animate attributeName="r" values="34;38;34" dur="3s" repeatCount="indefinite"/>
-      </circle>
-      {/* Sun */}
-      <circle cx="195" cy="65" r="26" fill="rgba(252,211,77,1)"/>
-      {/* Rotating rays group */}
-      <g style={{transformOrigin:'195px 65px'}}>
-        <animateTransform attributeName="transform" type="rotate" from="0 195 65" to="360 195 65" dur="20s" repeatCount="indefinite"/>
-        {[0,30,60,90,120,150,180,210,240,270,300,330].map(deg => (
-          <line key={deg}
-            x1={195 + Math.cos(deg*Math.PI/180)*32}
-            y1={65 + Math.sin(deg*Math.PI/180)*32}
-            x2={195 + Math.cos(deg*Math.PI/180)*46}
-            y2={65 + Math.sin(deg*Math.PI/180)*46}
-            stroke="rgba(252,211,77,0.6)" strokeWidth="2.5" strokeLinecap="round"/>
-        ))}
-      </g>
-      {/* Horizon hills */}
-      <path d="M0 105 Q60 80 120 98 Q180 115 240 88 Q300 60 390 92 L390 140 L0 140 Z" fill="rgba(251,146,60,0.12)"/>
-      <path d="M0 118 Q80 100 160 112 Q240 124 320 102 Q355 92 390 108 L390 140 L0 140 Z" fill="rgba(251,146,60,0.08)"/>
-    </svg>
-  );
-}
-
-function MidnightScene() {
-  const stars = Array.from({length: 40}, (_, i) => ({
-    x: (i * 137.5) % 390,
-    y: (i * 73.1) % 110,
-    r: i % 4 === 0 ? 2 : i % 3 === 0 ? 1.5 : 1,
-    delay: (i * 0.3) % 3,
-    dur: 2 + (i % 3),
-  }));
-  return (
-    <svg width="100%" height="140" viewBox="0 0 390 140" fill="none" style={{position:'absolute',top:0,left:0,right:0,pointerEvents:'none'}}>
-      <defs>
-        {stars.map((s,i) => (
-          <animate key={i} id={`sa${i}`} />
-        ))}
-      </defs>
-      {stars.map((s,i) => (
-        <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="white">
-          <animate attributeName="opacity" values="0.2;0.9;0.2" dur={`${s.dur}s`} begin={`${s.delay}s`} repeatCount="indefinite"/>
-        </circle>
-      ))}
-      <circle cx="310" cy="40" r="22" fill="rgba(226,232,240,0.15)"/>
-      <circle cx="310" cy="40" r="18" fill="rgba(226,232,240,0.9)"/>
-      <circle cx="321" cy="32" r="14" fill="rgba(15,15,40,0.95)"/>
-    </svg>
-  );
+  if (saved === 'sunrise' || saved === 'midnight') return saved;
+  return 'auto';
 }
 
 export default function Login() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [themeMode, setThemeMode] = useState(() => {
-    const saved = localStorage.getItem('xfit-theme');
-    if (saved === 'sunrise' || saved === 'midnight') return saved;
-    return 'auto';
-  });
-  const theme = themeMode === 'auto' ? getAutoTheme() : themeMode;
-  const t = THEMES[theme];
+  const [themeMode, setThemeMode] = useState(getThemeMode);
+
+  const activeTheme = themeMode === 'auto' ? getAutoTheme() : themeMode;
+  const isDark = activeTheme === 'midnight';
 
   const cycleTheme = () => {
     const next = themeMode === 'auto' ? 'sunrise' : themeMode === 'sunrise' ? 'midnight' : 'auto';
     setThemeMode(next);
-    if (next === 'auto') localStorage.removeItem('xfit-theme');
-    else localStorage.setItem('xfit-theme', next);
+    const resolved = next === 'auto' ? getAutoTheme() : next;
+    applyTheme(resolved);
   };
 
-  const themeButtonLabel = themeMode === 'auto' ? '🌓 Auto' : themeMode === 'sunrise' ? '🌙 Night' : '☀️ Day';
+  const btnLabel = themeMode === 'auto' ? '🌓 Auto' : themeMode === 'sunrise' ? '🌙 Night' : '☀️ Day';
 
   const handleLogin = async () => {
     setLoading(true); setError('');
@@ -124,30 +40,23 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{background: t.bg}}>
+    <div className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}
+      style={{ background: isDark ? 'linear-gradient(160deg,#080818 0%,#0f0f28 50%,#080818 100%)' : 'linear-gradient(160deg,#fff7ed 0%,#fed7aa 40%,#fde68a 100%)' }}>
 
-      {/* Scene */}
-      {theme === 'sunrise' ? <SunriseScene /> : <MidnightScene />}
-
-      {/* Blobs */}
-      <div className="absolute top-10 left-10 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{background: t.blob1, opacity: 0.6}}/>
-      <div className="absolute bottom-40 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{background: t.blob2, opacity: 0.5}}/>
+      {/* Full screen animated background */}
+      <AnimatedBackground />
 
       {/* Theme toggle */}
-      <div className="absolute top-5 right-5 z-10">
-        <button onClick={cycleTheme}
-          style={{
-            background: theme === 'midnight' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-            border: `1px solid ${theme === 'midnight' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
-            borderRadius: '999px',
-            padding: '6px 14px',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: t.textMuted,
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)',
-          }}>
-          {themeButtonLabel}
+      <div className="absolute top-5 right-5 z-20">
+        <button onClick={cycleTheme} style={{
+          background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
+          borderRadius: '999px', padding: '6px 14px',
+          fontSize: '12px', fontWeight: 600,
+          color: isDark ? '#94a3b8' : '#78716c',
+          cursor: 'pointer', backdropFilter: 'blur(8px)',
+        }}>
+          {btnLabel}
         </button>
       </div>
 
@@ -156,22 +65,21 @@ export default function Login() {
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.5 }}
           className="relative text-center space-y-6 max-w-xs w-full">
 
-          {/* Logo */}
           <div className="mx-auto w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-2xl"
-            style={{background: 'linear-gradient(135deg, #f97316, #ea580c)'}}>
+            style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}>
             <span className="text-white font-black text-4xl tracking-tight">X</span>
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-5xl font-black tracking-tight" style={{color: t.textPrimary}}>XFit</h1>
-            <p className="text-base" style={{color: t.textMuted}}>Stay consistent. Stay strong.</p>
+            <h1 className="text-5xl font-black tracking-tight" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>XFit</h1>
+            <p style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Stay consistent. Stay strong.</p>
           </div>
 
           <div className="flex justify-center gap-6 pt-2">
             {[['🏋️', 'Workouts'], ['🏃', 'Run tracking'], ['🥗', 'Nutrition']].map(([emoji, label]) => (
               <div key={label} className="text-center">
                 <div className="text-xl">{emoji}</div>
-                <div className="text-[10px] mt-1 font-medium" style={{color: t.textMuted}}>{label}</div>
+                <div className="text-[10px] mt-1 font-medium" style={{ color: isDark ? '#64748b' : '#a8a29e' }}>{label}</div>
               </div>
             ))}
           </div>
@@ -182,20 +90,18 @@ export default function Login() {
       <motion.div initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45, delay:0.1 }}
         className="rounded-t-3xl px-6 pt-7 pb-10 space-y-4 relative z-10"
         style={{
-          background: t.cardBg,
-          borderTop: `1px solid ${t.cardBorder}`,
+          background: isDark ? 'rgba(10,10,25,0.92)' : 'rgba(255,255,255,0.88)',
+          borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
-          backdropFilter: 'blur(20px)',
+          backdropFilter: 'blur(24px)',
         }}>
 
         <div className="text-center">
-          <h2 className="text-xl font-bold" style={{color: t.textPrimary}}>Let's get started</h2>
-          <p className="text-sm mt-1" style={{color: t.textMuted}}>Sign in to track your journey</p>
+          <h2 className="text-xl font-bold" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>Let's get started</h2>
+          <p className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Sign in to track your journey</p>
         </div>
 
-        {error && (
-          <div className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error}</div>
-        )}
+        {error && <div className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error}</div>}
 
         <button onClick={handleLogin} disabled={loading}
           className="w-full h-14 rounded-2xl bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-60">
@@ -211,7 +117,7 @@ export default function Login() {
           {loading ? 'Signing in…' : 'Continue with Google'}
         </button>
 
-        <p className="text-center text-xs" style={{color: t.textMuted}}>
+        <p className="text-center text-xs" style={{ color: isDark ? '#475569' : '#a8a29e' }}>
           By continuing you agree to our Terms & Privacy Policy
         </p>
       </motion.div>
