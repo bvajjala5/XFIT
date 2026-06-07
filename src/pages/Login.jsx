@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
 
+function getAutoTheme() {
+  const hour = new Date().getHours();
+  return (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
+}
+
 function getTheme() {
-  // Check saved preference first
   const saved = localStorage.getItem('xfit-theme');
   if (saved === 'sunrise') return 'sunrise';
   if (saved === 'midnight') return 'midnight';
-  // Auto detect by hour
-  const hour = new Date().getHours();
-  return (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
+  return getAutoTheme(); // auto by default
 }
 
 const THEMES = {
@@ -37,44 +39,59 @@ const THEMES = {
 
 function SunriseScene() {
   return (
-    <svg width="100%" height="120" viewBox="0 0 390 120" fill="none" style={{position:'absolute',bottom:0,left:0,right:0}}>
-      <ellipse cx="195" cy="130" rx="260" ry="60" fill="rgba(251,146,60,0.08)"/>
+    <svg width="100%" height="140" viewBox="0 0 390 140" fill="none" style={{position:'absolute',bottom:0,left:0,right:0,pointerEvents:'none'}}>
+      {/* Sun glow pulse */}
+      <circle cx="195" cy="65" r="50" fill="rgba(251,191,36,0.08)">
+        <animate attributeName="r" values="45;55;45" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.08;0.15;0.08" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="195" cy="65" r="36" fill="rgba(251,191,36,0.15)">
+        <animate attributeName="r" values="34;38;34" dur="3s" repeatCount="indefinite"/>
+      </circle>
       {/* Sun */}
-      <circle cx="195" cy="60" r="32" fill="rgba(251,191,36,0.9)"/>
-      <circle cx="195" cy="60" r="24" fill="rgba(252,211,77,1)"/>
-      {/* Sun rays */}
-      {[0,30,60,90,120,150,180,210,240,270,300,330].map(deg => (
-        <line key={deg}
-          x1={195 + Math.cos(deg*Math.PI/180)*38}
-          y1={60 + Math.sin(deg*Math.PI/180)*38}
-          x2={195 + Math.cos(deg*Math.PI/180)*48}
-          y2={60 + Math.sin(deg*Math.PI/180)*48}
-          stroke="rgba(252,211,77,0.7)" strokeWidth="2.5" strokeLinecap="round"/>
-      ))}
+      <circle cx="195" cy="65" r="26" fill="rgba(252,211,77,1)"/>
+      {/* Rotating rays group */}
+      <g style={{transformOrigin:'195px 65px'}}>
+        <animateTransform attributeName="transform" type="rotate" from="0 195 65" to="360 195 65" dur="20s" repeatCount="indefinite"/>
+        {[0,30,60,90,120,150,180,210,240,270,300,330].map(deg => (
+          <line key={deg}
+            x1={195 + Math.cos(deg*Math.PI/180)*32}
+            y1={65 + Math.sin(deg*Math.PI/180)*32}
+            x2={195 + Math.cos(deg*Math.PI/180)*46}
+            y2={65 + Math.sin(deg*Math.PI/180)*46}
+            stroke="rgba(252,211,77,0.6)" strokeWidth="2.5" strokeLinecap="round"/>
+        ))}
+      </g>
       {/* Horizon hills */}
-      <path d="M0 100 Q60 70 120 90 Q180 110 240 80 Q300 50 390 85 L390 120 L0 120 Z" fill="rgba(251,146,60,0.12)"/>
-      <path d="M0 110 Q80 90 160 105 Q240 120 320 95 Q355 85 390 100 L390 120 L0 120 Z" fill="rgba(251,146,60,0.08)"/>
+      <path d="M0 105 Q60 80 120 98 Q180 115 240 88 Q300 60 390 92 L390 140 L0 140 Z" fill="rgba(251,146,60,0.12)"/>
+      <path d="M0 118 Q80 100 160 112 Q240 124 320 102 Q355 92 390 108 L390 140 L0 140 Z" fill="rgba(251,146,60,0.08)"/>
     </svg>
   );
 }
 
 function MidnightScene() {
-  const stars = Array.from({length: 28}, (_, i) => ({
+  const stars = Array.from({length: 40}, (_, i) => ({
     x: (i * 137.5) % 390,
-    y: (i * 73.1) % 90,
-    r: i % 3 === 0 ? 1.5 : 1,
-    opacity: 0.4 + (i % 5) * 0.12,
+    y: (i * 73.1) % 110,
+    r: i % 4 === 0 ? 2 : i % 3 === 0 ? 1.5 : 1,
+    delay: (i * 0.3) % 3,
+    dur: 2 + (i % 3),
   }));
   return (
-    <svg width="100%" height="120" viewBox="0 0 390 120" fill="none" style={{position:'absolute',top:0,left:0,right:0}}>
+    <svg width="100%" height="140" viewBox="0 0 390 140" fill="none" style={{position:'absolute',top:0,left:0,right:0,pointerEvents:'none'}}>
+      <defs>
+        {stars.map((s,i) => (
+          <animate key={i} id={`sa${i}`} />
+        ))}
+      </defs>
       {stars.map((s,i) => (
-        <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="white" opacity={s.opacity}/>
+        <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="white">
+          <animate attributeName="opacity" values="0.2;0.9;0.2" dur={`${s.dur}s`} begin={`${s.delay}s`} repeatCount="indefinite"/>
+        </circle>
       ))}
-      {/* Moon */}
-      <circle cx="310" cy="35" r="18" fill="rgba(226,232,240,0.9)"/>
-      <circle cx="320" cy="28" r="14" fill="rgba(30,30,60,0.95)"/>
-      {/* Subtle glow */}
-      <circle cx="310" cy="35" r="26" fill="rgba(226,232,240,0.05)"/>
+      <circle cx="310" cy="40" r="22" fill="rgba(226,232,240,0.15)"/>
+      <circle cx="310" cy="40" r="18" fill="rgba(226,232,240,0.9)"/>
+      <circle cx="321" cy="32" r="14" fill="rgba(15,15,40,0.95)"/>
     </svg>
   );
 }
@@ -83,8 +100,22 @@ export default function Login() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState(getTheme);
+  const [themeMode, setThemeMode] = useState(() => {
+    const saved = localStorage.getItem('xfit-theme');
+    if (saved === 'sunrise' || saved === 'midnight') return saved;
+    return 'auto';
+  });
+  const theme = themeMode === 'auto' ? getAutoTheme() : themeMode;
   const t = THEMES[theme];
+
+  const cycleTheme = () => {
+    const next = themeMode === 'auto' ? 'sunrise' : themeMode === 'sunrise' ? 'midnight' : 'auto';
+    setThemeMode(next);
+    if (next === 'auto') localStorage.removeItem('xfit-theme');
+    else localStorage.setItem('xfit-theme', next);
+  };
+
+  const themeButtonLabel = themeMode === 'auto' ? '🌓 Auto' : themeMode === 'sunrise' ? '🌙 Night' : '☀️ Day';
 
   const handleLogin = async () => {
     setLoading(true); setError('');
@@ -104,7 +135,7 @@ export default function Login() {
 
       {/* Theme toggle */}
       <div className="absolute top-5 right-5 z-10">
-        <button onClick={() => setTheme(t => t === 'sunrise' ? 'midnight' : 'sunrise')}
+        <button onClick={cycleTheme}
           style={{
             background: theme === 'midnight' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
             border: `1px solid ${theme === 'midnight' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
@@ -116,7 +147,7 @@ export default function Login() {
             cursor: 'pointer',
             backdropFilter: 'blur(8px)',
           }}>
-          {theme === 'sunrise' ? '🌙 Night' : '☀️ Day'}
+          {themeButtonLabel}
         </button>
       </div>
 
