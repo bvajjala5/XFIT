@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, orderBy } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -36,7 +36,7 @@ export default function Leaderboard() {
     retry: 1,
   });
 
-  // Real workout count from the user's actual logs — source of truth for rank
+  // Real workout count — source of truth for rank display
   const { data: actualWorkoutCount = null } = useQuery({
     queryKey: ['actual-workout-count', user?.uid],
     queryFn: async () => {
@@ -45,24 +45,30 @@ export default function Leaderboard() {
       return snap.size;
     },
     enabled: !!user,
-    onSuccess: async (count) => {
-      // Auto-sync leaderboard totalWorkouts if it's out of date
-      if (count === null) return;
-      const lbRef = doc(db, 'leaderboard', user.uid);
-      const lbSnap = await getDoc(lbRef);
-      if (lbSnap.exists()) {
-        const stored = lbSnap.data().totalWorkouts || 0;
-        if (stored !== count) {
-          await updateDoc(lbRef, { totalWorkouts: count, rank: getRank(count), updatedAt: new Date() });
-          queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
-        }
-      }
-    },
   });
 
   const myEntry = allEntries.find(e => e.id === user?.uid);
-  // Use actual log count for rank (falls back to leaderboard value if not loaded yet)
   const myTotalWorkouts = actualWorkoutCount ?? (myEntry?.totalWorkouts || 0);
+
+  // Sync leaderboard totalWorkouts when actual count differs (onSuccess removed in TQ v5)
+  useEffect(() => {
+    if (actualWorkoutCount === null || !user) return;
+    const stored = myEntry?.totalWorkouts ?? -1;
+    if (stored === actualWorkoutCount) return;
+    const lbRef = doc(db, 'leaderboard', user.uid);
+    const displayName = userData?.full_name?.split(' ')[0] || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete';
+    (async () => {
+      try {
+        const snap = await getDoc(lbRef);
+        if (snap.exists()) {
+          await updateDoc(lbRef, { totalWorkouts: actualWorkoutCount, rank: getRank(actualWorkoutCount), updatedAt: new Date() });
+        } else {
+          await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: actualWorkoutCount, weeklyWorkouts: 0, streak: 0, rank: getRank(actualWorkoutCount), updatedAt: new Date() });
+        }
+        queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
+      } catch (e) { console.error('lb sync error', e); }
+    })();
+  }, [actualWorkoutCount, user?.uid]);
   const getDisplayName = () =>
     userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Athlete';
 
