@@ -54,6 +54,22 @@ function StatRing({ value, max, color, label, display }) {
   )
 }
 
+function WorkoutCardSkeleton() {
+  return (
+    <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+      <div className="w-full h-36 animate-pulse bg-secondary/60" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 w-3/4 animate-pulse bg-secondary/60 rounded-xl" />
+        <div className="h-3 w-1/2 animate-pulse bg-secondary/60 rounded-xl" />
+        <div className="flex gap-3 mt-2">
+          <div className="h-3 w-12 animate-pulse bg-secondary/60 rounded-xl" />
+          <div className="h-3 w-12 animate-pulse bg-secondary/60 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { user, userDoc, refreshUserDoc } = useAuth()
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -63,7 +79,7 @@ export default function Home() {
     seedWorkouts()
   }, [userDoc])
 
-  const { data: workouts = [] } = useQuery({
+  const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(collection(db, 'workouts'))
@@ -342,7 +358,15 @@ export default function Home() {
         </motion.div>
 
         {/* ── WORKOUT LIBRARY ── */}
-        {workouts.length > 0 && (
+        {workoutsLoading && (
+          <div className="space-y-3">
+            <div className="h-5 w-32 animate-pulse bg-secondary/60 rounded-xl" />
+            <div className="grid grid-cols-2 gap-3">
+              {[1,2,3,4].map(i => <WorkoutCardSkeleton key={i} />)}
+            </div>
+          </div>
+        )}
+        {!workoutsLoading && workouts.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <div className="flex items-center justify-between mb-2.5 px-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Browse Workouts</p>
