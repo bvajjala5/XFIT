@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import { Pencil, ChevronRight, Flame, Calendar, Clock, Play, CheckCircle2, Dumbbell, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import TermsModal from '@/components/shared/TermsModal'
 import { seedWorkouts } from '@/lib/seedWorkouts'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import WaterTracker from '@/components/home/WaterTracker'
@@ -149,6 +150,7 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto pb-28">
+      <TermsModal userId={user?.uid} />
       <DailyCheckIn userId={user?.uid} />
 
       {/* ── HERO HEADER ── */}
