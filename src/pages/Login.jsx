@@ -24,6 +24,12 @@ export default function Login() {
   const activeTheme = themeMode === 'auto' ? getAutoTheme() : themeMode;
   const isDark = activeTheme === 'midnight';
 
+  // Apply theme class to document so AnimatedBackground picks it up
+  React.useEffect(() => {
+    document.documentElement.className = '';
+    document.documentElement.classList.add(`theme-${activeTheme}`);
+  }, [activeTheme]);
+
   const cycleTheme = () => {
     const next = themeMode === 'auto' ? 'sunrise' : themeMode === 'sunrise' ? 'midnight' : 'auto';
     setThemeMode(next);
