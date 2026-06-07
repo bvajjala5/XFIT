@@ -55,14 +55,13 @@ export default function Friends() {
 
   const handleToggle = async (profile) => {
     const followingRef = doc(db, "users", user.uid, "following", profile.uid);
-    // Also track following UIDs on our OWN leaderboard doc so others can count our followers
-    const myLbRef = doc(db, "leaderboard", user.uid);
+    const followerRef = doc(db, "users", profile.uid, "followers", user.uid);
     if (following.includes(profile.uid)) {
       await deleteDoc(followingRef);
-      try { await updateDoc(myLbRef, { followingUids: arrayRemove(profile.uid) }); } catch (e) {}
+      try { await deleteDoc(followerRef); } catch(e) {}
     } else {
       await setDoc(followingRef, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() });
-      try { await updateDoc(myLbRef, { followingUids: arrayUnion(profile.uid) }); } catch (e) {}
+      try { await setDoc(followerRef, { uid: user.uid, followedAt: new Date() }); } catch(e) {}
     }
     qc.invalidateQueries({ queryKey: ["following"] });
     qc.invalidateQueries({ queryKey: ["follower-count", user.uid] });
