@@ -166,10 +166,10 @@ export default function WorkoutPlayer() {
 
   if (!workout) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
 
-  const currentExercise = exercises[currentEx];
-  const totalDuration = exercises.reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0);
+  const currentExercise = exercises[currentEx] || exercises[0] || {};
+  const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0) : 1;
   const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0);
-  const overallProgress = ((elapsed+(exercises[currentEx]?.duration||30)-timeLeft)/totalDuration)*100;
+  const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
   const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
 
