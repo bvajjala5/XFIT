@@ -55,17 +55,14 @@ export default function Friends() {
 
   const handleToggle = async (profile) => {
     const followingRef = doc(db, "users", user.uid, "following", profile.uid);
-    const followerRef = doc(db, "users", profile.uid, "followers", user.uid);
     if (following.includes(profile.uid)) {
-      await Promise.all([deleteDoc(followingRef), deleteDoc(followerRef)]);
+      await deleteDoc(followingRef);
     } else {
-      const myDisplayName = user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'XFit User';
-      await Promise.all([
-        setDoc(followingRef, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() }),
-        setDoc(followerRef, { displayName: myDisplayName, uid: user.uid, followedAt: new Date() }),
-      ]);
+      // uid field = the person being followed, so collectionGroup queries find followers correctly
+      await setDoc(followingRef, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() });
     }
     qc.invalidateQueries({ queryKey: ["following"] });
+    qc.invalidateQueries({ queryKey: ["follower-count"] });
   };
 
   const filtered = leaderboard.filter(u =>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '@/lib/firebase';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { applyTheme } from '@/components/layout/AppLayout';
@@ -98,7 +98,9 @@ export default function Profile() {
   const { data: followerCount = 0 } = useQuery({
     queryKey: ['follower-count', user?.uid],
     queryFn: async () => {
-      const snap = await getDocs(collection(db, 'users', user.uid, 'followers'));
+      // Query all users' 'following' subcollections for docs where uid == this user
+      // (each following doc has uid = the person being followed)
+      const snap = await getDocs(query(collectionGroup(db, 'following'), where('uid', '==', user.uid)));
       return snap.size;
     },
     enabled: !!user,

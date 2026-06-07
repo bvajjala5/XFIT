@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, orderBy } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
@@ -36,7 +36,33 @@ export default function Leaderboard() {
     retry: 1,
   });
 
+  // Real workout count from the user's actual logs — source of truth for rank
+  const { data: actualWorkoutCount = null } = useQuery({
+    queryKey: ['actual-workout-count', user?.uid],
+    queryFn: async () => {
+      if (!user) return null;
+      const snap = await getDocs(collection(db, 'users', user.uid, 'workouts'));
+      return snap.size;
+    },
+    enabled: !!user,
+    onSuccess: async (count) => {
+      // Auto-sync leaderboard totalWorkouts if it's out of date
+      if (count === null) return;
+      const lbRef = doc(db, 'leaderboard', user.uid);
+      const lbSnap = await getDoc(lbRef);
+      if (lbSnap.exists()) {
+        const stored = lbSnap.data().totalWorkouts || 0;
+        if (stored !== count) {
+          await updateDoc(lbRef, { totalWorkouts: count, rank: getRank(count), updatedAt: new Date() });
+          queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
+        }
+      }
+    },
+  });
+
   const myEntry = allEntries.find(e => e.id === user?.uid);
+  // Use actual log count for rank (falls back to leaderboard value if not loaded yet)
+  const myTotalWorkouts = actualWorkoutCount ?? (myEntry?.totalWorkouts || 0);
   const getDisplayName = () =>
     userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Athlete';
 
@@ -102,15 +128,15 @@ export default function Leaderboard() {
         )}
       </div>
 
-      {myEntry && (
+      {(myEntry || user) && (
         <GlassCard className="flex items-center gap-4 border border-primary/30 bg-primary/5">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">{RANKS[getRank(myEntry.totalWorkouts||0)]?.emoji}</div>
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">{RANKS[getRank(myTotalWorkouts)]?.emoji}</div>
           <div className="flex-1">
             <p className="font-bold">{getDisplayName()} <span className="text-primary text-xs">(You)</span></p>
             <div className="flex items-center gap-3 mt-0.5">
-              <RankBadge rank={getRank(myEntry.totalWorkouts||0)}/>
-              <span className="text-xs text-muted-foreground">{myEntry.streak||0} day streak</span>
-              <span className="text-xs text-muted-foreground">{myEntry.totalWorkouts||0} workouts</span>
+              <RankBadge rank={getRank(myTotalWorkouts)}/>
+              <span className="text-xs text-muted-foreground">{myEntry?.streak||0} day streak</span>
+              <span className="text-xs text-muted-foreground">{myTotalWorkouts} workouts</span>
             </div>
           </div>
         </GlassCard>
@@ -137,7 +163,7 @@ export default function Leaderboard() {
           const isMe = entry.id === user?.uid;
           const val = tab==='streaks'?(entry.streak||0):tab==='weekly'?(entry.weeklyWorkouts||0):(entry.totalWorkouts||0);
           const lbl = tab==='streaks'?'day streak':tab==='weekly'?'this week':'total';
-          const rank = getRank(entry.totalWorkouts||0);
+          const rank = getRank(isMe ? myTotalWorkouts : (entry.totalWorkouts||0));
           return (
             <motion.div key={entry.id} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.04}}>
               <GlassCard className={`flex items-center gap-3 py-3 px-4 ${isMe?'border border-primary/50 bg-primary/5':''}`}>
