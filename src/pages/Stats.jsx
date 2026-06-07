@@ -4,7 +4,7 @@ import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Trophy, Flame, Calendar, Clock, TrendingUp, Zap, Award, Target, Plus, Wrench } from 'lucide-react';
+import { Trophy, Flame, Calendar, Clock, TrendingUp, Zap, Award, Target, Plus, Wrench, CheckCircle2, Lock, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { localDateStr, calcStreak } from '@/lib/utils';
 import GlassCard from '@/components/shared/GlassCard';
@@ -91,6 +91,155 @@ const CustomTooltip = ({ active, payload }) => {
     </div>
   );
 };
+
+const RANK_ORDER = [
+  { key: 'rookie',   threshold: 0,   next: 3,   desc: 'Just getting started' },
+  { key: 'bronze',   threshold: 3,   next: 8,   desc: 'Building the habit' },
+  { key: 'silver',   threshold: 8,   next: 15,  desc: 'Staying consistent' },
+  { key: 'gold',     threshold: 15,  next: 30,  desc: 'Serious athlete' },
+  { key: 'platinum', threshold: 30,  next: 50,  desc: 'Elite dedication' },
+  { key: 'diamond',  threshold: 50,  next: 75,  desc: 'Next level commitment' },
+  { key: 'elite',    threshold: 75,  next: 100, desc: 'Top 1% mindset' },
+  { key: 'legend',   threshold: 100, next: null, desc: 'Unstoppable' },
+];
+
+function RankProgress({ totalWorkouts }) {
+  const currentRankKey = getRank(totalWorkouts);
+  const currentRankData = RANK_ORDER.find(r => r.key === currentRankKey);
+  const r = RANKS[currentRankKey];
+  const isLegend = currentRankKey === 'legend';
+
+  const pct = isLegend ? 100 : Math.min(
+    ((totalWorkouts - currentRankData.threshold) / (currentRankData.next - currentRankData.threshold)) * 100, 100
+  );
+  const nextRankData = isLegend ? null : RANK_ORDER.find(r => r.threshold === currentRankData.next);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-card border border-border/60 rounded-3xl p-5 space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shrink-0"
+          style={{ background: `${r.color}22` }}>
+          {r.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Current Rank</p>
+          <p className="text-xl font-black" style={{ color: r.color }}>{r.label}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{currentRankData.desc}</p>
+        </div>
+        {isLegend && (
+          <span className="text-xs font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1.5 rounded-full border border-yellow-400/30">MAX</span>
+        )}
+      </div>
+
+      {!isLegend && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="font-semibold" style={{ color: r.color }}>{r.label}</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <ChevronRight className="w-3 h-3" />
+              <span style={{ color: RANKS[nextRankData.key].color }}>{RANKS[nextRankData.key].label}</span>
+            </span>
+          </div>
+          <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className="h-full rounded-full"
+              style={{ background: `linear-gradient(90deg, ${r.color}, ${RANKS[nextRankData.key].color})` }} />
+          </div>
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>{totalWorkouts} workouts</span>
+            <span>{currentRankData.next - totalWorkouts} more to {RANKS[nextRankData.key].label}</span>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function RanksRoadmap({ totalWorkouts }) {
+  const currentRankKey = getRank(totalWorkouts);
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      className="bg-card border border-border/60 rounded-3xl p-5 space-y-1">
+      <h3 className="font-bold text-sm mb-4">Ranks Roadmap</h3>
+      <div className="space-y-0">
+        {RANK_ORDER.map((rankData, i) => {
+          const r = RANKS[rankData.key];
+          const unlocked = totalWorkouts >= rankData.threshold;
+          const isCurrent = rankData.key === currentRankKey;
+          const isLast = i === RANK_ORDER.length - 1;
+          return (
+            <div key={rankData.key} className="flex gap-3">
+              {/* Timeline spine */}
+              <div className="flex flex-col items-center w-8 shrink-0">
+                <motion.div
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.06 }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-base border-2 z-10 ${
+                    unlocked
+                      ? isCurrent
+                        ? 'border-2 shadow-lg'
+                        : 'border-transparent'
+                      : 'border-border/40 bg-secondary/30'
+                  }`}
+                  style={unlocked ? { background: `${r.color}22`, borderColor: isCurrent ? r.color : 'transparent' } : {}}
+                >
+                  {unlocked && !isCurrent ? (
+                    <CheckCircle2 className="w-4 h-4" style={{ color: r.color }} />
+                  ) : unlocked ? (
+                    <span>{r.emoji}</span>
+                  ) : (
+                    <Lock className="w-3 h-3 text-muted-foreground/40" />
+                  )}
+                </motion.div>
+                {!isLast && (
+                  <div className={`w-0.5 flex-1 my-0.5 rounded-full ${unlocked ? 'bg-primary/30' : 'bg-border/30'}`} style={{ minHeight: 16 }} />
+                )}
+              </div>
+
+              {/* Rank info */}
+              <motion.div
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                className={`flex-1 pb-4 ${isLast ? 'pb-0' : ''}`}
+              >
+                <div className={`rounded-2xl px-4 py-3 border transition-all ${
+                  isCurrent
+                    ? 'border-2 bg-card shadow-md'
+                    : unlocked
+                      ? 'border-border/30 bg-secondary/10'
+                      : 'border-border/20 bg-secondary/5'
+                }`}
+                  style={isCurrent ? { borderColor: r.color, boxShadow: `0 0 16px ${r.color}22` } : {}}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-black ${unlocked ? '' : 'text-muted-foreground/40'}`}
+                        style={unlocked ? { color: r.color } : {}}>
+                        {r.label}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                          style={{ background: `${r.color}22`, color: r.color }}>
+                          YOU ARE HERE
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-semibold shrink-0 ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/30'}`}>
+                      {rankData.threshold === 0 ? 'Start' : `${rankData.threshold} workouts`}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-0.5 ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/30'}`}>
+                    {rankData.desc}
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function Stats() {
   const { user, userData } = useAuth();
@@ -207,20 +356,9 @@ export default function Stats() {
         )}
       </div>
 
-      {/* My rank card */}
-      {myEntry && (
-        <GlassCard className="flex items-center gap-4 border border-primary/30 bg-primary/5">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">{RANKS[getRank(myEntry.totalWorkouts||0)]?.emoji}</div>
-          <div className="flex-1">
-            <p className="font-bold">{getDisplayName()} <span className="text-primary text-xs">(You)</span></p>
-            <div className="flex items-center gap-3 mt-0.5">
-              <RankBadge rank={getRank(myEntry.totalWorkouts||0)}/>
-              <span className="text-xs text-muted-foreground">{myEntry.streak||0} day streak</span>
-              <span className="text-xs text-muted-foreground">{myEntry.totalWorkouts||0} workouts</span>
-            </div>
-          </div>
-        </GlassCard>
-      )}
+      {/* Current rank progress + roadmap */}
+      <RankProgress totalWorkouts={logs.length} />
+      <RanksRoadmap totalWorkouts={logs.length} />
 
       {/* Leaderboard tabs */}
       <div className="flex gap-2">
