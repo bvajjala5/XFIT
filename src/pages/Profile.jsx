@@ -325,17 +325,18 @@ export default function Profile() {
             </div>
             {showSupportInfo && (
               <div className="bg-secondary/30 rounded-2xl p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">About XFit Dev</p>
-                <p>I created XFit for free because I believe everyone deserves access to great fitness tools. If you find it helpful, please consider supporting — every little bit helps me keep this project going!</p>
+                <p className="font-medium text-foreground">About XFit</p>
+                <p>XFit is an independently developed fitness platform built to give everyone access to premium fitness tools. Your support helps fund continued development, server costs, and new features.</p>
+                <p className="mt-1">Your contribution goes toward:</p>
                 <p>• Server and hosting costs</p>
                 <p>• New features and improvements</p>
-                <p>• Eventually turning XFit into a mobile app</p>
-                <p className="text-primary font-medium mt-1">100% voluntary — thank you so much! 🙏</p>
+                <p>• Turning XFit into a full mobile app</p>
+                <p className="text-primary font-medium mt-1">100% voluntary — every contribution is appreciated 🙏</p>
               </div>
             )}
-            <a href="https://buymeacoffee.com/xfit" target="_blank" rel="noopener noreferrer"
-              className="w-full h-11 rounded-2xl bg-yellow-500/20 text-yellow-500 font-bold text-sm flex items-center justify-center gap-2 hover:bg-yellow-500/30 active:scale-[0.98] transition-all">
-              ❤️ Support XFit
+            <a href="https://ko-fi.com/xfit" target="_blank" rel="noopener noreferrer"
+              className="w-full h-11 rounded-2xl bg-primary/20 text-primary font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/30 active:scale-[0.98] transition-all">
+              ❤️ Consider Supporting XFit
             </a>
           </GlassCard>
           <GlassCard className="space-y-2">
