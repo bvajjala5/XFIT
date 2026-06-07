@@ -54,11 +54,16 @@ export default function Friends() {
   });
 
   const handleToggle = async (profile) => {
-    const ref = doc(db, "users", user.uid, "following", profile.uid);
+    const followingRef = doc(db, "users", user.uid, "following", profile.uid);
+    const followerRef = doc(db, "users", profile.uid, "followers", user.uid);
     if (following.includes(profile.uid)) {
-      await deleteDoc(ref);
+      await Promise.all([deleteDoc(followingRef), deleteDoc(followerRef)]);
     } else {
-      await setDoc(ref, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() });
+      const myDisplayName = user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'XFit User';
+      await Promise.all([
+        setDoc(followingRef, { displayName: profile.displayName, uid: profile.uid, followedAt: new Date() }),
+        setDoc(followerRef, { displayName: myDisplayName, uid: user.uid, followedAt: new Date() }),
+      ]);
     }
     qc.invalidateQueries({ queryKey: ["following"] });
   };

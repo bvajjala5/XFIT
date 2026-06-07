@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { getRank } from '@/components/shared/RankBadge';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -246,6 +247,19 @@ export default function WorkoutPlayer() {
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
     try {
+      const expectedSecs = (workout?.duration || workout?.estimated_duration || 30) * 60;
+      const pct = totalTime / expectedSecs;
+      const suspicious = pct < 0.5;
+      const countTowardRank = pct >= 0.6;
+
+      if (!countTowardRank) {
+        toast.warning(suspicious
+          ? `Workout logged, but completed too fast (${Math.round(pct*100)}% of expected time) — not counted toward rank.`
+          : `Logged! Complete at least 60% of the workout time to count toward rank.`,
+          { duration: 5000 }
+        );
+      }
+
       const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
       await addDoc(collection(db,'users',user.uid,'workouts'), {
         workout_id: workoutId,
@@ -259,24 +273,30 @@ export default function WorkoutPlayer() {
         rating: rating || null,
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
+        ...(suspicious ? { suspicious: true } : {}),
       });
-      const privacyStr = localStorage.getItem('xfit_lb_privacy');
-      const privacy = privacyStr ? JSON.parse(privacyStr) : { joined: true, name: null };
-      if (privacy.joined !== false) {
-        const lbRef = doc(db, 'leaderboard', user.uid);
-        const lbSnap = await getDoc(lbRef);
-        const today = new Date().toISOString().split('T')[0];
-        const displayName = privacy.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete';
-        if (!lbSnap.exists()) {
-          await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: 1, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, updatedAt: new Date() });
-        } else {
-          const data = lbSnap.data();
-          const last = data.lastWorkoutDate || '';
-          const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
-          const newStreak = last===today ? (data.streak||1) : last===yesterday ? (data.streak||0)+1 : 1;
-          const daysSince = last ? Math.floor((Date.now()-new Date(last+'T12:00:00').getTime())/86400000) : 999;
-          const newWeekly = daysSince>=7 ? 1 : (data.weeklyWorkouts||0)+(last===today?0:1);
-          await updateDoc(lbRef, { displayName, totalWorkouts: increment(1), weeklyWorkouts: newWeekly, streak: newStreak, lastWorkoutDate: today, updatedAt: new Date() });
+
+      if (countTowardRank) {
+        const privacyStr = localStorage.getItem('xfit_lb_privacy');
+        const privacy = privacyStr ? JSON.parse(privacyStr) : { joined: true, name: null };
+        if (privacy.joined !== false) {
+          const lbRef = doc(db, 'leaderboard', user.uid);
+          const lbSnap = await getDoc(lbRef);
+          const today = new Date().toISOString().split('T')[0];
+          const displayName = privacy.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete';
+          if (!lbSnap.exists()) {
+            const newTotal = 1;
+            await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: newTotal, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
+          } else {
+            const data = lbSnap.data();
+            const last = data.lastWorkoutDate || '';
+            const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+            const newStreak = last===today ? (data.streak||1) : last===yesterday ? (data.streak||0)+1 : 1;
+            const daysSince = last ? Math.floor((Date.now()-new Date(last+'T12:00:00').getTime())/86400000) : 999;
+            const newWeekly = daysSince>=7 ? 1 : (data.weeklyWorkouts||0)+(last===today?0:1);
+            const newTotal = (data.totalWorkouts||0) + 1;
+            await updateDoc(lbRef, { displayName, totalWorkouts: newTotal, weeklyWorkouts: newWeekly, streak: newStreak, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
+          }
         }
       }
     } catch(e) { console.error('handleLogWorkout error:', e); }
