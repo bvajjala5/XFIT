@@ -189,16 +189,17 @@ export default function WorkoutPlayer() {
 
   // Exercise countdown
   useEffect(() => {
-    if (isPaused || isComplete || !exercises.length || isResting) return;
+    if (isPaused || isComplete || !exercises.length) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev===5 && !announcedRef.current.countdown) { announcedRef.current.countdown=true; speakText('5... 4... 3... 2... 1...', voiceEnabled); }
         if (prev<=1) {
           if (currentEx < exercises.length-1) {
-            const restDur = exercises[currentEx]?.rest_seconds || 30;
-            speakText(`Nice work! Rest for ${restDur} seconds.`, voiceEnabled);
-            setIsResting(true);
-            setRestTimeLeft(restDur);
+            const nextEx = exercises[currentEx+1];
+            if (nextEx) speakText(`Great work! Coming up next — ${nextEx.name}.`, voiceEnabled);
+            setCurrentEx(c=>c+1);
+            setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
+            setTimeout(() => setMotivation(''), 3000);
             return 0;
           } else {
             speakText('Workout complete! You crushed it today. See you tomorrow.', voiceEnabled);
@@ -212,7 +213,7 @@ export default function WorkoutPlayer() {
       setTotalTime(t=>t+1);
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx, exercises, isResting]);
+  }, [isPaused, isComplete, currentEx, exercises]);
 
   // Rest countdown
   useEffect(() => {
@@ -234,15 +235,9 @@ export default function WorkoutPlayer() {
   }, [isResting, isPaused]);
 
   const skipExercise = useCallback(() => {
-    if (isResting) {
-      setIsResting(false);
-      setCurrentEx(c => c + 1);
-    } else if (currentEx < exercises.length-1) {
-      setCurrentEx(c=>c+1);
-    } else {
-      setIsComplete(true);
-    }
-  }, [currentEx, exercises, isResting]);
+    if (currentEx < exercises.length-1) setCurrentEx(c=>c+1);
+    else setIsComplete(true);
+  }, [currentEx, exercises]);
 
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
