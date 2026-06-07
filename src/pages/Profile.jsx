@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '@/lib/firebase';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { applyTheme } from '@/components/layout/AppLayout';
@@ -86,6 +86,24 @@ export default function Profile() {
     enabled: !!user
   });
 
+  const { data: followingCount = 0 } = useQuery({
+    queryKey: ['following-count', user?.uid],
+    queryFn: async () => {
+      const snap = await getDocs(collection(db, 'users', user.uid, 'following'));
+      return snap.size;
+    },
+    enabled: !!user,
+  });
+
+  const { data: followerCount = 0 } = useQuery({
+    queryKey: ['follower-count', user?.uid],
+    queryFn: async () => {
+      const snap = await getDocs(query(collectionGroup(db, 'following'), where('uid', '==', user.uid)));
+      return snap.size;
+    },
+    enabled: !!user,
+  });
+
   const toggleTheme = () => {
     const next = theme==='dark'?'light':'dark';
     setTheme(next);
@@ -155,7 +173,15 @@ export default function Profile() {
         <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto overflow-hidden">
           {userData?.profile_picture ? <img src={userData.profile_picture} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-8 h-8 text-primary"/>}
         </div>
-        <div><h1 className="text-2xl font-bold">{userData?.full_name||'Athlete'}</h1><p className="text-sm text-muted-foreground">{userData?.email}</p></div>
+        <div>
+          <h1 className="text-2xl font-bold">{userData?.full_name||'Athlete'}</h1>
+          <p className="text-sm text-muted-foreground">{userData?.email}</p>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            <span className="font-semibold text-foreground">{followingCount}</span> Following
+            <span className="mx-2 opacity-40">·</span>
+            <span className="font-semibold text-foreground">{followerCount}</span> Followers
+          </p>
+        </div>
         <div className="flex items-center justify-center gap-2 flex-wrap">
           {userData?.fitness_goal && <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full capitalize">{goalLabels[userData.fitness_goal]||userData.fitness_goal}</span>}
           {userData?.experience_level && <span className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full capitalize">{userData.experience_level}</span>}
