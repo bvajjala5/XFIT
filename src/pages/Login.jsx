@@ -46,19 +46,7 @@ export default function Login() {
       {/* Full screen animated background */}
       <AnimatedBackground />
 
-      {/* Theme toggle */}
-      <div className="absolute top-5 right-5 z-20">
-        <button onClick={cycleTheme} style={{
-          background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
-          borderRadius: '999px', padding: '6px 14px',
-          fontSize: '12px', fontWeight: 600,
-          color: isDark ? '#94a3b8' : '#78716c',
-          cursor: 'pointer', backdropFilter: 'blur(8px)',
-        }}>
-          {btnLabel}
-        </button>
-      </div>
+
 
       {/* Top section */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8 relative z-10">
