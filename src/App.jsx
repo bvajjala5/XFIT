@@ -14,6 +14,8 @@ const Stats = lazy(() => import('@/pages/Stats'))
 const Profile = lazy(() => import('@/pages/Profile'))
 const HealthHub = lazy(() => import('@/pages/HealthHub'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
+const Privacy = lazy(() => import('@/pages/Privacy'))
+const Terms = lazy(() => import('@/pages/Terms'))
 
 function LoadingScreen() {
   return (
