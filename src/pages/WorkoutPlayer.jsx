@@ -222,7 +222,7 @@ export default function WorkoutPlayer() {
       setTotalTime(t=>t+1);
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx]);
+  }, [isPaused, isComplete, currentEx, exercises.length]);
 
 
 
