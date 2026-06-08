@@ -98,14 +98,12 @@ export default function Profile() {
   const { data: followerCount = 0 } = useQuery({
     queryKey: ['follower-count', user?.uid],
     queryFn: async () => {
-      // Count leaderboard docs where followingUids contains this user's uid
-      // Each user writes to their OWN leaderboard doc, so no security rule issues
-      const snap = await getDocs(query(collection(db, 'leaderboard'), where('followingUids', 'array-contains', user.uid)));
+      if (!user) return 0;
+      const snap = await getDocs(collection(db, 'users', user.uid, 'followers'));
       return snap.size;
     },
     enabled: !!user,
   });
-
   const toggleTheme = () => {
     const next = theme==='dark'?'light':'dark';
     setTheme(next);

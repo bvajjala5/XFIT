@@ -315,61 +315,7 @@ export default function WorkoutPlayer() {
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
   const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
 
-  // ── REST SCREEN ──────────────────────────────────────────────────────────
-  if (isResting) {
-    const nextExercise = exercises[currentEx + 1];
-    const restTotal = exercises[currentEx]?.rest_seconds || 30;
-    const restPct = (restTimeLeft / restTotal) * 100;
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center space-y-8">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Rest Time</p>
-          <h2 className="text-4xl font-black">Catch your breath 😮‍💨</h2>
-        </motion.div>
 
-        {/* Rest ring */}
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-44 h-44">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="88" fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
-            <circle cx="100" cy="100" r="88" fill="none" stroke="hsl(211,100%,52%)" strokeWidth="8"
-              strokeLinecap="round" strokeDasharray={2*Math.PI*88}
-              strokeDashoffset={2*Math.PI*88*(1-restPct/100)}
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl font-black tabular-nums">{restTimeLeft}</span>
-            <span className="text-xs text-muted-foreground">seconds</span>
-          </div>
-        </motion.div>
-
-        {nextExercise && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="bg-card border border-border/60 rounded-2xl px-6 py-4 space-y-1 max-w-xs w-full">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest">Up Next</p>
-            <p className="font-bold text-lg">{nextExercise.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {nextExercise.reps ? `${nextExercise.reps} reps` : `${nextExercise.duration || 30}s`}
-              {nextExercise.sets ? ` · ${nextExercise.sets} sets` : ''}
-            </p>
-          </motion.div>
-        )}
-
-        <div className="flex gap-3">
-          <button onClick={() => setIsPaused(p => !p)}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-secondary/60 text-sm font-semibold">
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-            {isPaused ? 'Resume' : 'Pause'}
-          </button>
-          <button onClick={() => { setIsResting(false); setCurrentEx(c => c + 1); }}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl primary-gradient text-white text-sm font-bold">
-            <SkipForward className="w-4 h-4" /> Skip Rest
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── COMPLETION SCREEN ────────────────────────────────────────────────────
   if (isComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
