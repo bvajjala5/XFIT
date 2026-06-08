@@ -183,7 +183,7 @@ export default function WorkoutPlayer() {
       else if (isLast) speakText(`Last one! Give it everything you've got — ${ex.name}.`, voiceEnabled);
       else speakText(`Next up — ${ex.name}. ${desc}. Let's get it.`, voiceEnabled);
     }
-  }, [currentEx, exercises, isComplete]);
+  }, [currentEx, isComplete]);
 
   // Exercise countdown — use refs to avoid stale closures
   const exercisesRef = useRef(exercises);
