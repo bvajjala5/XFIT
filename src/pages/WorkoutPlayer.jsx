@@ -128,9 +128,7 @@ export default function WorkoutPlayer() {
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
 
-  // Rest timer
-  const [isResting, setIsResting] = useState(false);
-  const [restTimeLeft, setRestTimeLeft] = useState(30);
+
 
   // Post-workout modal
   const [showLogModal, setShowLogModal] = useState(false);
@@ -215,24 +213,7 @@ export default function WorkoutPlayer() {
     return () => clearInterval(timerRef.current);
   }, [isPaused, isComplete, currentEx, exercises]);
 
-  // Rest countdown
-  useEffect(() => {
-    if (!isResting || isPaused) return;
-    const t = setInterval(() => {
-      setRestTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(t);
-          setIsResting(false);
-          setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
-          setTimeout(() => setMotivation(''), 3000);
-          setCurrentEx(c => c + 1);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [isResting, isPaused]);
+
 
   const skipExercise = useCallback(() => {
     if (currentEx < exercises.length-1) setCurrentEx(c=>c+1);

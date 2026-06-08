@@ -78,7 +78,7 @@ function WorkoutCardSkeleton() {
 // Determine which popup should show next after `after` (or from scratch)
 function computeNextPopup(after, uid) {
   if (!uid) return null;
-  const steps = ['terms', 'checkin', 'recap', 'notifications'];
+  const steps = ['terms', 'checkin', 'notifications'];
   const startIdx = after ? steps.indexOf(after) + 1 : 0;
   for (let i = startIdx; i < steps.length; i++) {
     const s = steps[i];
@@ -218,7 +218,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto pb-28">
       <TermsModal userId={user?.uid} onDismiss={() => advancePopup('terms')} />
       <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin'} onDismiss={() => advancePopup('checkin')} />
-      <WeeklyRecap logs={logs} open={currentPopup === 'recap'} onDismiss={() => advancePopup('recap')} />
+      <WeeklyRecap logs={logs} />
       <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
       {/* ── HERO HEADER ── */}
