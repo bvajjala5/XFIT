@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['icons/*.png', 'locked-in-cover.png'],
       manifest: {
         name: 'XFit - Stay Consistent. Stay Strong.',
