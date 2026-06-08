@@ -185,15 +185,26 @@ export default function WorkoutPlayer() {
     }
   }, [currentEx, exercises, isComplete]);
 
-  // Exercise countdown
+  // Exercise countdown — use refs to avoid stale closures
+  const exercisesRef = useRef(exercises);
+  const currentExRef = useRef(currentEx);
+  useEffect(() => { exercisesRef.current = exercises; }, [exercises]);
+  useEffect(() => { currentExRef.current = currentEx; }, [currentEx]);
+
   useEffect(() => {
     if (isPaused || isComplete || !exercises.length) return;
+    clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev===5 && !announcedRef.current.countdown) { announcedRef.current.countdown=true; speakText('5... 4... 3... 2... 1...', voiceEnabled); }
+        if (prev===5 && !announcedRef.current.countdown) {
+          announcedRef.current.countdown=true;
+          speakText('5... 4... 3... 2... 1...', voiceEnabled);
+        }
         if (prev<=1) {
-          if (currentEx < exercises.length-1) {
-            const nextEx = exercises[currentEx+1];
+          const exs = exercisesRef.current;
+          const cur = currentExRef.current;
+          if (cur < exs.length-1) {
+            const nextEx = exs[cur+1];
             if (nextEx) speakText(`Great work! Coming up next — ${nextEx.name}.`, voiceEnabled);
             setCurrentEx(c=>c+1);
             setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
@@ -211,7 +222,7 @@ export default function WorkoutPlayer() {
       setTotalTime(t=>t+1);
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx, exercises]);
+  }, [isPaused, isComplete, currentEx]);
 
 
 
