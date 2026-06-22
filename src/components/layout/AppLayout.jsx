@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, MessageCircle, User, Heart, BarChart2 } from 'lucide-react';
+import { Home, Dumbbell, User, Heart, BarChart2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
@@ -9,7 +9,6 @@ const navItems = [
   { path: '/',          icon: Home,           label: 'Home'     },
   { path: '/health',    icon: Heart,          label: 'Health'   },
   { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
-  { path: '/coach',     icon: MessageCircle,  label: 'Coach'    },
   { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
   { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
