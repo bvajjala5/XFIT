@@ -191,10 +191,14 @@ export default function WorkoutPlayer() {
   useEffect(() => { exercisesRef.current = exercises; }, [exercises]);
   useEffect(() => { currentExRef.current = currentEx; }, [currentEx]);
 
+  const mountedRef = useRef(false);
+  useEffect(() => { mountedRef.current = true; }, []);
+
   useEffect(() => {
     if (isPaused || isComplete || !exercises.length) return;
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
+      if (!mountedRef.current) return;
       setTimeLeft(prev => {
         if (prev===5 && !announcedRef.current.countdown) {
           announcedRef.current.countdown=true;

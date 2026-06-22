@@ -22,7 +22,6 @@ const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
-const Coach = lazy(() => import('@/pages/Coach'))
 const Stats = lazy(() => import('@/pages/Stats'))
 const Profile = lazy(() => import('@/pages/Profile'))
 const HealthHub = lazy(() => import('@/pages/HealthHub'))
@@ -84,7 +83,6 @@ export default function App() {
         <Route index element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
         <Route path="workouts" element={<Suspense fallback={<PageLoader />}><WorkoutsAndRun /></Suspense>} />
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
-        <Route path="coach" element={<Suspense fallback={<PageLoader />}><Coach /></Suspense>} />
         <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
         <Route path="health" element={<Suspense fallback={<PageLoader />}><HealthHub /></Suspense>} />
