@@ -33,6 +33,7 @@ const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
 const Friends = lazy(() => import('@/pages/Friends'))
 const Community = lazy(() => import('@/pages/Community'))
 const Progress = lazy(() => import('@/pages/Progress'))
+const MarketingLanding = lazy(() => import('@/pages/MarketingLanding'))
 
 function LoadingScreen() {
   return (
@@ -69,6 +70,15 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/privacy" element={<Suspense fallback={<LoadingScreen />}><Privacy /></Suspense>} />
+      <Route path="/terms" element={<Suspense fallback={<LoadingScreen />}><Terms /></Suspense>} />
+
+      {/* Public front door. Signed-in members still land on their dashboard. */}
+      <Route path="/" element={user
+        ? <AuthGuard><AppLayout /></AuthGuard>
+        : <Suspense fallback={<LoadingScreen />}><MarketingLanding /></Suspense>}>
+        {user && <Route index element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />}
+      </Route>
 
       {/* Full-screen pages */}
       <Route path="/player/:id" element={
@@ -80,7 +90,6 @@ export default function App() {
 
       {/* App pages with layout */}
       <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
-        <Route index element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
         <Route path="workouts" element={<Suspense fallback={<PageLoader />}><WorkoutsAndRun /></Suspense>} />
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
         <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
@@ -91,8 +100,6 @@ export default function App() {
         <Route path="ranks" element={<Navigate to="/stats" replace />} />
         <Route path="progress" element={<Navigate to="/stats" replace />} />
         <Route path="run" element={<Navigate to="/workouts" replace />} />
-        <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
-        <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
         <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />
         <Route path="history" element={<Suspense fallback={<PageLoader />}><WorkoutHistory /></Suspense>} />
         <Route path="friends" element={<Suspense fallback={<PageLoader />}><Friends /></Suspense>} />
