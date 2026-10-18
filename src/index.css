@@ -98,3 +98,19 @@
 
 /* iOS safe area */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Exercise movement previews shown during an active workout */
+.workout-model-demo svg {
+  width: auto !important;
+  height: auto !important;
+  max-width: 150px;
+  max-height: 132px;
+}
+.workout-model-demo.is-paused svg * {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workout-model-demo svg * {
+    animation-play-state: paused !important;
+  }
+}

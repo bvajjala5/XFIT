@@ -11,6 +11,7 @@ import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX, Star
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import MuscleMapModel from '@/components/workout/MuscleMapModel';
+import WorkoutModel from '@/components/workout/WorkoutModel';
 import { toast } from 'sonner';
 
 function cleanForSpeech(text) {
@@ -445,11 +446,15 @@ export default function WorkoutPlayer() {
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
+            <div className="movement-demo glass rounded-2xl max-w-sm mx-auto px-4 py-3">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Movement demo</div>
+              <div className={`workout-model-demo flex justify-center py-1${isPaused ? ' is-paused' : ''}`}>
+                <WorkoutModel exerciseName={currentExercise?.name} />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Follow the motion at a controlled pace</p>
+            </div>
             <div className="hidden md:flex justify-center w-full">
               <div className="w-full max-w-xs"><MuscleMapModel exerciseName={currentExercise?.name} showModified={true} /></div>
-            </div>
-            <div className="flex md:hidden justify-center">
-              <MuscleMapModel exerciseName={currentExercise?.name} showModified={false} />
             </div>
           </motion.div>
         </AnimatePresence>
