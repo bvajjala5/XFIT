@@ -307,7 +307,7 @@ export default function Stats() {
     const ref = doc(db, 'leaderboard', user.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
-      await setDoc(ref, { displayName: getDisplayName(), email: user.email, streak: 0, totalWorkouts: 0, weeklyWorkouts: 0, updatedAt: new Date() });
+      await setDoc(ref, { displayName: getDisplayName(), streak: 0, totalWorkouts: 0, weeklyWorkouts: 0, updatedAt: new Date() });
     }
     return ref;
   };

@@ -71,11 +71,6 @@
       "description": "Browse and start a workout"
     },
     {
-      "name": "Coach X",
-      "url": "/coach",
-      "description": "Chat with your AI coach"
-    },
-    {
       "name": "Log Health",
       "url": "/health",
       "description": "Log your health metrics"
