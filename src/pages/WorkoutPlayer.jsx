@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
-import MuscleMapModel from '@/components/workout/MuscleMapModel';
+import ExerciseDemo from '@/components/workout/ExerciseDemo';
 import { toast } from 'sonner';
 
 function cleanForSpeech(text) {
@@ -445,12 +445,7 @@ export default function WorkoutPlayer() {
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
-            <div className="hidden md:flex justify-center w-full">
-              <div className="w-full max-w-xs"><MuscleMapModel exerciseName={currentExercise?.name} showModified={true} /></div>
-            </div>
-            <div className="flex md:hidden justify-center">
-              <MuscleMapModel exerciseName={currentExercise?.name} showModified={false} />
-            </div>
+            <ExerciseDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
           </motion.div>
         </AnimatePresence>
         <div className="relative w-48 h-48">
