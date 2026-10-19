@@ -26,7 +26,6 @@ export default defineConfig({
         ],
         shortcuts: [
           { name: 'Workouts', url: '/workouts', description: 'Browse workouts' },
-          { name: 'Coach X', url: '/coach', description: 'AI fitness coach' },
           { name: 'Health', url: '/health', description: 'Log health metrics' },
         ],
         categories: ['fitness', 'health', 'sports'],
