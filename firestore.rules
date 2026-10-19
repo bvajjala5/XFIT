@@ -8,7 +8,7 @@ service cloud.firestore {
     // REPLACE the placeholder below with your Firebase Auth UID
     // (Firebase console → Authentication → Users → copy the "User UID" column).
     // Until you do, nobody can write to /workouts (everyone can still read it).
-    function isAdmin() { return signedIn() && request.auth.uid == 'REPLACE_WITH_YOUR_FIREBASE_AUTH_UID'; }
+    function isAdmin() { return signedIn() && request.auth.uid == 'PASTE_YOUR_UID'; }
 
     // Everything under a user's own document is private to that user
     // (profile, workouts, schedule, health logs, photos, goals, tokens, etc.).
