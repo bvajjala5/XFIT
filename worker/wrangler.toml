@@ -5,7 +5,7 @@ compatibility_date = "2025-01-01"
 [vars]
 FIREBASE_PROJECT_ID = "xfit-723dd"
 # Comma-separated site origins allowed to call this Worker. Edit to your real domain(s).
-ALLOWED_ORIGINS = "https://YOUR-SITE.pages.dev,http://localhost:5173"
+ALLOWED_ORIGINS = "https://YOUR-REAL-SITE.pages.dev,http://localhost:5173"
 # GEMINI_MODEL = "gemini-2.0-flash"
 
 # Secret (NOT stored in this file) — set with:  npx wrangler secret put GEMINI_API_KEY
