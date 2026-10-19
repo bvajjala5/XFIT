@@ -274,10 +274,10 @@ export default function WorkoutPlayer() {
           const lbRef = doc(db, 'leaderboard', user.uid);
           const lbSnap = await getDoc(lbRef);
           const today = new Date().toISOString().split('T')[0];
-          const displayName = privacy.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Athlete';
+          const displayName = privacy.name || user.displayName?.split(' ')[0] || 'Athlete';
           if (!lbSnap.exists()) {
             const newTotal = 1;
-            await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: newTotal, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
+            await setDoc(lbRef, { displayName, totalWorkouts: newTotal, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
           } else {
             const data = lbSnap.data();
             const last = data.lastWorkoutDate || '';

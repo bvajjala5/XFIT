@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, orderBy, where, limit } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteField, increment, query, orderBy, where, limit } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
@@ -57,27 +57,27 @@ export default function Leaderboard() {
     const stored = myEntry?.totalWorkouts ?? -1;
     if (stored === myLogs.length) return;
     const lbRef = doc(db, 'leaderboard', user.uid);
-    const displayName = userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Athlete';
+    const displayName = userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Athlete';
     (async () => {
       try {
         const snap = await getDoc(lbRef);
         if (snap.exists()) {
-          await updateDoc(lbRef, { totalWorkouts: myLogs.length, rank: getRank(myLogs.length), updatedAt: new Date() });
+          await updateDoc(lbRef, { totalWorkouts: myLogs.length, rank: getRank(myLogs.length), updatedAt: new Date(), email: deleteField() });
         } else {
-          await setDoc(lbRef, { displayName, email: user.email, totalWorkouts: myLogs.length, weeklyWorkouts: 0, streak: 0, rank: getRank(myLogs.length), updatedAt: new Date() });
+          await setDoc(lbRef, { displayName, totalWorkouts: myLogs.length, weeklyWorkouts: 0, streak: 0, rank: getRank(myLogs.length), updatedAt: new Date() });
         }
         queryClient.invalidateQueries({ queryKey: ['leaderboard-entries'] });
       } catch (e) { console.error('lb sync error', e); }
     })();
   }, [myLogs.length, user?.uid]);
   const getDisplayName = () =>
-    userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Athlete';
+    userData?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Athlete';
 
   const ensureEntry = async () => {
     const entryRef = doc(db, 'leaderboard', user.uid);
     const snap = await getDoc(entryRef);
     if (!snap.exists()) {
-      await setDoc(entryRef, { displayName: getDisplayName(), email: user.email, streak: 0, totalWorkouts: 0, weeklyWorkouts: 0, updatedAt: new Date() });
+      await setDoc(entryRef, { displayName: getDisplayName(), streak: 0, totalWorkouts: 0, weeklyWorkouts: 0, updatedAt: new Date() });
     }
     return entryRef;
   };

@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    // Only you can change the shared workout library.
+    // REPLACE the placeholder below with your Firebase Auth UID
+    // (Firebase console → Authentication → Users → copy the "User UID" column).
+    // Until you do, nobody can write to /workouts (everyone can still read it).
+    function isAdmin() { return signedIn() && request.auth.uid == 'REPLACE_WITH_YOUR_FIREBASE_AUTH_UID'; }
+
+    // Everything under a user's own document is private to that user
+    // (profile, workouts, schedule, health logs, photos, goals, tokens, etc.).
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+    match /users/{uid}/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Following someone writes a doc into THEIR followers list, keyed by your uid.
+    match /users/{uid}/followers/{followerId} {
+      allow read: if isOwner(uid) || isOwner(followerId);
+      allow create: if isOwner(followerId) && request.resource.data.uid == request.auth.uid;
+      allow delete: if isOwner(followerId);
+    }
+
+    // Built-in workout library: everyone signed in can read, only the admin can write.
+    match /workouts/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Community workouts: anyone signed in can read; you can only publish/edit/remove your own.
+    // Anyone may bump importCount by exactly 1 (used when importing a workout).
+    match /sharedWorkouts/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.sharedBy == request.auth.uid;
+      allow update: if signedIn() && (
+        (resource.data.sharedBy == request.auth.uid && request.resource.data.sharedBy == request.auth.uid)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['importCount'])
+            && request.resource.data.importCount == resource.data.importCount + 1)
+      );
+      allow delete: if signedIn() && resource.data.sharedBy == request.auth.uid;
+    }
+
+    // Leaderboard: public to signed-in users, but you can only write your own row.
+    match /leaderboard/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // Anything not listed above is locked.
+  }
+}
