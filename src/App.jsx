@@ -6,7 +6,7 @@ import Login from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
 // Force-clear stale PWA service worker cache on version bump
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 if (typeof window !== 'undefined' && localStorage.getItem('xfit_cache_version') !== CACHE_VERSION) {
   localStorage.setItem('xfit_cache_version', CACHE_VERSION);
   if ('serviceWorker' in navigator) {
@@ -20,6 +20,7 @@ if (typeof window !== 'undefined' && localStorage.getItem('xfit_cache_version') 
 
 const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
+const Run = lazy(() => import('@/pages/Run'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
 const Stats = lazy(() => import('@/pages/Stats'))
@@ -90,7 +91,7 @@ export default function App() {
         {/* Redirects for old routes */}
         <Route path="ranks" element={<Navigate to="/stats" replace />} />
         <Route path="progress" element={<Navigate to="/stats" replace />} />
-        <Route path="run" element={<Navigate to="/workouts" replace />} />
+        <Route path="run" element={<Suspense fallback={<PageLoader />}><Run /></Suspense>} />
         <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
         <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
         <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />

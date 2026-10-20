@@ -13,6 +13,7 @@ import RankBadge, { getRank, RANKS } from '@/components/shared/RankBadge';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { isCountedWorkout } from '@/lib/workoutDuration';
 
 // ── RANGE OPTIONS ─────────────────────────────────────────────────────────
 const RANGE_OPTIONS = [
@@ -260,6 +261,8 @@ export default function Stats() {
     enabled: !!user,
   });
 
+  const completedLogs = logs.filter(isCountedWorkout);
+
   const { data: allEntries = [], isLoading: lbLoading } = useQuery({
     queryKey: ['leaderboard-entries'],
     queryFn: async () => {
@@ -270,16 +273,16 @@ export default function Stats() {
     },
   });
 
-  const streak = calcStreak(logs);
+  const streak = calcStreak(completedLogs);
   const days = RANGE_OPTIONS.find(r => r.key === range)?.days || 30;
-  const dailyData = buildDailyData(logs, days);
-  const weeklyData = buildWeeklyData(logs);
-  const totalMins = Math.round(logs.reduce((s, l) => s + (l.duration_seconds || 0), 0) / 60);
-  const totalCals = logs.reduce((s, l) => s + (l.calories_burned || 0), 0);
+  const dailyData = buildDailyData(completedLogs, days);
+  const weeklyData = buildWeeklyData(completedLogs);
+  const totalMins = Math.round(completedLogs.reduce((s, l) => s + (l.duration_seconds || 0), 0) / 60);
+  const totalCals = completedLogs.reduce((s, l) => s + (l.calories_burned || 0), 0);
   const bestWeek = Math.max(...weeklyData.map(w => w.workouts), 0);
 
   const typeCounts = {};
-  logs.forEach(l => { const t = l.workout_type || 'other'; typeCounts[t] = (typeCounts[t] || 0) + 1; });
+  completedLogs.forEach(l => { const t = l.workout_type || 'other'; typeCounts[t] = (typeCounts[t] || 0) + 1; });
   const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
   const maxTypeCount = Math.max(...typeEntries.map(e => e[1]), 1);
 
@@ -288,14 +291,14 @@ export default function Stats() {
 
   // Sync real workout count to leaderboard if out of sync
   useEffect(() => {
-    if (!user || !logs.length || !myEntry) return;
-    const realCount = logs.length;
+    if (!user || !myEntry) return;
+    const realCount = completedLogs.length;
     const storedCount = myEntry.totalWorkouts || 0;
     if (realCount !== storedCount) {
       const ref = doc(db, 'leaderboard', user.uid);
       updateDoc(ref, { totalWorkouts: realCount, rank: getRank(realCount) }).catch(() => {});
     }
-  }, [logs.length, myEntry, user]);
+  }, [completedLogs.length, myEntry, user]);
 
   const sorted = [...allEntries].sort((a, b) =>
     lbTab === 'streaks' ? (b.streak||0)-(a.streak||0) :
@@ -368,8 +371,8 @@ export default function Stats() {
       </div>
 
       {/* Current rank progress + roadmap */}
-      <RankProgress totalWorkouts={logs.length} />
-      <RanksRoadmap totalWorkouts={logs.length} />
+      <RankProgress totalWorkouts={completedLogs.length} />
+      <RanksRoadmap totalWorkouts={completedLogs.length} />
 
       {/* Leaderboard tabs */}
       <div className="flex gap-2">
@@ -427,7 +430,7 @@ export default function Stats() {
       {/* ── PROGRESS SECTION ────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Workouts', value: logs.length,  color: 'text-primary',    icon: Calendar },
+          { label: 'Workouts', value: completedLogs.length,  color: 'text-primary',    icon: Calendar },
           { label: 'Streak',   value: streak,        color: 'text-orange-400', icon: Flame    },
           { label: 'Best Week',value: bestWeek,      color: 'text-green-400',  icon: Trophy   },
         ].map(({ label, value, color, icon: Icon }) => (
@@ -467,7 +470,7 @@ export default function Stats() {
             ))}
           </div>
         </div>
-        {logs.length === 0 ? (
+        {completedLogs.length === 0 ? (
           <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">Complete a workout to see your activity here</div>
         ) : (
           <ResponsiveContainer width="100%" height={160}>
@@ -542,11 +545,11 @@ export default function Stats() {
       )}
 
       {/* Recent workouts */}
-      {logs.slice(0,5).length > 0 && (
+      {completedLogs.slice(0,5).length > 0 && (
         <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-3">
           <h3 className="font-bold text-sm">Recent Workouts</h3>
           <div className="space-y-2">
-            {logs.slice(0,5).map(log => {
+            {completedLogs.slice(0,5).map(log => {
               const date = log.completedAt?.toDate ? log.completedAt.toDate() : new Date(log.completedAt||0);
               return (
                 <div key={log.id} className="flex items-center gap-3 py-1">
@@ -570,7 +573,7 @@ export default function Stats() {
       )}
 
       {/* Badges */}
-      <Badges logs={logs} streak={streak} />
+      <Badges logs={completedLogs} streak={streak} />
     </div>
   );
 }

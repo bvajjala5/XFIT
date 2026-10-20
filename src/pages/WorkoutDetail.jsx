@@ -16,9 +16,7 @@ const typeColors = {
 };
 
 // ── DEFAULT DURATIONS FOR LOCKED IN ──────────────────────────────────────
-// 7 core circuits share 3 mins (180s) total
-// Rounds 1-6: 180 / 7 ≈ 26s each
-// Round 7 (Ab Hold): 26s + 60s extra = 86s
+// Core rounds run 25s for rounds 1–6 and 85s for the final round (about 3m55s total).
 const CORE_BASE = Math.floor(180 / 7); // 25s
 const CORE_LAST = CORE_BASE + 60;      // 85s
 
@@ -115,6 +113,9 @@ export default function WorkoutDetail() {
   const totalCustomMins = workout
     ? Math.round(workout.exercises?.reduce((s, ex, i) => s + getDuration(ex, i), 0) / 60)
     : 0;
+  const workoutDescription = isLockedIn
+    ? (workout.description || '').replace(/\b21 minutes?\b/i, 'about 25 minutes')
+    : workout.description;
 
   const buildPlayerUrl = () => {
     if (!workout) return '#';
@@ -173,7 +174,7 @@ export default function WorkoutDetail() {
         <div>
           <h2 className="font-semibold mb-2">About this workout</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {workout.description || 'A great workout to challenge yourself.'}
+            {workoutDescription || 'A great workout to challenge yourself.'}
           </p>
         </div>
 

@@ -7,6 +7,7 @@ import { Clock, Flame, Dumbbell, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import GlassCard from "@/components/shared/GlassCard";
 import { Link } from "react-router-dom";
+import { isCountedWorkout } from "@/lib/workoutDuration";
 
 function formatDuration(secs) {
   const m = Math.floor(secs / 60);
@@ -29,6 +30,7 @@ export default function WorkoutHistory() {
   });
 
   const filtered = filter === "All" ? logs : logs.filter(l => l.workout_type === filter.toLowerCase());
+  const completedCount = logs.filter(isCountedWorkout).length;
   const types = ["All", ...new Set(logs.map(l => l.workout_type).filter(Boolean).map(t => t.charAt(0).toUpperCase() + t.slice(1)))];
 
   const grouped = filtered.reduce((acc, log) => {
@@ -42,7 +44,12 @@ export default function WorkoutHistory() {
     <div className="max-w-2xl mx-auto pb-28 px-4 pt-6 space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center"><Dumbbell className="w-5 h-5 text-primary" /></div>
-        <div><h1 className="text-xl font-black">Workout History</h1><p className="text-xs text-muted-foreground">{logs.length} workouts completed</p></div>
+        <div>
+          <h1 className="text-xl font-black">Workout History</h1>
+          <p className="text-xs text-muted-foreground">
+            {completedCount} workouts counted{logs.length > completedCount ? ` · ${logs.length - completedCount} short or partial sessions excluded from stats` : ''}
+          </p>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -77,7 +84,11 @@ export default function WorkoutHistory() {
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="w-3 h-3" />{formatDuration(log.duration_seconds || 0)}</span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground"><Flame className="w-3 h-3 text-orange-400" />{log.calories_burned || 0} cal</span>
-                    {log.exercises_completed && <span className="text-xs text-muted-foreground">{log.exercises_completed} exercises</span>}
+                    {log.suspicious || log.is_partial ? (
+                      <span className="text-xs text-amber-400">{log.suspicious ? 'Short session — not counted' : `Partial · ${log.exercises_completed || 0}/${log.exercises_total || '?'} exercises`}</span>
+                    ) : log.exercises_completed !== undefined && (
+                      <span className="text-xs text-muted-foreground">{log.exercises_completed} exercises</span>
+                    )}
                   </div>
                 </div>
                 {log.workout_type && (
