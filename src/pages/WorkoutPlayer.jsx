@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import ExerciseDemo from '@/components/workout/ExerciseDemo';
 import KabiWorkoutDemo from '@/components/workout/KabiWorkoutDemo';
+import CustomBicepCurlDemo from '@/components/workout/CustomBicepCurlDemo';
 import { toast } from 'sonner';
 
 function cleanForSpeech(text) {
@@ -326,6 +327,7 @@ export default function WorkoutPlayer() {
 
   const currentExercise = exercises[currentEx] || exercises[0] || {};
   const usesKabiDemo = String(workout?.title || workout?.name || '').trim().toLowerCase() === 'locked in';
+  const usesCustomCurlDemo = usesKabiDemo && /^bicep curls?$/i.test(String(currentExercise?.name || '').trim());
   const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0) : 1;
   const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0);
   const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
@@ -447,7 +449,9 @@ export default function WorkoutPlayer() {
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
-            {usesKabiDemo
+            {usesCustomCurlDemo
+              ? <CustomBicepCurlDemo />
+              : usesKabiDemo
               ? <KabiWorkoutDemo exerciseName={currentExercise?.name} />
               : <ExerciseDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />}
           </motion.div>
