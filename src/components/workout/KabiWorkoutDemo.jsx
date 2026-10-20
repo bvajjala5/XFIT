@@ -1,20 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alignment, Fit, Layout, Rive } from '@rive-app/canvas';
+import { Alignment, Fit, Layout, Rive, RuntimeLoader } from '@rive-app/canvas';
+import riveWasmUrl from '@rive-app/canvas/rive.wasm?url';
 import ExerciseDemo from '@/components/workout/ExerciseDemo';
+
+// Serve the Rive runtime from our own site (not a CDN) so it works offline / behind blockers.
+RuntimeLoader.setWasmUrl(riveWasmUrl);
 
 const KABI_LICENSE = 'https://github.com/bryllim/kabi-mascot#license';
 
-function getPose(exerciseName = '') {
-  const name = exerciseName.toLowerCase();
+export function getPose(exerciseName = '') {
+  // "Push-Ups or Diamond Push-Ups" → demo the first option
+  const name = exerciseName.toLowerCase().split(/\s+or\s+|\s*\/\s*/)[0];
   if (/jumping jack/.test(name)) return { index: 4, label: 'Jumping jacks' };
   if (/jump rope|skip(ping)? rope/.test(name)) return { index: 17, label: 'Jump rope' };
   if (/high knee|sprint/.test(name)) return { index: 18, label: 'High knees' };
   if (/burpee/.test(name)) return { index: 15, label: 'Burpee' };
   if (/push[\s-]?ups?/.test(name)) return { index: 12, label: 'Push-up' };
-  if (/plank/.test(name)) return { index: 13, label: 'Plank' };
-  if (/lunge|split squat/.test(name)) return { index: 14, label: 'Lunge' };
+  if (/plank|ab hold|hold|hip raise|leg raise|crunch|twist|core/.test(name)) return { index: 13, label: 'Plank' };
+  if (/lunge|split squat|bulgarian/.test(name)) return { index: 14, label: 'Lunge' };
   if (/squat/.test(name)) return { index: 3, label: 'Squat' };
   if (/curl/.test(name)) return { index: 6, label: 'Curl' };
+  if (/raise|press|overhead|ground to|clean|snatch|thruster|row|fly|extension/.test(name)) return { index: 2, label: 'Lift' };
   if (/box(ing)?|jab|cross punch/.test(name)) return { index: 16, label: 'Boxing' };
   if (/run|jog/.test(name)) return { index: 5, label: 'Run' };
   if (/stretch|mobility|warm.?up/.test(name)) return { index: 10, label: 'Stretch' };
