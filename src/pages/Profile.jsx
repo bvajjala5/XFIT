@@ -6,6 +6,7 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } fr
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { isCountedWorkout } from '@/lib/workoutDuration';
+import NotificationSetup from '@/components/shared/NotificationSetup';
 import { applyTheme } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,7 @@ export default function Profile() {
   };
   const [recentOpen, setRecentOpen] = useState(false);
   const [showSupportInfo, setShowSupportInfo] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
   const [editingGoal, setEditingGoal] = useState(null);
   const [editGoalVal, setEditGoalVal] = useState('');
@@ -216,6 +218,16 @@ export default function Profile() {
             <div className="flex justify-between"><span className="text-muted-foreground">Distance Unit</span><span className="capitalize">{userData?.distance_unit||'miles'}</span></div>
           </div>
         )}
+      </GlassCard>
+      <GlassCard className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold">Reminders</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Workout and friend activity notifications</p>
+        </div>
+        <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setRemindersOpen(true)}>
+          Manage
+        </Button>
+        <NotificationSetup userId={user?.uid} open={remindersOpen} onDismiss={() => setRemindersOpen(false)} />
       </GlassCard>
       <GlassCard className="space-y-3">
         <h2 className="font-semibold text-sm flex items-center gap-2">🎯 My Goals</h2>
