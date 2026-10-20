@@ -12,6 +12,25 @@ import { localDateStr } from '@/lib/utils'
 import { toast } from 'sonner'
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack']
+const COMMON_FOODS = [
+  { id: 'generic-apple', name: 'Apple, raw', aliases: ['apple'], per100: { calories: 52, protein: 0.3, carbs: 13.8, fat: 0.2 } },
+  { id: 'generic-banana', name: 'Banana, raw', aliases: ['banana'], per100: { calories: 89, protein: 1.1, carbs: 22.8, fat: 0.3 } },
+  { id: 'generic-oats', name: 'Oats, dry', aliases: ['oats', 'oatmeal'], per100: { calories: 389, protein: 16.9, carbs: 66.3, fat: 6.9 } },
+  { id: 'generic-egg', name: 'Egg, whole, raw', aliases: ['egg', 'eggs'], per100: { calories: 143, protein: 12.6, carbs: 0.7, fat: 9.5 } },
+  { id: 'generic-chicken', name: 'Chicken breast, cooked', aliases: ['chicken'], per100: { calories: 165, protein: 31, carbs: 0, fat: 3.6 } },
+  { id: 'generic-rice', name: 'White rice, cooked', aliases: ['rice'], per100: { calories: 130, protein: 2.7, carbs: 28.2, fat: 0.3 } },
+  { id: 'generic-yogurt', name: 'Greek yogurt, plain', aliases: ['yogurt', 'yoghurt'], per100: { calories: 59, protein: 10.3, carbs: 3.6, fat: 0.4 } },
+  { id: 'generic-avocado', name: 'Avocado, raw', aliases: ['avocado'], per100: { calories: 160, protein: 2, carbs: 8.5, fat: 14.7 } },
+]
+
+function findCommonFoods(searchText) {
+  const terms = searchText.toLowerCase().trim().split(/\s+/).filter(Boolean)
+  if (!terms.length) return []
+  return COMMON_FOODS.filter(food => {
+    const searchable = [food.name, ...food.aliases].join(' ').toLowerCase()
+    return terms.every(term => searchable.includes(term))
+  }).map(({ aliases, ...food }) => ({ ...food, brand: '', image: '', serving_size: '100g' }))
+}
 function getGoals() {
   try {
     const stored = localStorage.getItem('xfit_nutrition_goals');
@@ -20,14 +39,17 @@ function getGoals() {
   return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 }
 
-// Use USDA FoodData Central API — no CORS issues, very reliable
-async function searchFood(searchQuery) {
+// Search Open Food Facts for packaged products, with a local ingredient list
+// as a reliable fallback when the third-party API is unavailable.
+async function searchFood(searchQuery, signal) {
   try {
     const res = await fetch(
-      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,serving_size,code&nocache=1`
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,serving_size,code&nocache=1`,
+      { signal }
     )
     if (!res.ok) throw new Error('Search failed')
     const data = await res.json()
+    const queryTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean)
     return (data.products || [])
       .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g'])
       .map(p => ({
@@ -43,6 +65,10 @@ async function searchFood(searchQuery) {
           fat:      Math.round((p.nutriments['fat_100g'] || 0) * 10) / 10,
         }
       }))
+      .filter(food => {
+        const searchable = `${food.name} ${food.brand}`.toLowerCase()
+        return queryTerms.every(term => searchable.includes(term))
+      })
       .filter(f => f.per100.calories > 0)
   } catch (err) {
     console.error('Food search error:', err)
@@ -69,30 +95,56 @@ function FoodSearchModal({ open, onClose, onAdd }) {
   const [searchText, setSearchText] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [searchUnavailable, setSearchUnavailable] = useState(false)
   const [selected, setSelected] = useState(null)
   const [grams, setGrams] = useState(100)
   const [mealType, setMealType] = useState('Breakfast')
   const searchTimeout = useRef(null)
+  const searchRequest = useRef(0)
+  const searchAbort = useRef(null)
 
   useEffect(() => {
-    if (!open) { setSearchText(''); setResults([]); setSelected(null); setGrams(100) }
+    if (!open) {
+      clearTimeout(searchTimeout.current)
+      searchAbort.current?.abort()
+      searchRequest.current += 1
+      setSearchText(''); setResults([]); setSelected(null); setGrams(100)
+      setSearching(false); setSearchUnavailable(false)
+    }
   }, [open])
 
-  async function doSearch(text) {
-    if (!text.trim()) { setResults([]); return }
+  async function doSearch(text, requestId) {
+    if (!text.trim()) { setResults([]); setSearching(false); return }
+    const controller = new AbortController()
+    searchAbort.current = controller
+    const fallbackFoods = findCommonFoods(text)
+    setResults(fallbackFoods)
     setSearching(true)
+    setSearchUnavailable(false)
+    const timeoutId = setTimeout(() => controller.abort(), 6000)
     try {
-      const r = await searchFood(text)
-      setResults(r)
-    } catch { toast.error('Search failed — try a different term') }
-    finally { setSearching(false) }
+      const remoteResults = await searchFood(text, controller.signal)
+      if (requestId !== searchRequest.current) return
+      setResults([...fallbackFoods, ...remoteResults])
+    } catch (error) {
+      if (requestId !== searchRequest.current) return
+      setSearchUnavailable(true)
+    } finally {
+      clearTimeout(timeoutId)
+      if (requestId === searchRequest.current) setSearching(false)
+    }
   }
 
   function handleSearchChange(e) {
     const val = e.target.value
     setSearchText(val)
+    const requestId = ++searchRequest.current
+    searchAbort.current?.abort()
+    setSearching(false)
+    setResults([])
+    setSearchUnavailable(false)
     clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => doSearch(val), 600)
+    searchTimeout.current = setTimeout(() => doSearch(val, requestId), 600)
   }
 
   function calcNutrition(per100, g) {
@@ -200,10 +252,15 @@ function FoodSearchModal({ open, onClose, onAdd }) {
 
               <div className="space-y-2">
                 {results.length === 0 && searchText && !searching && (
-                  <p className="text-center text-muted-foreground text-sm py-6">No results — try a different search term</p>
+                  <p className="text-center text-muted-foreground text-sm py-6">
+                    {searchUnavailable ? 'Online food search is unavailable. Try a common ingredient such as apple, banana, or oats.' : 'No foods found. Try another search term.'}
+                  </p>
+                )}
+                {searchUnavailable && results.length > 0 && (
+                  <p className="text-center text-muted-foreground text-xs">Online food search is unavailable; showing common foods.</p>
                 )}
                 {!searchText && (
-                  <p className="text-center text-muted-foreground text-xs py-4">Type to search from the USDA food database</p>
+                  <p className="text-center text-muted-foreground text-xs py-4">Search packaged foods or common ingredients</p>
                 )}
                 {results.map(food => (
                   <button key={food.id} onClick={() => setSelected(food)}

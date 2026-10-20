@@ -11,6 +11,7 @@ import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX, Star
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import ExerciseDemo from '@/components/workout/ExerciseDemo';
+import { getExerciseDurationSeconds, getWorkoutDurationSeconds } from '@/lib/workoutDuration';
 import { toast } from 'sonner';
 
 function cleanForSpeech(text) {
@@ -125,6 +126,7 @@ export default function WorkoutPlayer() {
   const [isPaused, setIsPaused] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [totalTime, setTotalTime] = useState(0);
+  const [completedExerciseCount, setCompletedExerciseCount] = useState(0);
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
 
@@ -139,6 +141,7 @@ export default function WorkoutPlayer() {
 
   const timerRef = useRef(null);
   const announcedRef = useRef({ exIndex:-1, countdown:false });
+  const completedExerciseIndicesRef = useRef(new Set());
 
   const toggleVoice = () => {
     const next = !voiceEnabled;
@@ -167,12 +170,13 @@ export default function WorkoutPlayer() {
       return ex;
     });
   }, [workout?.id, workout?.exercises, customDurations]);
+  const plannedDurationSeconds = getWorkoutDurationSeconds(exercises) || (workout?.duration || workout?.estimated_duration || 30) * 60;
 
   // Set duration when exercise changes
   useEffect(() => {
     if (!exercises.length || isComplete) return;
     const ex = exercises[currentEx];
-    const dur = ex?.duration || (ex?.sets ? ex.sets*(ex.reps||10)*3 : 30);
+    const dur = getExerciseDurationSeconds(ex);
     setTimeLeft(dur);
     announcedRef.current.countdown = false;
     if (announcedRef.current.exIndex !== currentEx) {
@@ -207,6 +211,8 @@ export default function WorkoutPlayer() {
         if (prev<=1) {
           const exs = exercisesRef.current;
           const cur = currentExRef.current;
+          completedExerciseIndicesRef.current.add(cur);
+          setCompletedExerciseCount(completedExerciseIndicesRef.current.size);
           if (cur < exs.length-1) {
             const nextEx = exs[cur+1];
             if (nextEx) speakText(`Great work! Coming up next — ${nextEx.name}.`, voiceEnabled);
@@ -238,20 +244,19 @@ export default function WorkoutPlayer() {
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
     try {
-      const expectedSecs = (workout?.duration || workout?.estimated_duration || 30) * 60;
-      const pct = totalTime / expectedSecs;
-      const suspicious = pct < 0.5;
-      const countTowardRank = pct >= 0.6;
+      const pct = totalTime / plannedDurationSeconds;
+      const suspicious = pct < 0.5 || completedExerciseCount === 0;
+      const countTowardRank = !suspicious && pct >= 0.6 && completedExerciseCount === exercises.length;
 
       if (!countTowardRank) {
         toast.warning(suspicious
-          ? `Workout logged, but completed too fast (${Math.round(pct*100)}% of expected time) — not counted toward rank.`
-          : `Logged! Complete at least 60% of the workout time to count toward rank.`,
+          ? 'Short session saved to history, but it will not count toward stats or rank.'
+          : 'Partial session saved. Complete all exercises and at least 60% of the planned time to count toward rank.',
           { duration: 5000 }
         );
       }
 
-      const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
+      const calories = Math.round((workout?.calories_estimate||200) * Math.min(totalTime / plannedDurationSeconds, 1.2));
       await addDoc(collection(db,'users',user.uid,'workouts'), {
         workout_id: workoutId,
         workout_title: workout?.title||workout?.name||'',
@@ -260,7 +265,9 @@ export default function WorkoutPlayer() {
         completedAt: serverTimestamp(),
         duration_seconds: totalTime,
         calories_burned: calories,
-        exercises_completed: currentEx+1,
+        exercises_completed: completedExerciseCount,
+        exercises_total: exercises.length,
+        is_partial: completedExerciseCount < exercises.length,
         rating: rating || null,
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
@@ -297,7 +304,7 @@ export default function WorkoutPlayer() {
   const handleShare = async () => {
     setSharing(true);
     try {
-      const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
+      const calories = Math.round((workout?.calories_estimate||200) * Math.min(totalTime / plannedDurationSeconds, 1.2));
       const dataUrl = await generateShareCard({
         workoutTitle: workout?.title || workout?.name || 'Workout',
         duration: formatTime(totalTime),
@@ -324,11 +331,10 @@ export default function WorkoutPlayer() {
   if (!workout) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
 
   const currentExercise = exercises[currentEx] || exercises[0] || {};
-  const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0) : 1;
-  const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0);
-  const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
+  const totalDuration = plannedDurationSeconds || 1;
+  const overallProgress = totalDuration > 0 ? Math.min((totalTime / totalDuration) * 100, 100) : 0;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
-  const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
+  const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/totalDuration,1.2));
 
 
   if (isComplete) {
@@ -342,7 +348,7 @@ export default function WorkoutPlayer() {
           <div className="grid grid-cols-3 gap-3">
             <GlassCard className="text-center"><div className="text-xl font-bold">{formatTime(totalTime)}</div><div className="text-[10px] text-muted-foreground">Duration</div></GlassCard>
             <GlassCard className="text-center"><div className="text-xl font-bold">{calories}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
-            <GlassCard className="text-center"><div className="text-xl font-bold">{exercises.length}</div><div className="text-[10px] text-muted-foreground">Exercises</div></GlassCard>
+            <GlassCard className="text-center"><div className="text-xl font-bold">{completedExerciseCount}/{exercises.length}</div><div className="text-[10px] text-muted-foreground">Exercises</div></GlassCard>
           </div>
           <div className="flex gap-3">
             <Button className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowLogModal(true)}>
@@ -443,7 +449,7 @@ export default function WorkoutPlayer() {
         <AnimatePresence mode="wait">
           <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-3 w-full">
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
-            <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
+            <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${getExerciseDurationSeconds(currentExercise)} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
             <ExerciseDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
           </motion.div>
@@ -451,7 +457,7 @@ export default function WorkoutPlayer() {
         <div className="relative w-48 h-48">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
-            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(211,100%,52%)" strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(currentExercise?.duration||30))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
+            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(211,100%,52%)" strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/getExerciseDurationSeconds(currentExercise))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-5xl font-black tabular-nums">{formatTime(timeLeft)}</span>

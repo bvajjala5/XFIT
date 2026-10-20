@@ -21,6 +21,7 @@ import DailyCheckIn from '@/components/home/DailyCheckIn'
 import WaterTracker from '@/components/home/WaterTracker'
 import DailyGoals from '@/components/home/DailyGoals'
 import DailyQuote from '@/components/home/DailyQuote'
+import { getWorkoutDurationMinutes, isCountedWorkout } from '@/lib/workoutDuration'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -192,10 +193,11 @@ export default function Home() {
   }
 
   const firstName = userDoc?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'there'
-  const streak = calcStreak(logs)
+  const completedLogs = logs.filter(isCountedWorkout)
+  const streak = calcStreak(completedLogs)
 
   const weekAgo = new Date(Date.now() - 7 * 86400000)
-  const weekLogs = logs.filter(l => {
+  const weekLogs = completedLogs.filter(l => {
     const d = new Date(l.completedAt?.toDate?.() || l.completedAt || 0)
     return d >= weekAgo
   })
@@ -206,7 +208,7 @@ export default function Home() {
   const today = getLocalWeekday()
   const todaySchedule = schedule[today]
   const todayStr = localDateStr()
-  const todayLogged = logs.some(l => {
+  const todayLogged = completedLogs.some(l => {
     const d = new Date(l.completedAt?.toDate?.() || l.completedAt || 0)
     return localDateStr(d) === todayStr
   })
@@ -218,7 +220,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto pb-28">
       <TermsModal userId={user?.uid} onDismiss={() => advancePopup('terms')} />
       <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin'} onDismiss={() => advancePopup('checkin')} />
-      <WeeklyRecap logs={logs} />
+      <WeeklyRecap logs={completedLogs} />
       <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
       {/* ── HERO HEADER ── */}
@@ -290,7 +292,7 @@ export default function Home() {
               <div className="flex gap-1">
                 {Array.from({ length: 14 }, (_, i) => {
                   const d = new Date(Date.now() - (13 - i) * 86400000)
-                  const has = logs.some(l => localDateStr(new Date(l.completedAt?.toDate?.() || l.completedAt || 0)) === localDateStr(d))
+                  const has = completedLogs.some(l => localDateStr(new Date(l.completedAt?.toDate?.() || l.completedAt || 0)) === localDateStr(d))
                   const isToday = i === 13
                   return (
                     <div key={i} title={d.toLocaleDateString()}
@@ -344,13 +346,7 @@ export default function Home() {
                     <div>
                       <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Signature Workout</span>
                       <h3 className="text-xl font-black text-white mt-0.5">{lockedIn.title}</h3>
-                      <p className="text-white/60 text-xs mt-1">{(() => {
-                        try {
-                          const saved = localStorage.getItem('xfit_total_duration_' + lockedIn.id);
-                          if (saved) return saved + ' min';
-                        } catch(e) {}
-                        return lockedIn.duration + ' min';
-                      })()} · {lockedIn.trainer}</p>
+                      <p className="text-white/60 text-xs mt-1">{getWorkoutDurationMinutes(lockedIn)} min · {lockedIn.trainer}</p>
                     </div>
                     <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
                       <Play className="w-4 h-4 text-white fill-white" />

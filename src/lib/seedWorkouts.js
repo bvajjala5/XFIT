@@ -23,13 +23,13 @@ const LOCKED_IN = {
   trainer_bio: 'Personal routine — built for consistency and strength.',
   category: 'full_body',
   type: 'strength',
-  duration: 21,
+  duration: 25,
   difficulty: 'advanced',
   calories_estimate: 300,
   is_personal: true,
   is_public: true,
   equipment: 'Dumbbells',
-  description: 'The Locked In routine. 105 jump warm-up, bicep curls, lateral raises, hammer curls, ground-to-overhead, push-ups or diamond push-ups, 7-round core circuit with 30s ab hold finish, squats or Bulgarian split squats. All at comfortable weight. 21 minutes. 300 calories. Advanced.',
+  description: 'The Locked In routine. 105 jump warm-up, bicep curls, lateral raises, hammer curls, ground-to-overhead, push-ups or diamond push-ups, 7-round core circuit with 30s ab hold finish, squats or Bulgarian split squats. All at comfortable weight. About 25 minutes. 300 calories. Advanced.',
   image_url: '/locked-in-cover.png',
   exercises: [
     { name: '105 Jumps Warm-Up', type: 'timed', duration: 120, instructions: 'Jump continuously — jumping jacks, high knees, or rope skips.' },
@@ -49,7 +49,7 @@ const LOCKED_IN = {
   ]
 };
 
-const SEEDED_KEY = 'xfit_workouts_seeded_v2';
+const SEEDED_KEY = 'xfit_workouts_seeded_v3';
 
 export async function seedWorkouts(uid) {
   // Only attempt seeding for the dev account — regular users can't write to /workouts
@@ -66,7 +66,8 @@ export async function seedWorkouts(uid) {
       if (!snap.exists()) {
         await setDoc(ref, w);
       } else if (w.id === 'locked-in') {
-        await setDoc(ref, { image_url: w.image_url }, { merge: true });
+        // Keep the existing workout's content, but sync corrected summary metadata.
+        await setDoc(ref, { image_url: w.image_url, duration: w.duration, description: w.description }, { merge: true });
       }
     }
   } catch(e) {

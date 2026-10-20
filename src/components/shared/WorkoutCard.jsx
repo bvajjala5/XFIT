@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getWorkoutDurationMinutes } from '@/lib/workoutDuration';
 
 const typeColors = {
   hiit: 'bg-red-500/20 text-red-300',
@@ -45,13 +46,7 @@ export default function WorkoutCard({ workout, index = 0 }) {
             <h3 className="font-bold text-sm leading-tight truncate">{workout.title}</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{workout.trainer}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(() => {
-                try {
-                  const saved = localStorage.getItem('xfit_total_duration_' + workout.id);
-                  if (saved) return saved + 'm';
-                } catch(e) {}
-                return workout.duration + 'm';
-              })()}</span>
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{getWorkoutDurationMinutes(workout)}m</span>
               <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-400" />{workout.calories_estimate || '—'}</span>
             </div>
           </div>

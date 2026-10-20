@@ -5,6 +5,7 @@ import { deleteUser } from 'firebase/auth';
 import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } from 'firebase/firestore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { isCountedWorkout } from '@/lib/workoutDuration';
 import { applyTheme } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +87,8 @@ export default function Profile() {
     enabled: !!user
   });
 
+  const completedLogs = logs.filter(isCountedWorkout);
+
   const { data: followingCount = 0 } = useQuery({
     queryKey: ['following-count', user?.uid],
     queryFn: async () => {
@@ -156,10 +159,10 @@ export default function Profile() {
     } catch(e) { await logout(); }
   };
 
-  const streak = calcStreak(logs);
-  const rank = getRank(logs.length);
-  const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
-  const totalCals = logs.reduce((s,l)=>s+(l.calories_burned||0),0);
+  const streak = calcStreak(completedLogs);
+  const rank = getRank(completedLogs.length);
+  const totalMins = Math.round(completedLogs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
+  const totalCals = completedLogs.reduce((s,l)=>s+(l.calories_burned||0),0);
 
   function getTrend(current, prev) {
     if (prev==null) return null;
@@ -189,7 +192,7 @@ export default function Profile() {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <GlassCard className="text-center"><Dumbbell className="w-4 h-4 text-primary mx-auto mb-1"/><div className="text-xl font-bold">{logs.length}</div><div className="text-[10px] text-muted-foreground">Workouts</div></GlassCard>
+        <GlassCard className="text-center"><Dumbbell className="w-4 h-4 text-primary mx-auto mb-1"/><div className="text-xl font-bold">{completedLogs.length}</div><div className="text-[10px] text-muted-foreground">Workouts</div></GlassCard>
         <GlassCard className="text-center"><Clock className="w-4 h-4 text-green-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
         <GlassCard className="text-center"><Flame className="w-4 h-4 text-orange-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
       </div>
@@ -258,7 +261,7 @@ export default function Profile() {
           </div>
         ))}
       </GlassCard>
-      {logs.length>0 && (
+      {completedLogs.length>0 && (
         <div className="glass rounded-2xl overflow-hidden">
           <button className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors" onClick={()=>setRecentOpen(o=>!o)}>
             <h2 className="font-semibold text-sm">Recent Workouts</h2>
@@ -266,7 +269,7 @@ export default function Profile() {
           </button>
           <div style={{maxHeight:recentOpen?'600px':'0',overflow:'hidden',transition:'max-height 0.3s ease'}}>
             <div className="px-4 pb-4 space-y-2">
-              {logs.slice(0,10).map((log,i)=>(
+              {completedLogs.slice(0,10).map((log,i)=>(
                 <motion.div key={log.id} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.03}} className="glass rounded-xl p-3 flex items-center justify-between">
                   <div>
                     <div className="font-medium text-sm">{log.workout_title}</div>
