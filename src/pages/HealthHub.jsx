@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
 import MealTracker from '@/components/nutrition/MealTracker';
+import WaterTracker from '@/components/home/WaterTracker';
+import DailyGoals from '@/components/home/DailyGoals';
 import { Footprints, Heart, Moon, Flame, Wind, Plus, Activity, Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,7 +60,7 @@ function WeightTracker({ userId }) {
   const trendColor = diff === null ? '' : diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-muted-foreground';
 
   return (
-    <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-5">
+    <div className="bg-card border border-border rounded-xl p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Scale className="w-4 h-4 text-primary" />
@@ -134,47 +136,25 @@ function WeightTracker({ userId }) {
 
 // ── METRIC CARD — bigger ring, better visual ──────────────────────────────
 function HealthMetricCard({ metric, onClick }) {
-  const { label, icon: Icon, color, colorClass, value, target, format, subtitle } = metric;
+  const { label, icon: Icon, colorClass, value, target, format, subtitle } = metric;
   const progress = target ? Math.min((value / target) * 100, 100) : 0;
-  const size = 56, strokeW = 6, r = (size - strokeW) / 2, circ = 2 * Math.PI * r;
 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left glass rounded-2xl p-4 flex flex-col gap-3 active:scale-95 transition-all hover:border-white/15 min-h-[140px]"
+      className="w-full text-left rounded-xl border border-border bg-card p-4 flex flex-col gap-3 transition-colors hover:border-primary/40 min-h-[118px]"
     >
-      {/* Top row: label + icon */}
       <div className="flex items-center justify-between">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
-        <Icon className={`w-4 h-4 ${colorClass}`} />
+        <p className="text-xs text-muted-foreground font-medium">{label}</p>
+        <Icon className={`w-4 h-4 ${colorClass}`} aria-hidden="true" />
       </div>
-
-      {/* Middle: ring + value side by side */}
-      <div className="flex items-center gap-3">
-        {/* Ring */}
-        <div className="relative shrink-0" style={{ width: size, height: size }}>
-          <svg width={size} height={size} className="-rotate-90">
-            <circle cx={size/2} cy={size/2} r={r} fill="none"
-              stroke="hsl(var(--secondary))" strokeWidth={strokeW} />
-            <circle cx={size/2} cy={size/2} r={r} fill="none"
-              stroke={color} strokeWidth={strokeW} strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={circ - (progress / 100) * circ}
-              style={{ transition: 'stroke-dashoffset 1s ease' }} />
-          </svg>
-          {/* Percentage inside ring */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[10px] font-bold" style={{ color }}>{Math.round(progress)}%</span>
-          </div>
-        </div>
-
-        {/* Value */}
-        <div className="flex-1 min-w-0">
-          <p className={`text-2xl font-black leading-none ${colorClass}`}>{format(value)}</p>
-          {subtitle && <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{subtitle}</p>}
-          {target && <p className="text-[10px] text-muted-foreground mt-0.5">of {target.toLocaleString()} goal</p>}
-        </div>
+      <div>
+        <p className="text-xl font-semibold leading-none tabular-nums">{format(value)}</p>
+        {subtitle && <p className="mt-1 text-[10px] text-muted-foreground leading-tight">{subtitle}</p>}
       </div>
+      {target && <div className="h-1 rounded-full bg-secondary" aria-label={`${Math.round(progress)} percent of goal`}>
+        <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+      </div>}
     </button>
   );
 }
@@ -316,24 +296,24 @@ export default function HealthHub() {
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-24">
+    <div className="p-4 md:p-7 max-w-4xl mx-auto space-y-5 pb-24">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Health Hub</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Today's overview</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
+          <p className="text-muted-foreground text-sm mt-1">A simple view of your daily health</p>
         </div>
         {activeTab === 'overview' && (
-          <Button onClick={() => setLogModalOpen(true)} size="lg" className="rounded-xl gap-2 h-11">
+          <Button onClick={() => setLogModalOpen(true)} size="sm" className="rounded-lg gap-2">
             <Plus className="w-4 h-4" /> Log Stats
           </Button>
         )}
       </div>
 
       {/* Tab switcher */}
-      <div className="flex gap-2">
-        {[{ key:'overview', label:'📊 Overview' },{ key:'weight', label:'⚖️ Weight' },{ key:'nutrition', label:'🍽️ Nutrition' }].map(t => (
+      <div className="flex gap-1 rounded-xl border border-border bg-card p-1">
+        {[{ key:'overview', label:'Overview' },{ key:'weight', label:'Weight' },{ key:'nutrition', label:'Nutrition' }].map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab===t.key?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+            className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors ${activeTab===t.key?'bg-secondary text-foreground':'text-muted-foreground hover:text-foreground'}`}>
             {t.label}
           </button>
         ))}
@@ -341,7 +321,7 @@ export default function HealthHub() {
 
       {activeTab === 'overview' && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {isLoading
               ? Array(5).fill(0).map((_,i) => <Skeleton key={i} className="h-36 rounded-2xl"/>)
               : metrics.map((m,i) => (
@@ -358,6 +338,10 @@ export default function HealthHub() {
               <p className="text-xs text-muted-foreground mt-1">Apple Health, Fitbit, and Garmin integrations require a published app. For now, log your stats manually above or use the Run tracker for GPS-based step counting.</p>
             </div>
           </GlassCard>
+          <div className="grid gap-3 md:grid-cols-2">
+            <WaterTracker />
+            <DailyGoals />
+          </div>
         </>
       )}
 

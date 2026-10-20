@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home, Dumbbell, User, Heart, BarChart2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
 
@@ -39,45 +38,41 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
       <InstallBanner />
-      {/* Desktop sidebar */}
-      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
-        <div className="w-10 h-10 rounded-2xl primary-gradient flex items-center justify-center mb-6 shadow-lg">
-          <span className="text-white font-black text-lg">X</span>
+      {/* Desktop navigation */}
+      <nav className="hidden md:flex fixed inset-x-0 top-0 h-14 items-center justify-between px-6 bg-card border-b border-border z-50">
+        <Link to="/" className="text-base font-semibold tracking-tight" aria-label="XFit home">XFit</Link>
+        <div className="flex h-full items-center gap-1">
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
+              || (path === '/workouts' && ['/run', '/builder'].includes(location.pathname));
+            return (
+              <Link key={path} to={path} aria-current={isActive ? 'page' : undefined}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/70'}`}>
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </div>
-        {navItems.map(({ path, icon: Icon, label }) => {
-          const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
-          return (
-            <Link key={path} to={path}
-              className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl w-16 transition-all ${isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
-              {isActive && <motion.div layoutId="activeNav" className="absolute inset-0 bg-primary/10 rounded-2xl" />}
-              <Icon className="w-[18px] h-[18px] relative z-10" />
-              <span className="text-[9px] font-semibold relative z-10 leading-tight text-center">{label}</span>
-            </Link>
-          );
-        })}
       </nav>
 
       {/* Main content */}
-      <main className="pb-24 md:pb-0 md:pl-20">
+      <main className="pb-24 md:pb-0 md:pt-14">
         <Outlet />
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-border/40"
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card border-t border-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around py-2 px-1">
           {navItems.map(({ path, icon: Icon, label }) => {
-            const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
+              const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
+                || (path === '/workouts' && ['/run', '/builder'].includes(location.pathname));
             return (
-              <Link key={path} to={path}
-                className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl min-w-0 relative transition-all active:scale-90">
-                {isActive && (
-                  <motion.div layoutId="activeMobileNav"
-                    className="absolute inset-0 bg-primary/12 rounded-xl"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
-                )}
-                <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-[9px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
+              <Link key={path} to={path} aria-current={isActive ? 'page' : undefined}
+                className={`flex flex-col items-center gap-1 rounded-lg px-3 py-2 min-w-0 transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <Icon className={`h-[18px] w-[18px] ${isActive ? 'text-primary' : ''}`} />
+                <span className="text-[10px] font-medium">{label}</span>
               </Link>
             );
           })}
