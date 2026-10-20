@@ -14,6 +14,7 @@ import RankBadge, { getRank } from '@/components/shared/RankBadge';
 import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Sun, Moon, ChevronDown, ChevronUp, Pencil, Check, X, Palette} from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { calcStreak, localDateStr } from '@/lib/utils';
+import { useNewFollowers } from '@/hooks/useNewFollowers';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
@@ -93,6 +94,8 @@ export default function Profile() {
       return snap.size;
     },
     enabled: !!user,
+    refetchOnWindowFocus: true,
+    staleTime: 15_000,
   });
 
   const { data: followerCount = 0 } = useQuery({
@@ -103,7 +106,10 @@ export default function Profile() {
       return snap.size;
     },
     enabled: !!user,
+    refetchOnWindowFocus: true,
+    staleTime: 15_000,
   });
+  const newFollowers = useNewFollowers();
   const toggleTheme = () => {
     const next = theme==='dark'?'light':'dark';
     setTheme(next);
@@ -177,9 +183,9 @@ export default function Profile() {
           <h1 className="text-2xl font-bold">{userData?.full_name||'Athlete'}</h1>
           <p className="text-sm text-muted-foreground">{userData?.email}</p>
           <p className="text-xs text-muted-foreground mt-1.5">
-            <span className="font-semibold text-foreground">{followingCount}</span> Following
+            <Link to="/friends?tab=following" className="hover:text-primary"><span className="font-semibold text-foreground">{followingCount}</span> Following</Link>
             <span className="mx-2 opacity-40">·</span>
-            <span className="font-semibold text-foreground">{followerCount}</span> Followers
+            <Link to="/friends?tab=followers" className="hover:text-primary"><span className="font-semibold text-foreground">{followerCount}</span> Followers{newFollowers > 0 && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{newFollowers} new</span>}</Link>
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -371,7 +377,7 @@ export default function Profile() {
             <div className="border-t border-border/30" />
             <Link to="/records" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>🏆 Personal Records</span><span>→</span></Link>
             <div className="border-t border-border/30" />
-            <Link to="/friends" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>👥 Friends & Following</span><span>→</span></Link>
+            <Link to="/friends" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>👥 Friends & Following{newFollowers > 0 && <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{newFollowers} new</span>}</span><span>→</span></Link>
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>

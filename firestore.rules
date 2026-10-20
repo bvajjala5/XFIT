@@ -22,7 +22,7 @@ service cloud.firestore {
     // Following someone writes a doc into THEIR followers list, keyed by your uid.
     match /users/{uid}/followers/{followerId} {
       allow read: if isOwner(uid) || isOwner(followerId);
-      allow create: if isOwner(followerId) && request.resource.data.uid == request.auth.uid;
+      allow create, update: if isOwner(followerId) && request.resource.data.uid == request.auth.uid;
       allow delete: if isOwner(followerId);
     }
 

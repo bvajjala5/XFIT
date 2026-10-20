@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { db } from '@/lib/firebase'
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/AuthContext'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Plus, Trash2, Loader2, ChevronDown, Apple } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, Apple } from 'lucide-react'
+import FoodPicker from '@/components/nutrition/FoodPicker'
 import { localDateStr } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -18,36 +18,6 @@ function getGoals() {
     if (stored) return JSON.parse(stored);
   } catch(e) {}
   return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
-}
-
-// Use USDA FoodData Central API — no CORS issues, very reliable
-async function searchFood(searchQuery) {
-  try {
-    const res = await fetch(
-      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,serving_size,code&nocache=1`
-    )
-    if (!res.ok) throw new Error('Search failed')
-    const data = await res.json()
-    return (data.products || [])
-      .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g'])
-      .map(p => ({
-        id: p.code || String(Math.random()),
-        name: p.product_name,
-        brand: p.brands || '',
-        image: '',
-        serving_size: p.serving_size || '100g',
-        per100: {
-          calories: Math.round(p.nutriments['energy-kcal_100g'] || 0),
-          protein:  Math.round((p.nutriments['proteins_100g'] || 0) * 10) / 10,
-          carbs:    Math.round((p.nutriments['carbohydrates_100g'] || 0) * 10) / 10,
-          fat:      Math.round((p.nutriments['fat_100g'] || 0) * 10) / 10,
-        }
-      }))
-      .filter(f => f.per100.calories > 0)
-  } catch (err) {
-    console.error('Food search error:', err)
-    throw err
-  }
 }
 
 function MacroBar({ label, value, goal, color }) {
@@ -65,171 +35,6 @@ function MacroBar({ label, value, goal, color }) {
   )
 }
 
-function FoodSearchModal({ open, onClose, onAdd }) {
-  const [searchText, setSearchText] = useState('')
-  const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
-  const [selected, setSelected] = useState(null)
-  const [grams, setGrams] = useState(100)
-  const [mealType, setMealType] = useState('Breakfast')
-  const searchTimeout = useRef(null)
-
-  useEffect(() => {
-    if (!open) { setSearchText(''); setResults([]); setSelected(null); setGrams(100) }
-  }, [open])
-
-  async function doSearch(text) {
-    if (!text.trim()) { setResults([]); return }
-    setSearching(true)
-    try {
-      const r = await searchFood(text)
-      setResults(r)
-    } catch { toast.error('Search failed — try a different term') }
-    finally { setSearching(false) }
-  }
-
-  function handleSearchChange(e) {
-    const val = e.target.value
-    setSearchText(val)
-    clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => doSearch(val), 600)
-  }
-
-  function calcNutrition(per100, g) {
-    const f = g / 100
-    return {
-      calories: Math.round(per100.calories * f),
-      protein:  Math.round(per100.protein  * f * 10) / 10,
-      carbs:    Math.round(per100.carbs    * f * 10) / 10,
-      fat:      Math.round(per100.fat      * f * 10) / 10,
-    }
-  }
-
-  function handleAdd() {
-    if (!selected) return
-    const nutrition = calcNutrition(selected.per100, grams)
-    onAdd({ ...selected, grams, mealType, ...nutrition, loggedAt: new Date().toISOString() })
-    onClose()
-  }
-
-  if (!open) return null
-  const nutrition = selected ? calcNutrition(selected.per100, grams) : null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <motion.div initial={{ y:100, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:100, opacity:0 }}
-        className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl"
-        style={{ maxHeight: '85vh', overflowY: 'auto' }}>
-
-        {/* Header */}
-        <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
-          <h2 className="text-lg font-bold">Add Food</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
-          {selected ? (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                  <Apple className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold leading-tight">{selected.name}</p>
-                  {selected.brand && <p className="text-xs text-muted-foreground mt-0.5">{selected.brand}</p>}
-                  <button onClick={() => setSelected(null)} className="text-xs text-primary mt-1">← Back to search</button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold">Amount (grams)</label>
-                <div className="flex gap-2 items-center">
-                  <Input type="number" value={grams} onChange={e => setGrams(Math.max(1, Number(e.target.value)))}
-                    className="bg-secondary/40 border-0 w-28 text-center text-lg font-bold h-12" />
-                  <div className="flex gap-1 ml-auto">
-                    {[50,100,150,200].map(g => (
-                      <button key={g} onClick={() => setGrams(g)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${grams===g?'bg-primary text-white':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                        {g}g
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <GlassCard className="grid grid-cols-4 gap-2 text-center">
-                {[{label:'Calories',value:nutrition.calories,unit:'kcal',color:'text-orange-400'},
-                  {label:'Protein', value:nutrition.protein, unit:'g',   color:'text-blue-400'},
-                  {label:'Carbs',   value:nutrition.carbs,   unit:'g',   color:'text-yellow-400'},
-                  {label:'Fat',     value:nutrition.fat,     unit:'g',   color:'text-pink-400'}].map(n => (
-                  <div key={n.label}>
-                    <div className={`text-lg font-black ${n.color}`}>{n.value}</div>
-                    <div className="text-[9px] text-muted-foreground">{n.unit}</div>
-                    <div className="text-[9px] text-muted-foreground">{n.label}</div>
-                  </div>
-                ))}
-              </GlassCard>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold">Meal</label>
-                <div className="flex gap-2">
-                  {MEAL_TYPES.map(m => (
-                    <button key={m} onClick={() => setMealType(m)}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${mealType===m?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground'}`}>
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Button className="w-full h-12 rounded-xl text-base gap-2" onClick={handleAdd}>
-                <Plus className="w-4 h-4" /> Add to Log
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                <Input value={searchText} onChange={handleSearchChange}
-                  placeholder="Search any food..."
-                  className="pl-9 pr-10 bg-secondary/40 border-0 h-12" autoFocus />
-                {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground"/>}
-              </div>
-
-              <div className="space-y-2">
-                {results.length === 0 && searchText && !searching && (
-                  <p className="text-center text-muted-foreground text-sm py-6">No results — try a different search term</p>
-                )}
-                {!searchText && (
-                  <p className="text-center text-muted-foreground text-xs py-4">Type to search from the USDA food database</p>
-                )}
-                {results.map(food => (
-                  <button key={food.id} onClick={() => setSelected(food)}
-                    className="w-full text-left glass rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 border border-transparent transition-all">
-                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <Apple className="w-4 h-4 text-muted-foreground"/>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{food.name}</p>
-                      {food.brand && <p className="text-xs text-muted-foreground truncate">{food.brand}</p>}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-bold text-orange-400 text-sm">{food.per100.calories}</p>
-                      <p className="text-[10px] text-muted-foreground">kcal/100g</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
 export default function MealTracker({ userId }) {
   const [GOALS, setGOALS] = useState(getGoals)
 
@@ -241,6 +46,7 @@ export default function MealTracker({ userId }) {
     return () => window.removeEventListener('storage', handler)
   }, [])
   const [modalOpen, setModalOpen] = useState(false)
+  const [pickerMeal, setPickerMeal] = useState(null)
   const [expandedMeal, setExpandedMeal] = useState(null)
   const queryClient = useQueryClient()
   const dateKey = localDateStr()
@@ -313,7 +119,7 @@ export default function MealTracker({ userId }) {
         </div>
       </GlassCard>
 
-      <Button onClick={() => setModalOpen(true)} className="w-full h-12 rounded-xl gap-2 text-base">
+      <Button onClick={() => { setPickerMeal(null); setModalOpen(true) }} className="w-full h-12 rounded-xl gap-2 text-base">
         <Plus className="w-5 h-5"/> Log Food
       </Button>
 
@@ -358,7 +164,7 @@ export default function MealTracker({ userId }) {
                         </button>
                       </div>
                     ))}
-                    <button onClick={() => setModalOpen(true)}
+                    <button onClick={() => { setPickerMeal(meal); setModalOpen(true) }}
                       className="w-full text-xs text-primary flex items-center justify-center gap-1 py-2 hover:bg-primary/5 rounded-xl transition-all">
                       <Plus className="w-3.5 h-3.5"/> Add to {meal}
                     </button>
@@ -370,7 +176,7 @@ export default function MealTracker({ userId }) {
         })}
       </div>
 
-      <FoodSearchModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addFood}/>
+      <FoodPicker open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addFood} userId={userId} defaultMeal={pickerMeal}/>
     </div>
   )
 }
