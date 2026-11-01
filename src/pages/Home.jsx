@@ -4,11 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
-import WorkoutCard from '@/components/shared/WorkoutCard'
-import GlassCard from '@/components/shared/GlassCard'
 import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
-import { Pencil, ChevronRight, Flame, Calendar, Clock, Play, CheckCircle2, Dumbbell, Zap, Share2 } from 'lucide-react'
+import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
@@ -18,61 +16,14 @@ import NotificationSetup from '@/components/shared/NotificationSetup'
 import { shareWorkout, unshareWorkout, isShared } from '@/lib/shareWorkout'
 import { seedWorkouts } from '@/lib/seedWorkouts'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
-import WaterTracker from '@/components/home/WaterTracker'
-import DailyGoals from '@/components/home/DailyGoals'
-import DailyQuote from '@/components/home/DailyQuote'
+import { getDailyQuote } from '@/components/home/DailyQuote'
+import { toast } from 'sonner'
 
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
-}
-
-function getMotiEmoji() {
-  const h = new Date().getHours()
-  if (h < 12) return '☀️'
-  if (h < 17) return '💪'
-  return '🔥'
-}
-
-// Compact ring for the stats row
-function StatRing({ value, max, color, label, display }) {
-  const pct = Math.min((value / max) * 100, 100)
-  const r = 22, circ = 2 * Math.PI * r
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative w-14 h-14">
-        <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
-          <circle cx="28" cy="28" r={r} fill="none" stroke="currentColor" strokeWidth="5" className="text-secondary" />
-          <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="5"
-            strokeLinecap="round" strokeDasharray={circ}
-            strokeDashoffset={circ * (1 - pct / 100)}
-            style={{ transition: 'stroke-dashoffset 1.2s ease' }} />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold leading-none">{display}</span>
-        </div>
-      </div>
-      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</span>
-    </div>
-  )
-}
-
-function WorkoutCardSkeleton() {
-  return (
-    <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
-      <div className="w-full h-36 animate-pulse bg-secondary/60" />
-      <div className="p-3 space-y-2">
-        <div className="h-4 w-3/4 animate-pulse bg-secondary/60 rounded-xl" />
-        <div className="h-3 w-1/2 animate-pulse bg-secondary/60 rounded-xl" />
-        <div className="flex gap-3 mt-2">
-          <div className="h-3 w-12 animate-pulse bg-secondary/60 rounded-xl" />
-          <div className="h-3 w-12 animate-pulse bg-secondary/60 rounded-xl" />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // Determine which popup should show next after `after` (or from scratch)
@@ -104,6 +55,7 @@ export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [sharingId, setSharingId] = useState(null)
   const [currentPopup, setCurrentPopup] = useState(null)
+  const [manualCheckin, setManualCheckin] = useState(false)
 
   // Initialize state machine once user is known
   useEffect(() => {
@@ -214,258 +166,145 @@ export default function Home() {
   const recommended = workouts.find(w => userDoc?.preferred_types?.includes(w.type)) || workouts[0]
   const lockedIn = workouts.find(w => w.id === 'locked-in')
 
+  const quote = getDailyQuote()
+  const goalWorkouts = Number(localStorage.getItem('xfit_goals_workouts_per_week')) || 7
+  const goalMinutes = Number(localStorage.getItem('xfit_goals_weekly_minutes')) || 150
+  const goalCalories = Number(localStorage.getItem('xfit_goals_weekly_calories')) || 2000
+  const scheduled = todaySchedule && !todaySchedule.is_rest_day ? todaySchedule : null
+  const scheduledLink = scheduled ? (scheduled.is_custom ? `/player/custom/${scheduled.workout_id}` : `/player/${scheduled.workout_id}`) : null
+  const todayText = todayLogged
+    ? 'Workout done. Rest up and recover.'
+    : scheduled ? `${scheduled.workout_title} · ${scheduled.workout_duration} min`
+    : todaySchedule?.is_rest_day ? 'Rest day. Recovery counts.'
+    : 'Your day is ready when you are.'
+
+  const cardCls = 'bg-card/75 backdrop-blur-md border border-border/50 rounded-3xl'
+  const fmt = (n) => n.toLocaleString()
+  const durationOf = (w) => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch (e) {} return w.duration }
+
   return (
-    <div className="max-w-2xl mx-auto pb-28">
+    <div className="relative z-10 max-w-2xl mx-auto pb-28 px-4">
       <TermsModal userId={user?.uid} onDismiss={() => advancePopup('terms')} />
-      <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin'} onDismiss={() => advancePopup('checkin')} />
+      <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin' || manualCheckin}
+        onDismiss={() => { setManualCheckin(false); advancePopup('checkin') }} />
       <WeeklyRecap logs={logs} />
       <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
-      {/* ── HERO HEADER ── */}
-      <div className="relative px-5 pt-8 pb-6 overflow-hidden">
-        {/* Subtle background glow */}
-        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 blur-3xl primary-gradient pointer-events-none" />
+      {/* Greeting + quote */}
+      <motion.header initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="pt-8 pb-5 flex items-end justify-between gap-5">
+        <div className="min-w-0 shrink-0 max-w-[48%]">
+          <p className="text-muted-foreground text-sm">{getGreeting()}</p>
+          <h1 className="text-3xl font-extrabold tracking-tight truncate">{firstName}</h1>
+        </div>
+        <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mb-1">
+          <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote.text}”</blockquote>
+          {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground/70 mt-1">{quote.author}</figcaption>}
+        </figure>
+      </motion.header>
 
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <p className="text-muted-foreground text-sm font-medium">{getMotiEmoji()} {getGreeting()}</p>
-          <h1 className="text-3xl font-black mt-0.5 tracking-tight">{firstName}</h1>
-        </motion.div>
-
-        {/* Streak pill + freeze button */}
-        {streak > 0 && (
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
-            className="absolute top-8 right-5 flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-1.5 bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-full">
-              <Flame className="w-3.5 h-3.5" /> {streak} day streak
-            </div>
-            <StreakProtection streak={streak} userId={user?.uid} onUseFreeze={() => {}} />
-          </motion.div>
-        )}
-      </div>
-
-      <div className="px-4 space-y-4">
-
-        {/* ── TODAY BANNER ── */}
-        {todayLogged ? (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-2xl px-4 py-3.5">
-            <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-green-300">Workout done for today!</p>
-              <p className="text-xs text-green-400/70 mt-0.5">Great work — rest up and recover 💚</p>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 bg-primary/8 border border-primary/15 rounded-2xl px-4 py-3.5">
-            <Dumbbell className="w-5 h-5 text-primary shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">Ready to move?</p>
-              <p className="text-xs text-muted-foreground mt-0.5">You haven't logged a workout yet today</p>
-            </div>
-            <Link to="/workouts">
-              <button className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-colors">
-                Browse
-              </button>
-            </Link>
-          </motion.div>
-        )}
-
-        {/* ── WEEKLY STATS ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <div className="bg-card border border-border/60 rounded-3xl p-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4">This week</p>
-            <div className="flex items-center justify-around">
-              <StatRing value={weekWorkouts} max={Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7} color="hsl(var(--primary))" label="Workouts" display={`${weekWorkouts}/${Number(localStorage.getItem('xfit_goals_workouts_per_week'))||7}`} />
-              <StatRing value={weekMinutes} max={Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150} color="#4ade80" label="Minutes" display={`${weekMinutes}/${Number(localStorage.getItem('xfit_goals_weekly_minutes'))||150}m`} />
-              <StatRing value={weekCalories} max={Number(localStorage.getItem('xfit_goals_weekly_calories'))||2000} color="#fb923c" label="Calories" display={`${weekCalories}/${Number(localStorage.getItem('xfit_goals_weekly_calories'))||2000}`} />
-            </div>
-
-            {/* 14-day streak dots */}
-            <div className="mt-4 pt-4 border-t border-border/40">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-muted-foreground">Last 14 days</span>
-                <span className="text-[10px] text-orange-400 font-semibold">{streak} day streak 🔥</span>
-              </div>
-              <div className="flex gap-1">
-                {Array.from({ length: 14 }, (_, i) => {
-                  const d = new Date(Date.now() - (13 - i) * 86400000)
-                  const has = logs.some(l => localDateStr(new Date(l.completedAt?.toDate?.() || l.completedAt || 0)) === localDateStr(d))
-                  const isToday = i === 13
-                  return (
-                    <div key={i} title={d.toLocaleDateString()}
-                      className={`flex-1 h-2 rounded-full transition-all ${has ? 'bg-orange-400' : isToday ? 'bg-primary/30 ring-1 ring-primary/50' : 'bg-secondary'}`} />
-                  )
-                })}
-              </div>
-            </div>
+      <div className="space-y-4">
+        {/* Today */}
+        <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`${cardCls} px-5 py-4 flex items-center gap-3`}>
+          {todayLogged
+            ? <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0" />
+            : <Circle className="w-6 h-6 text-muted-foreground shrink-0" />}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold">Today</p>
+            <p className="text-sm text-muted-foreground leading-snug">{todayText}</p>
           </div>
-        </motion.div>
+          {scheduled && !todayLogged ? (
+            <Link to={scheduledLink} aria-label={`Start ${scheduled.workout_title}`}
+              className="w-11 h-11 rounded-full primary-gradient flex items-center justify-center shrink-0 active:scale-95 transition-transform">
+              <Play className="w-4 h-4 text-white fill-white" />
+            </Link>
+          ) : (
+            <button onClick={() => setManualCheckin(true)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground min-h-[44px] shrink-0">
+              <ClipboardCheck className="w-5 h-5" /> <span>Check-in</span>
+            </button>
+          )}
+        </motion.section>
 
-        {/* ── TODAY'S SCHEDULED WORKOUT ── */}
-        {todaySchedule && !todaySchedule.is_rest_day && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="bg-card border border-border/60 rounded-3xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl primary-gradient flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 text-white" />
+        {/* This week */}
+        <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className={`${cardCls} p-5`}>
+          <div className="flex items-baseline justify-between mb-5">
+            <h2 className="font-semibold">This week</h2>
+            <span className="text-sm text-muted-foreground">{streak > 0 ? `${streak} day streak` : 'Last 7 days'}</span>
+          </div>
+          <div className="grid grid-cols-3 divide-x divide-border/50">
+            {[
+              ['Workouts', weekWorkouts, goalWorkouts],
+              ['Minutes', weekMinutes, goalMinutes],
+              ['Calories', weekCalories, goalCalories],
+            ].map(([label, val, goal], i) => (
+              <div key={label} className={i === 0 ? 'pr-4' : 'px-4'}>
+                <p className="text-3xl font-bold tabular-nums leading-none">{fmt(val)}</p>
+                <p className="text-sm text-muted-foreground mt-2">{label}</p>
+                <div className="h-1.5 rounded-full bg-secondary mt-3 overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${Math.min(100, (val / goal) * 100)}%` }} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">of {fmt(goal)}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Scheduled today</p>
-                <p className="font-bold truncate mt-0.5">{todaySchedule.workout_title}</p>
-                <p className="text-xs text-muted-foreground">{todaySchedule.workout_duration} min · {todaySchedule.workout_difficulty}</p>
-              </div>
-              {todayLogged ? (
-                <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0" />
-              ) : (
-                <Link to={todaySchedule.is_custom ? `/player/custom/${todaySchedule.workout_id}` : `/player/${todaySchedule.workout_id}`}>
-                  <button className="w-10 h-10 rounded-2xl primary-gradient flex items-center justify-center shadow-md active:scale-95 transition-transform">
-                    <Play className="w-4 h-4 text-white fill-white" />
-                  </button>
-                </Link>
+            ))}
+          </div>
+          {streak > 0 && <div className="mt-4 flex justify-end"><StreakProtection streak={streak} userId={user?.uid} onUseFreeze={() => {}} /></div>}
+        </motion.section>
+
+        {/* Start */}
+        {(lockedIn || customWorkouts.length > 0 || recommended) && (
+          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={`${cardCls} overflow-hidden`}>
+            <div className="flex items-center justify-between px-5 pt-4 pb-1">
+              <h2 className="font-semibold">Start a workout</h2>
+              <Link to="/workouts" className="text-sm text-primary flex items-center min-h-[44px]">All <ChevronRight className="w-4 h-4" /></Link>
+            </div>
+            <ul className="divide-y divide-border/40">
+              {lockedIn && (
+                <li><Link to={`/workouts/${lockedIn.id}`} className="flex items-center gap-3 px-5 py-3 min-h-[56px] hover:bg-secondary/40 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{lockedIn.title}</p>
+                    <p className="text-xs text-muted-foreground">Signature · {durationOf(lockedIn)} min</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </Link></li>
               )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── LOCKED IN FEATURED CARD ── */}
-        {lockedIn && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">Featured Workout</p>
-            <Link to={`/workouts/${lockedIn.id}`}>
-              <div className="relative rounded-3xl overflow-hidden h-52 group">
-                <img
-                  src={lockedIn.image_url || 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&q=80'}
-                  alt={lockedIn.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Signature Workout</span>
-                      <h3 className="text-xl font-black text-white mt-0.5">{lockedIn.title}</h3>
-                      <p className="text-white/60 text-xs mt-1">{(() => {
-                        try {
-                          const saved = localStorage.getItem('xfit_total_duration_' + lockedIn.id);
-                          if (saved) return saved + ' min';
-                        } catch(e) {}
-                        return lockedIn.duration + ' min';
-                      })()} · {lockedIn.trainer}</p>
+              {customWorkouts.map((w) => (
+                <li key={w.id} className="flex items-center gap-1 pr-3 hover:bg-secondary/40 transition-colors">
+                  <Link to={`/player/custom/${w.id}`} className="flex-1 min-w-0 flex items-center gap-3 pl-5 py-3 min-h-[56px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{w.name}</p>
+                      <p className="text-xs text-muted-foreground">Mine · {(() => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch (e) {} return w.duration || w.estimated_duration || '—' })()} min · {w.exercises?.length || 0} exercises</p>
                     </div>
-                    <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
-                      <Play className="w-4 h-4 text-white fill-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        )}
-
-        {/* ── QUICK ACTIONS ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="grid grid-cols-2 gap-3">
-            <Link to="/builder">
-              <div className="bg-card border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-[0.98]">
-                <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                  <Pencil className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold leading-tight">Build</p>
-                  <p className="text-[10px] text-muted-foreground">Custom workout</p>
-                </div>
-              </div>
-            </Link>
-            <Link to="/run">
-              <div className="bg-card border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:border-green-500/30 hover:bg-green-500/5 transition-all active:scale-[0.98]">
-                <div className="w-9 h-9 rounded-xl bg-green-500/15 flex items-center justify-center shrink-0">
-                  <Zap className="w-4 h-4 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold leading-tight">Run</p>
-                  <p className="text-[10px] text-muted-foreground">GPS tracker</p>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* ── MY CUSTOM WORKOUTS ── */}
-        {customWorkouts.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
-            <div className="flex items-center justify-between mb-2.5 px-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">My Workouts</p>
-              <Link to="/community" className="text-xs text-primary font-semibold">Community →</Link>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-              {customWorkouts.map(w => (
-                <div key={w.id} className="flex-shrink-0 bg-card border border-border/60 rounded-2xl p-4 w-48">
-                  <p className="font-semibold text-sm truncate">{w.name}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{(() => {
-                    try {
-                      const saved = localStorage.getItem('xfit_total_duration_' + w.id);
-                      if (saved) return saved;
-                    } catch(e) {}
-                    return w.duration || w.estimated_duration || '—';
-                  })()} min · {w.exercises?.length || 0} exercises</p>
-                  <div className="flex gap-1.5 mt-3">
-                    <Link to={`/player/custom/${w.id}`} className="flex-1">
-                      <button className="w-full h-8 rounded-xl primary-gradient text-white text-xs font-semibold flex items-center justify-center gap-1 active:scale-95 transition-transform">
-                        <Play className="w-3 h-3 fill-white" /> Start
-                      </button>
-                    </Link>
-                    <button
-                      onClick={() => handleShare(w)}
-                      disabled={sharingId === w.id}
-                      title="Share with community"
-                      className="w-8 h-8 rounded-xl bg-secondary/60 flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors disabled:opacity-50"
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+                    <Play className="w-4 h-4 text-muted-foreground" />
+                  </Link>
+                  <button onClick={() => handleShare(w)} disabled={sharingId === w.id} aria-label="Share with community"
+                    className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-50">
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </li>
               ))}
-            </div>
-          </motion.div>
+              {recommended && recommended.id !== lockedIn?.id && (
+                <li><Link to={`/workouts/${recommended.id}`} className="flex items-center gap-3 px-5 py-3 min-h-[56px] hover:bg-secondary/40 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{recommended.title}</p>
+                    <p className="text-xs text-muted-foreground capitalize">Suggested · {recommended.type?.replace('_', ' ')} · {durationOf(recommended)} min</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </Link></li>
+              )}
+            </ul>
+          </motion.section>
         )}
 
-        {/* ── DAILY QUOTE ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
-          <DailyQuote />
+        {/* Quick links */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-2 gap-3">
+          <Link to="/builder" className={`${cardCls} px-4 min-h-[56px] flex items-center gap-3 active:scale-[0.98] transition-transform`}>
+            <Pencil className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Build workout</span>
+          </Link>
+          <Link to="/run" className={`${cardCls} px-4 min-h-[56px] flex items-center gap-3 active:scale-[0.98] transition-transform`}>
+            <Zap className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Run</span>
+          </Link>
         </motion.div>
-
-        {/* ── WATER + GOALS ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <WaterTracker />
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
-          <DailyGoals />
-        </motion.div>
-
-        {/* ── WORKOUT LIBRARY ── */}
-        {workoutsLoading && (
-          <div className="space-y-3">
-            <div className="h-5 w-32 animate-pulse bg-secondary/60 rounded-xl" />
-            <div className="grid grid-cols-2 gap-3">
-              {[1,2,3,4].map(i => <WorkoutCardSkeleton key={i} />)}
-            </div>
-          </div>
-        )}
-        {!workoutsLoading && workouts.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <div className="flex items-center justify-between mb-2.5 px-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Browse Workouts</p>
-              <Link to="/workouts" className="text-xs text-primary font-semibold">See all →</Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {workouts.filter(w => w.id !== 'locked-in').slice(0, 4).map((w, i) => (
-                <WorkoutCard key={w.id} workout={w} index={i} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
       </div>
     </div>
   )
