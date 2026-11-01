@@ -39,9 +39,7 @@ export default function InstallBanner() {
           exit={{ y: 100, opacity: 0 }}
           className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto">
           <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg font-black text-primary">X</span>
-            </div>
+            <img src="/icons/icon-96.png" alt="" width="40" height="40" className="w-10 h-10 rounded-xl flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold">Install Uttar Fitness</p>
               <p className="text-xs text-muted-foreground">Add to home screen for the best experience</p>

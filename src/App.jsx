@@ -39,9 +39,7 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-          <span className="text-3xl">⚡</span>
-        </div>
+        <img src="/icons/icon-192.png" alt="Uttar Fitness" width="64" height="64" className="w-16 h-16 rounded-2xl" />
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     </div>
