@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs, getDoc, setDoc, doc, query, limit } from 'firebase/firestore';
+import { collection, getDocs, getDoc, setDoc, deleteDoc, doc, query, limit } from 'firebase/firestore';
 
 const WORKOUTS = [
   { id:'hiit-cardio', title:'Athletic HIIT Cardio', trainer:'Jess Rivera', category:'full_body', type:'hiit', duration:30, difficulty:'advanced', calories_estimate:420, equipment:'None', description:'High-intensity interval training to torch calories and boost endurance.', image_url:'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80', exercises:[{name:'Burpees',reps:15,duration:45},{name:'Jump Squats',reps:20,duration:45},{name:'Mountain Climbers',duration:60},{name:'High Knees',duration:60},{name:'Box Jumps',reps:12,duration:45}] },
@@ -16,40 +16,7 @@ const WORKOUTS = [
   { id:'upper-body-blast', title:'Upper Body Blast', trainer:'Sarah Kim', category:'upper_body', type:'strength', duration:35, difficulty:'intermediate', calories_estimate:310, equipment:'Dumbbells, Pull-up bar', description:'Sculpt your upper body with this complete push/pull routine.', image_url:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80', exercises:[{name:'Push-Ups',reps:20,duration:60},{name:'Dumbbell Rows',sets:3,reps:12,weight:'moderate'},{name:'Lateral Raises',sets:3,reps:15,weight:'light'},{name:'Bicep Curls',sets:3,reps:12,weight:'moderate'}] },
 ];
 
-const LOCKED_IN = {
-  id: 'locked-in',
-  title: 'Locked In',
-  trainer: 'Bhanu Vajjala',
-  trainer_bio: 'Personal routine — built for consistency and strength.',
-  category: 'full_body',
-  type: 'strength',
-  duration: 21,
-  difficulty: 'advanced',
-  calories_estimate: 300,
-  is_personal: true,
-  is_public: true,
-  equipment: 'Dumbbells',
-  description: 'The Locked In routine. 105 jump warm-up, bicep curls, lateral raises, hammer curls, ground-to-overhead, push-ups or diamond push-ups, 7-round core circuit with 30s ab hold finish, squats or Bulgarian split squats. All at comfortable weight. 21 minutes. 300 calories. Advanced.',
-  image_url: '/locked-in-cover.png',
-  exercises: [
-    { name: '105 Jumps Warm-Up', type: 'timed', duration: 120, instructions: 'Jump continuously — jumping jacks, high knees, or rope skips.' },
-    { name: 'Bicep Curls', reps: 25, sets: 1, weight: 'comfortable weight', rest: 30, instructions: 'Full range, squeeze at top.' },
-    { name: 'Lateral Raises', reps: 40, sets: 1, weight: 'comfortable weight', rest: 30, instructions: 'Raise to shoulder height, slow descent.' },
-    { name: 'Hammer Curls', reps: 25, sets: 1, weight: 'comfortable weight', rest: 30, instructions: 'Neutral grip, elbows pinned to sides.' },
-    { name: 'Dumbbell Ground to Overhead', reps: 25, sets: 1, weight: 'comfortable weight', rest: 30, instructions: 'Squat down, drive up, press overhead.' },
-    { name: 'Push-Ups or Diamond Push-Ups', reps: 50, sets: 1, rest: 45, instructions: 'Choose your variation. Chest to floor.' },
-    { name: 'Core Circuit Round 1', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 2', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 3', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 4', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 5', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 6', type: 'timed', duration: 36, rest: 15, instructions: '5 squats → 5 hip raises → 5 Russian twists each side.' },
-    { name: 'Core Circuit Round 7 + Ab Hold', type: 'timed', duration: 66, rest: 45, instructions: 'Final round: 5 squats → 5 hip raises → 5 Russian twists + 30s ab hold!' },
-    { name: 'Squats or Bulgarian Split Squats', reps: 35, sets: 1, weight: 'comfortable weight', rest: 60, instructions: '35 standard squats OR 20 reps Bulgarian split squats each leg.' },
-  ]
-};
-
-const SEEDED_KEY = 'xfit_workouts_seeded_v2';
+const SEEDED_KEY = 'xfit_workouts_seeded_v3';
 
 export async function seedWorkouts(uid) {
   // Only attempt seeding for the dev account — regular users can't write to /workouts
@@ -59,16 +26,17 @@ export async function seedWorkouts(uid) {
   if (sessionStorage.getItem(SEEDED_KEY)) return;
   sessionStorage.setItem(SEEDED_KEY, '1');
   try {
-    const allWorkouts = [...WORKOUTS, LOCKED_IN];
+    const allWorkouts = [...WORKOUTS];
     for (const w of allWorkouts) {
       const ref = doc(db, 'workouts', w.id);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
         await setDoc(ref, w);
-      } else if (w.id === 'locked-in') {
-        await setDoc(ref, { image_url: w.image_url }, { merge: true });
       }
     }
+    // 'Locked In' was retired: remove the old copy from the shared library (admin account only).
+    const old = doc(db, 'workouts', 'locked-in');
+    if ((await getDoc(old)).exists()) await deleteDoc(old);
   } catch(e) {
     console.warn('Seed workouts error:', e);
   }

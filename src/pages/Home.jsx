@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
 import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
-import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp } from 'lucide-react'
+import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp, CalendarDays } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
@@ -169,7 +169,9 @@ export default function Home() {
   const weekCalories = weekLogs.reduce((s, l) => s + (l.calories_burned || 0), 0)
 
   const today = getLocalWeekday()
-  const todaySchedule = schedule[today]
+  const rawToday = schedule[today]
+  const todaySchedule = rawToday?.workout_id === 'locked-in' ? null : rawToday   // 'Locked In' was removed
+  const hasAnyPlan = Object.values(schedule).some((e) => e && e.workout_id !== 'locked-in')
   const todayStr = localDateStr()
   const todayLogged = logs.some(l => {
     const d = new Date(l.completedAt?.toDate?.() || l.completedAt || 0)
@@ -177,7 +179,6 @@ export default function Home() {
   })
 
   const recommended = workouts.find(w => userDoc?.preferred_types?.includes(w.type)) || workouts[0]
-  const lockedIn = workouts.find(w => w.id === 'locked-in')
 
   const quote = getDailyQuote()
   const goalWorkouts = Number(localStorage.getItem('xfit_goals_workouts_per_week')) || 7
@@ -224,6 +225,7 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             <p className="font-semibold">Today</p>
             <p className="text-sm text-muted-foreground leading-snug">{todayText}</p>
+            {!hasAnyPlan && !todayLogged && <Link to="/plan" className="inline-block text-sm text-primary mt-1">Set up your weekly split</Link>}
           </div>
           {scheduled && !todayLogged && (
             <Link to={scheduledLink} aria-label={`Start ${scheduled.workout_title}`}
@@ -276,23 +278,14 @@ export default function Home() {
         </motion.section>
 
         {/* Start */}
-        {(lockedIn || customWorkouts.length > 0 || recommended) && (
+        {(customWorkouts.some((w) => !w.is_split_template) || recommended) && (
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={`${cardCls} overflow-hidden`}>
             <div className="flex items-center justify-between px-5 pt-4 pb-1">
               <h2 className="font-semibold">Start a workout</h2>
               <Link to="/workouts" className="text-sm text-primary flex items-center min-h-[44px]">All <ChevronRight className="w-4 h-4" /></Link>
             </div>
             <ul className="divide-y divide-border/40">
-              {lockedIn && (
-                <li><Link to={`/workouts/${lockedIn.id}`} className="flex items-center gap-3 px-5 py-3 min-h-[56px] hover:bg-secondary/40 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{lockedIn.title}</p>
-                    <p className="text-xs text-muted-foreground">Signature · {durationOf(lockedIn)} min</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </Link></li>
-              )}
-              {customWorkouts.map((w) => (
+              {customWorkouts.filter((w) => !w.is_split_template).slice(0, 3).map((w) => (
                 <li key={w.id} className="flex items-center gap-1 pr-3 hover:bg-secondary/40 transition-colors">
                   <Link to={`/player/custom/${w.id}`} className="flex-1 min-w-0 flex items-center gap-3 pl-5 py-3 min-h-[56px]">
                     <div className="flex-1 min-w-0">
@@ -307,7 +300,7 @@ export default function Home() {
                   </button>
                 </li>
               ))}
-              {recommended && recommended.id !== lockedIn?.id && (
+              {recommended && (
                 <li><Link to={`/workouts/${recommended.id}`} className="flex items-center gap-3 px-5 py-3 min-h-[56px] hover:bg-secondary/40 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{recommended.title}</p>
@@ -321,13 +314,12 @@ export default function Home() {
         )}
 
         {/* Quick links */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-2 gap-3">
-          <Link to="/builder" className={`${cardCls} px-4 min-h-[56px] flex items-center gap-3 active:scale-[0.98] transition-transform`}>
-            <Pencil className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Build workout</span>
-          </Link>
-          <Link to="/run" className={`${cardCls} px-4 min-h-[56px] flex items-center gap-3 active:scale-[0.98] transition-transform`}>
-            <Zap className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Run</span>
-          </Link>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-3 gap-3">
+          {[['/plan', CalendarDays, 'Plan'], ['/builder', Pencil, 'Build'], ['/run', Zap, 'Run']].map(([to, Icon, label]) => (
+            <Link key={to} to={to} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+              <Icon className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">{label}</span>
+            </Link>
+          ))}
         </motion.div>
       </div>
     </div>

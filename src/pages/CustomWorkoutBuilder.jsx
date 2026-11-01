@@ -21,7 +21,7 @@ const EXAMPLE_PROMPTS = [
   'Quick 10 min morning stretch and core activation',
   'Heavy upper body day: chest, shoulders, triceps — 45 mins',
   'Leg day: squats, lunges, hip raises — 30 mins intermediate',
-  "Bhanu's Locked In style — intense 20 min strength circuit",
+  "Intense 20 min dumbbell strength circuit",
   '5 min abs finisher after any workout',
 ]
 

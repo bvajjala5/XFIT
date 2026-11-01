@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import { toast } from 'sonner';
+import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
 const GOOD_VOICES = [
@@ -80,7 +81,7 @@ function unlockSpeech() {
 
 const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it up.', 'Well done.'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const amountText = (ex, dur) => ex.reps ? `${ex.reps} reps` : `${dur} seconds`;
+const amountText = (ex) => amountLabel(ex);
 
 const motivations = ["You're crushing it! 💪","Push through the burn!","Almost there, don't give up!","You're stronger than yesterday!","Feel the power! 🔥","Every rep counts!","Let's go, champion!"];
 
@@ -159,9 +160,10 @@ async function generateShareCard({ workoutTitle, duration, calories, rating, dif
   return canvas.toDataURL('image/png');
 }
 
-export default function WorkoutPlayer() {
+export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const { id } = useParams();
-  const isCustom = id?.startsWith('custom/');
+  // /player/custom/:id passes isCustom as a prop (the id has no 'custom/' prefix there).
+  const isCustom = isCustomRoute || id?.startsWith('custom/');
   const workoutId = isCustom ? id.replace('custom/','') : id;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -231,7 +233,8 @@ export default function WorkoutPlayer() {
 
   const exercises = useMemo(() => {
     if (!workout?.exercises) return [];
-    return workout.exercises.map((ex,i) => {
+    return workout.exercises.map((raw,i) => {
+      const ex = normalizeExercise(raw);   // handles builder-style fields (duration_seconds, "8-12" reps)
       if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i]};
       return ex;
     });
@@ -514,7 +517,7 @@ export default function WorkoutPlayer() {
         <AnimatePresence mode="wait">
           <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-3 w-full">
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
-            <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${currentExercise.reps} reps${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
+            <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
             <WorkoutDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
           </motion.div>
