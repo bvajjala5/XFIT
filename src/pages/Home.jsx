@@ -6,8 +6,8 @@ import { db } from '@/lib/firebase'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
 import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
-import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
 import WeeklyRecap from '@/components/shared/WeeklyRecap'
@@ -29,12 +29,11 @@ function getGreeting() {
 // Determine which popup should show next after `after` (or from scratch)
 function computeNextPopup(after, uid) {
   if (!uid) return null;
-  const steps = ['terms', 'checkin', 'notifications'];
+  const steps = ['terms', 'notifications'];
   const startIdx = after ? steps.indexOf(after) + 1 : 0;
   for (let i = startIdx; i < steps.length; i++) {
     const s = steps[i];
     if (s === 'terms' && !localStorage.getItem('xfit_terms_agreed_' + uid)) return 'terms';
-    if (s === 'checkin' && localStorage.getItem('xfit_checkin_date') !== localDateStr()) return 'checkin';
     if (s === 'recap') {
       const today = new Date();
       if (today.getDay() === 0) {
@@ -56,6 +55,20 @@ export default function Home() {
   const [sharingId, setSharingId] = useState(null)
   const [currentPopup, setCurrentPopup] = useState(null)
   const [manualCheckin, setManualCheckin] = useState(false)
+  // Gentle one-time-per-day arrow pointing at the check-in button; fades after a few seconds.
+  const [showHint, setShowHint] = useState(false)
+  useEffect(() => {
+    if (!user?.uid) return
+    let t
+    try {
+      const today = localDateStr()
+      if (localStorage.getItem('xfit_checkin_date') === today || localStorage.getItem('xfit_checkin_hint_date') === today) return
+      localStorage.setItem('xfit_checkin_hint_date', today)
+      setShowHint(true)
+      t = setTimeout(() => setShowHint(false), 8000)
+    } catch (e) {}
+    return () => clearTimeout(t)
+  }, [user?.uid])
 
   // Initialize state machine once user is known
   useEffect(() => {
@@ -185,8 +198,7 @@ export default function Home() {
   return (
     <div className="relative z-10 max-w-2xl mx-auto pb-28 px-4">
       <TermsModal userId={user?.uid} onDismiss={() => advancePopup('terms')} />
-      <DailyCheckIn userId={user?.uid} open={currentPopup === 'checkin' || manualCheckin}
-        onDismiss={() => { setManualCheckin(false); advancePopup('checkin') }} />
+      <DailyCheckIn userId={user?.uid} open={manualCheckin} onDismiss={() => setManualCheckin(false)} />
       <WeeklyRecap logs={logs} />
       <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
@@ -213,17 +225,29 @@ export default function Home() {
             <p className="font-semibold">Today</p>
             <p className="text-sm text-muted-foreground leading-snug">{todayText}</p>
           </div>
-          {scheduled && !todayLogged ? (
+          {scheduled && !todayLogged && (
             <Link to={scheduledLink} aria-label={`Start ${scheduled.workout_title}`}
               className="w-11 h-11 rounded-full primary-gradient flex items-center justify-center shrink-0 active:scale-95 transition-transform">
               <Play className="w-4 h-4 text-white fill-white" />
             </Link>
-          ) : (
-            <button onClick={() => setManualCheckin(true)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground min-h-[44px] shrink-0">
+          )}
+          <div className="relative shrink-0">
+            <button onClick={() => { setShowHint(false); setManualCheckin(true) }}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground min-h-[44px]">
               <ClipboardCheck className="w-5 h-5" /> <span>Check-in</span>
             </button>
-          )}
+            <AnimatePresence>
+              {showHint && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.6 } }}
+                  className="absolute z-20 left-1/2 -translate-x-1/2 top-full flex flex-col items-center pointer-events-none" aria-hidden="true">
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }} className="flex flex-col items-center">
+                    <ArrowUp className="w-6 h-6 text-primary" strokeWidth={2.5} />
+                    <span className="text-[11px] font-semibold text-primary whitespace-nowrap mt-0.5">Daily check-in</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.section>
 
         {/* This week */}
