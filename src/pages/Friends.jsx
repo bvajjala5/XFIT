@@ -19,7 +19,7 @@ function UserCard({ profile, isFollowing, onToggle, isNew = false, busy = false,
         {profile.photoURL ? <img src={profile.photoURL} alt="" className="w-full h-full object-cover" /> : <span className="text-lg font-black text-primary">{(profile.displayName||"?")[0]}</span>}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{profile.displayName || "XFit User"}{isNew && <span className="ml-2 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">NEW</span>}</p>
+        <p className="font-semibold text-sm truncate">{profile.displayName || "Athlete"}{isNew && <span className="ml-2 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">NEW</span>}</p>
         <div className="flex items-center gap-3 mt-0.5">
           <span className="flex items-center gap-1 text-xs text-muted-foreground"><Dumbbell className="w-3 h-3" />{profile.totalWorkouts || 0} workouts</span>
           <span className="flex items-center gap-1 text-xs text-orange-400"><Flame className="w-3 h-3" />{profile.streak || 0} streak</span>
@@ -41,7 +41,7 @@ export default function Friends() {
   const [search, setSearch] = useState("");
   const [busyUid, setBusyUid] = useState(null);
   const qc = useQueryClient();
-  const me = { uid: user?.uid, displayName: user?.displayName?.split(" ")[0] || "XFit User" };
+  const me = { uid: user?.uid, displayName: user?.displayName?.split(" ")[0] || "Athlete" };
 
   const { data: leaderboard = [] } = useQuery({
     queryKey: ["leaderboard-all"],

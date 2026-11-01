@@ -1,4 +1,4 @@
-// AI helper — talks to the XFit AI proxy (see /worker). The Gemini API key lives on
+// AI helper — talks to the Uttar Fitness AI proxy (see /worker). The Gemini API key lives on
 // the proxy, never in this app. Requests are authenticated with the user's Firebase ID token.
 import { auth } from './firebase';
 

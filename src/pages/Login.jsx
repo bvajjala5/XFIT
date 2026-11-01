@@ -58,13 +58,10 @@ export default function Login() {
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.5 }}
           className="relative text-center space-y-6 max-w-xs w-full">
 
-          <div className="mx-auto w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-2xl"
-            style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)' }}>
-            <span className="text-white font-black text-4xl tracking-tight">X</span>
-          </div>
+          <img src="/icons/icon-192.png" alt="Uttar Fitness" width="96" height="96" className="mx-auto w-24 h-24 rounded-[2rem] shadow-2xl" />
 
           <div className="space-y-2">
-            <h1 className="text-5xl font-black tracking-tight" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>XFit</h1>
+            <h1 className="text-4xl font-black tracking-tight whitespace-nowrap" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>Uttar Fitness</h1>
             <p style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Stay consistent. Stay strong.</p>
           </div>
 

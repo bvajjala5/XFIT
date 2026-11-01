@@ -1,4 +1,4 @@
-// XFit AI proxy — keeps the Gemini API key on the server and only serves signed-in XFit users.
+// Uttar Fitness AI proxy — keeps the Gemini API key on the server and only serves signed-in Uttar Fitness users.
 // Secrets/vars (see wrangler.toml + README):
 //   GEMINI_API_KEY      (secret)  your Google AI Studio key
 //   FIREBASE_PROJECT_ID (var)     your Firebase project id

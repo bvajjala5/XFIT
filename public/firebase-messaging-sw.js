@@ -9,10 +9,10 @@ self.addEventListener('message', event => {
 
     messaging.onBackgroundMessage(payload => {
       const { title, body, icon } = payload.notification ?? {};
-      self.registration.showNotification(title ?? 'XFit', {
+      self.registration.showNotification(title ?? 'Uttar Fitness', {
         body: body ?? '',
-        icon: icon ?? '/icon-192.png',
-        badge: '/icon-192.png',
+        icon: icon ?? '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
         data: payload.data,
       });
     });
