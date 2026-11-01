@@ -20,6 +20,7 @@ if (typeof window !== 'undefined' && localStorage.getItem('xfit_cache_version') 
 
 const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
+const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
 const Stats = lazy(() => import('@/pages/Stats'))
@@ -83,6 +84,7 @@ export default function App() {
         <Route index element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
         <Route path="workouts" element={<Suspense fallback={<PageLoader />}><WorkoutsAndRun /></Suspense>} />
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
+        <Route path="plan" element={<Suspense fallback={<PageLoader />}><WeeklyPlan /></Suspense>} />
         <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
         <Route path="health" element={<Suspense fallback={<PageLoader />}><HealthHub /></Suspense>} />

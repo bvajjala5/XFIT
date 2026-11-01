@@ -51,14 +51,6 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/locked-in-cover.png",
-      "sizes": "600x400",
-      "type": "image/png",
-      "form_factor": "wide"
-    }
-  ],
   "categories": [
     "fitness",
     "health",

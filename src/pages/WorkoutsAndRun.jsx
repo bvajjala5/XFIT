@@ -64,11 +64,18 @@ export default function WorkoutsAndRun() {
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">{workouts.length} workouts available</p>
         </div>
+        <div className="flex items-center">
+        <Link to="/plan">
+          <button className="text-xs font-semibold bg-secondary/60 text-foreground px-3 py-2 rounded-xl mr-2 min-h-[36px]">
+            Plan
+          </button>
+        </Link>
         <Link to="/builder">
           <button className="text-xs font-semibold bg-primary/10 text-primary px-3 py-2 rounded-xl hover:bg-primary/20 transition-colors">
             + Build
           </button>
         </Link>
+        </div>
       </div>
 
       {/* Search */}
