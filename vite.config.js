@@ -9,13 +9,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icons/*.png', 'locked-in-cover.png'],
+      includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'XFit - Stay Consistent. Stay Strong.',
-        short_name: 'XFit',
+        name: 'Uttar Fitness - Stay Consistent. Stay Strong.',
+        short_name: 'Uttar Fitness',
         description: 'Your AI-powered fitness companion.',
-        theme_color: '#f97316',
-        background_color: '#080818',
+        theme_color: '#20212d',
+        background_color: '#20212d',
         display: 'standalone',
         start_url: '/',
         orientation: 'portrait',

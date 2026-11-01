@@ -38,7 +38,7 @@ export default function TermsModal({ userId, onDismiss }) {
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-2xl font-black">Welcome to XFit!</h2>
+              <h2 className="text-2xl font-black">Welcome to Uttar Fitness!</h2>
               <p className="text-muted-foreground text-sm">Please review and agree to our terms before getting started.</p>
             </div>
 

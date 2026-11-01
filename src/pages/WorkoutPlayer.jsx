@@ -112,7 +112,7 @@ async function generateShareCard({ workoutTitle, duration, calories, rating, dif
   ctx.fillStyle = accentGrad;
   ctx.beginPath(); ctx.roundRect(80, 80, 300, 56, 16); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui, sans-serif';
-  ctx.fillText('⚡ XFit', 105, 118);
+  ctx.fillText('⚡ Uttar Fitness', 105, 118);
 
   // Accent line
   ctx.fillStyle = accentGrad;
@@ -373,12 +373,12 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         difficulty: logDifficulty,
       });
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'xfit-workout.png', { type: 'image/png' });
+      const file = new File([blob], 'uttar-workout.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'XFit Workout Complete!', text: `Just crushed a workout on XFit! 💪` });
+        await navigator.share({ files: [file], title: 'Uttar Fitness Workout Complete!', text: `Just crushed a workout on Uttar Fitness! 💪` });
       } else {
         const a = document.createElement('a');
-        a.href = dataUrl; a.download = 'xfit-workout.png'; a.click();
+        a.href = dataUrl; a.download = 'uttar-workout.png'; a.click();
         toast.success('Image saved!');
       }
     } catch(e) {

@@ -20,10 +20,10 @@ export async function followUser(me, target) {
   if (me.uid === target.uid) throw new Error("You can't follow yourself");
   const batch = writeBatch(db);
   batch.set(doc(db, 'users', me.uid, 'following', target.uid), {
-    uid: target.uid, displayName: target.displayName || 'XFit User', followedAt: serverTimestamp(),
+    uid: target.uid, displayName: target.displayName || 'Athlete', followedAt: serverTimestamp(),
   });
   batch.set(doc(db, 'users', target.uid, 'followers', me.uid), {
-    uid: me.uid, displayName: me.displayName || 'XFit User', followedAt: serverTimestamp(),
+    uid: me.uid, displayName: me.displayName || 'Athlete', followedAt: serverTimestamp(),
   });
   await batch.commit();
 }
@@ -53,7 +53,7 @@ export async function repairFollowerLinks(me, followingList) {
   const results = await Promise.allSettled(
     followingList.map((f) =>
       setDoc(doc(db, 'users', f.id, 'followers', me.uid), {
-        uid: me.uid, displayName: me.displayName || 'XFit User', followedAt: f.followedAt ?? serverTimestamp(),
+        uid: me.uid, displayName: me.displayName || 'Athlete', followedAt: f.followedAt ?? serverTimestamp(),
       })
     )
   );

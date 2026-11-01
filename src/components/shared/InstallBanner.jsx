@@ -43,7 +43,7 @@ export default function InstallBanner() {
               <span className="text-lg font-black text-primary">X</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold">Install XFit</p>
+              <p className="text-sm font-bold">Install Uttar Fitness</p>
               <p className="text-xs text-muted-foreground">Add to home screen for the best experience</p>
             </div>
             <button onClick={handleInstall}

@@ -43,9 +43,7 @@ export default function AppLayout() {
       <InstallBanner />
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
-        <div className="w-10 h-10 rounded-2xl primary-gradient flex items-center justify-center mb-6 shadow-lg">
-          <span className="text-white font-black text-lg">X</span>
-        </div>
+        <img src="/icons/icon-96.png" alt="Uttar Fitness" width="40" height="40" className="w-10 h-10 rounded-2xl mb-6 shadow-lg" />
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
           return (

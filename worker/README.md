@@ -1,4 +1,4 @@
-# XFit AI proxy
+# Uttar Fitness AI proxy
 
 Holds your Gemini key on the server so it never ships in the app. The app sends the
 signed-in user's Firebase ID token; the Worker verifies it, then calls Gemini.

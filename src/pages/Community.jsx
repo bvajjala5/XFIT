@@ -55,7 +55,7 @@ export default function Community() {
         <h1 className="text-2xl font-black flex items-center gap-2">
           <Users className="w-6 h-6 text-primary" /> Community
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Workouts shared by XFit users</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Workouts shared by Uttar Fitness users</p>
       </div>
 
       {isLoading && (
