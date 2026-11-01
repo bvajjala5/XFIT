@@ -1,0 +1,21 @@
+name: Claude Automation
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude_tasks:
+    if: contains(github.event.comment.body, '@claude') || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run local workflow execution
+        run: |
+          echo "Connecting workspace automation framework..."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
