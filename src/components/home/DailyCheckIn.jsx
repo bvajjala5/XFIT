@@ -1,176 +1,206 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Droplets, X } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { localDateStr } from '@/lib/utils'
 
-const MOODS = [
-  { emoji: '🔥', label: 'Fired up' },
-  { emoji: '😊', label: 'Good' },
-  { emoji: '😐', label: 'Okay' },
-  { emoji: '😴', label: 'Tired' },
-  { emoji: '😤', label: 'Stressed' },
-]
+const SLEEP_FEEL = [['😫', 'Awful'], ['😕', 'Poor'], ['😐', 'Okay'], ['🙂', 'Good'], ['😁', 'Great']]
+const ENERGY = [['🪫', 'Drained'], ['😴', 'Low'], ['😐', 'Okay'], ['⚡', 'Good'], ['🔥', 'Charged']]
+const SORE = [['None', 1], ['Light', 2], ['Some', 3], ['Sore', 4], ['Very', 5]]
+const FOOD = [['Yes', 'yes'], ['Partly', 'partly'], ['No', 'no']]
 
-const ENERGY_LEVELS = [
-  { value: 1, label: 'Low', color: 'bg-red-400' },
-  { value: 2, label: 'Meh', color: 'bg-orange-400' },
-  { value: 3, label: 'Decent', color: 'bg-yellow-400' },
-  { value: 4, label: 'Good', color: 'bg-green-400' },
-  { value: 5, label: 'High', color: 'bg-emerald-400' },
-]
+// 0–100, only from the answers the user actually gave. Higher = ready for a harder session.
+export function checkinReadiness({ sleepHours, sleepFeel, energy, soreness, jointPain }) {
+  const parts = []
+  if (sleepHours != null) parts.push(Math.min(sleepHours / 8, 1) * 100)
+  if (sleepFeel) parts.push(((sleepFeel - 1) / 4) * 100)
+  if (energy) parts.push(((energy - 1) / 4) * 100)
+  if (soreness) parts.push(((5 - soreness) / 4) * 100)
+  if (!parts.length) return null
+  let score = parts.reduce((a, b) => a + b, 0) / parts.length
+  if (jointPain) score -= 15
+  return Math.round(Math.max(0, Math.min(100, score)))
+}
 
-export default function DailyCheckIn({ userId, onComplete, open, onDismiss }) {
-  const controlled = open !== undefined
-  const [visible, setVisible] = useState(controlled ? open : false)
-  const [step, setStep] = useState(1) // 1=mood, 2=energy, 3=workout
-  const [mood, setMood] = useState(null)
-  const [energy, setEnergy] = useState(null)
-  const [workedOut, setWorkedOut] = useState(null)
+function advice(score, jointPain) {
+  if (score == null) return { title: 'Checked in', body: 'Have a great day.' }
+  if (jointPain) return { title: 'Go easy on the joints', body: 'Pick mobility or light work today, and skip anything that hurts.' }
+  if (score >= 75) return { title: 'Ready to push', body: 'You’re well recovered. A good day for a hard session.' }
+  if (score >= 50) return { title: 'Good to train', body: 'Solid base. Train as planned and listen to your body.' }
+  return { title: 'Take it easier', body: 'Recovery is low. Keep it light or do mobility today.' }
+}
 
-  // Controlled mode: sync visibility with open prop
-  useEffect(() => {
-    if (controlled) setVisible(open)
-  }, [open, controlled])
+const waterKey = () => 'xfit_water_' + localDateStr()
+const readWater = () => { try { return Number(localStorage.getItem(waterKey())) || 0 } catch (e) { return 0 } }
+const waterGoal = () => { try { return Number(localStorage.getItem('xfit_water_goal')) || 8 } catch (e) { return 8 } }
 
-  // Uncontrolled mode: self-manage with localStorage check + delay
-  useEffect(() => {
-    if (controlled || !userId) return
-    const today = localDateStr()
-    const lastCheckin = localStorage.getItem('xfit_checkin_date')
-    if (lastCheckin === today) return
-    setTimeout(() => setVisible(true), 1500)
-  }, [userId, controlled])
-
-  const handleMood = (m) => {
-    setMood(m)
-    setTimeout(() => setStep(2), 300)
-  }
-
-  const handleEnergy = (e) => {
-    setEnergy(e)
-    setTimeout(() => setStep(3), 300)
-  }
-
-  const handleWorkout = async (did) => {
-    setWorkedOut(did)
-    const today = localDateStr()
-    try {
-      await setDoc(doc(db, 'users', userId, 'checkins', today), {
-        mood: mood.label,
-        moodEmoji: mood.emoji,
-        energy: energy.value,
-        energyLabel: energy.label,
-        workedOut: did,
-        date: today,
-        createdAt: new Date(),
-      })
-      localStorage.setItem('xfit_checkin_date', today)
-    } catch (e) { console.error('Checkin save error:', e) }
-    setTimeout(() => {
-      setVisible(false)
-      onComplete?.({ mood, energy, workedOut: did })
-      onDismiss?.()
-    }, 800)
-  }
-
-  const dismiss = () => {
-    localStorage.setItem('xfit_checkin_date', localDateStr())
-    setVisible(false)
-    onDismiss?.()
-  }
-
+function Row({ title, hint, children }) {
   return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Choice({ active, onClick, children, className = '' }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`flex-1 min-h-[44px] rounded-xl text-sm transition-all active:scale-95 ${active ? 'bg-primary/20 ring-2 ring-primary text-foreground font-semibold' : 'bg-secondary/60 text-muted-foreground'} ${className}`}>
+      {children}
+    </button>
+  )
+}
+
+export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
+  const [sleepHours, setSleepHours] = useState(7.5)
+  const [sleepTouched, setSleepTouched] = useState(false)
+  const [sleepFeel, setSleepFeel] = useState(null)
+  const [energy, setEnergy] = useState(null)
+  const [food, setFood] = useState(null)
+  const [soreness, setSoreness] = useState(null)
+  const [jointPain, setJointPain] = useState(false)
+  const [water, setWater] = useState(readWater)
+  const [saving, setSaving] = useState(false)
+  const [result, setResult] = useState(null)
+  const goal = waterGoal()
+
+  useEffect(() => { if (open) { setWater(readWater()); setResult(null) } }, [open])
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => e.key === 'Escape' && onDismiss?.()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onDismiss])
+
+  const setGlasses = (n) => {
+    const next = Math.max(0, Math.min(12, n))
+    setWater(next)
+    try { localStorage.setItem(waterKey(), String(next)) } catch (e) {}   // same place the water tracker uses
+  }
+
+  const answered = sleepTouched || sleepFeel || energy || food || soreness || jointPain || water > 0
+
+  const save = async () => {
+    if (saving) return
+    setSaving(true)
+    const today = localDateStr()
+    const data = {
+      sleepHours: sleepTouched ? sleepHours : null,
+      sleepFeel, energy, nutritionOnTrack: food, soreness, jointPain,
+      hydrationGlasses: water, date: today, createdAt: new Date(),
+    }
+    const score = checkinReadiness({ sleepHours: data.sleepHours, sleepFeel, energy, soreness, jointPain })
+    data.readiness = score
+    try {
+      if (userId) await setDoc(doc(db, 'users', userId, 'checkins', today), data)
+    } catch (e) { console.error('Check-in save error:', e) }
+    try { localStorage.setItem('xfit_checkin_date', today) } catch (e) {}
+    setResult(advice(score, jointPain))
+    setSaving(false)
+    onComplete?.(data)
+  }
+
+  // Portal to <body>: the page content sits in its own stacking layer, below the bottom nav.
+  return createPortal(
     <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-        >
+      {open && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => onDismiss?.()}>
           <motion.div
-            initial={{ scale: 0.85, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.85, opacity: 0 }}
-            transition={{ type: 'spring', bounce: 0.3 }}
-            className="w-full max-w-sm bg-card border border-border rounded-3xl p-6 space-y-5"
-          >
-            {/* Step 1 — Mood */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Daily Check-in</p>
-                  <h2 className="text-xl font-black">How are you feeling?</h2>
-                </div>
-                <div className="flex justify-between gap-2">
-                  {MOODS.map(m => (
-                    <button key={m.label} onClick={() => handleMood(m)}
-                      className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 hover:bg-secondary ${mood?.label === m.label ? 'bg-primary/20 ring-2 ring-primary' : 'bg-secondary/50'}`}>
-                      <span className="text-2xl">{m.emoji}</span>
-                      <span className="text-[10px] font-medium text-muted-foreground">{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <button onClick={dismiss} className="w-full text-xs text-muted-foreground py-1 hover:text-foreground transition-colors">
-                  Skip for today
+            initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog" aria-label="Daily check-in"
+            className="w-full sm:max-w-md bg-card border border-border/60 rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto"
+            style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-extrabold tracking-tight">Check-in</h2>
+                <p className="text-xs text-muted-foreground">Takes 20 seconds. Skip anything you like.</p>
+              </div>
+              <button onClick={() => onDismiss?.()} aria-label="Close" className="w-11 h-11 -mr-2 flex items-center justify-center text-muted-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {result ? (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center py-8 space-y-2">
+                <p className="text-4xl">✅</p>
+                <p className="text-xl font-extrabold">{result.title}</p>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">{result.body}</p>
+                <button onClick={() => onDismiss?.()} className="mt-5 w-full min-h-[48px] rounded-2xl primary-gradient text-white font-semibold">Done</button>
+              </motion.div>
+            ) : (
+              <div className="space-y-5">
+                <Row title="Sleep" hint={sleepTouched ? `${sleepHours} h` : 'Slide to set hours'}>
+                  <input type="range" min="3" max="12" step="0.5" value={sleepHours} aria-label="Hours slept"
+                    onChange={(e) => { setSleepHours(Number(e.target.value)); setSleepTouched(true) }}
+                    className="w-full accent-[hsl(var(--primary))] h-8" />
+                  <div className="flex gap-1.5">
+                    {SLEEP_FEEL.map(([e, l], i) => (
+                      <Choice key={l} active={sleepFeel === i + 1} onClick={() => setSleepFeel(i + 1)}>
+                        <span className="block text-lg leading-none">{e}</span>
+                        <span className="block text-[10px] mt-1">{l}</span>
+                      </Choice>
+                    ))}
+                  </div>
+                </Row>
+
+                <Row title="Energy right now">
+                  <div className="flex gap-1.5">
+                    {ENERGY.map(([e, l], i) => (
+                      <Choice key={l} active={energy === i + 1} onClick={() => setEnergy(i + 1)}>
+                        <span className="block text-lg leading-none">{e}</span>
+                        <span className="block text-[10px] mt-1">{l}</span>
+                      </Choice>
+                    ))}
+                  </div>
+                </Row>
+
+                <Row title="Hit your nutrition goals yesterday?">
+                  <div className="flex gap-1.5">
+                    {FOOD.map(([l, v]) => <Choice key={v} active={food === v} onClick={() => setFood(v)}>{l}</Choice>)}
+                  </div>
+                </Row>
+
+                <Row title="Soreness" hint="Muscles and joints">
+                  <div className="flex gap-1.5">
+                    {SORE.map(([l, v]) => <Choice key={v} active={soreness === v} onClick={() => setSoreness(v)} className="text-xs">{l}</Choice>)}
+                  </div>
+                  <button type="button" onClick={() => setJointPain(!jointPain)} aria-pressed={jointPain}
+                    className={`w-full min-h-[44px] rounded-xl text-sm transition-all ${jointPain ? 'bg-red-500/15 ring-2 ring-red-400/60 text-foreground font-semibold' : 'bg-secondary/60 text-muted-foreground'}`}>
+                    {jointPain ? 'Joint pain: yes' : 'Any joint pain?'}
+                  </button>
+                </Row>
+
+                <Row title="Hydration" hint={`${water} / ${goal} glasses`}>
+                  <div className="flex flex-wrap gap-0.5">
+                    {Array.from({ length: Math.max(goal, water) }, (_, i) => (
+                      <button key={i} type="button" onClick={() => setGlasses(i < water ? i : i + 1)} aria-label={`${i + 1} glasses`}
+                        className="w-10 h-11 rounded-xl flex items-center justify-center active:scale-90 transition-transform">
+                        <Droplets className={`w-6 h-6 ${i < water ? 'text-blue-400 fill-blue-400/30' : 'text-muted-foreground/40'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </Row>
+
+                <button onClick={save} disabled={saving || !answered}
+                  className="w-full min-h-[48px] rounded-2xl primary-gradient text-white font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform">
+                  {saving ? 'Saving…' : 'Save check-in'}
                 </button>
               </div>
-            )}
-
-            {/* Step 2 — Energy */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Daily Check-in</p>
-                  <h2 className="text-xl font-black">Energy level?</h2>
-                  <p className="text-sm text-muted-foreground mt-1">How's your body feeling?</p>
-                </div>
-                <div className="flex gap-2">
-                  {ENERGY_LEVELS.map(e => (
-                    <button key={e.value} onClick={() => handleEnergy(e)}
-                      className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all active:scale-95 ${energy?.value === e.value ? 'bg-primary/20 ring-2 ring-primary' : 'bg-secondary/50 hover:bg-secondary'}`}>
-                      <div className={`w-3 h-8 rounded-full ${e.color} opacity-80`} />
-                      <span className="text-[10px] font-medium text-muted-foreground">{e.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 3 — Workout */}
-            {step === 3 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Daily Check-in</p>
-                  <h2 className="text-xl font-black">Did you work out today?</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Or planning to?</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Yes! 💪", value: true,  cls: 'bg-green-500/20 hover:bg-green-500/30 border-green-500/40 text-green-300' },
-                    { label: "Not yet", value: false, cls: 'bg-secondary/50 hover:bg-secondary border-border text-muted-foreground' },
-                  ].map(opt => (
-                    <button key={String(opt.value)} onClick={() => handleWorkout(opt.value)}
-                      className={`py-4 rounded-2xl font-bold text-sm border transition-all active:scale-95 ${opt.cls}`}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Done state */}
-            {workedOut !== null && step === 3 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-2">
-                <p className="text-3xl mb-2">🔒</p>
-                <p className="font-black text-lg">Locked In.</p>
-                <p className="text-sm text-muted-foreground">Let's make today count!</p>
-              </motion.div>
             )}
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
