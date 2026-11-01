@@ -31,7 +31,7 @@ const QUOTES = [
   { text: "Locked in. Every single day.", author: "Bhanu Vajjala" },
 ]
 
-function getDailyQuote() {
+export function getDailyQuote() {
   // Pick a quote based on the day of year so it changes daily but is consistent
   const now = new Date()
   const start = new Date(now.getFullYear(), 0, 0)

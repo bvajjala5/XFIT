@@ -51,10 +51,10 @@ export default function Workouts() {
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="relative z-10 p-4 md:p-8 max-w-6xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Workout Library</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">{filtered.length} workouts available</p>
+        <h1 className="text-3xl font-extrabold tracking-tight">Workouts</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">{filtered.length} available</p>
       </div>
       <div className="flex gap-2">
         <div className="relative flex-1">

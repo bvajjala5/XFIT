@@ -134,25 +134,22 @@ export default function WorkoutDetail() {
   const hasAnyCustom = Object.keys(customDurations).length > 0;
 
   return (
-    <div className="min-h-screen">
-      {/* Hero image */}
-      <div className="relative h-72 md:h-96">
-        <img src={workout.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80'}
-          alt={workout.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 glass rounded-full p-2.5">
+    <div className="relative z-10 min-h-screen">
+      {/* Header */}
+      <div className="relative z-10 px-4 md:px-8 pt-6 max-w-4xl mx-auto">
+        <button onClick={() => navigate(-1)} aria-label="Back" className="glass rounded-full w-11 h-11 flex items-center justify-center">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="absolute bottom-6 left-4 right-4 md:left-8">
+        <div className="mt-5">
           <Badge className={`${typeColors[workout.type] || ''} border-0 mb-2 text-[10px] uppercase tracking-wider`}>
             {workout.type}
           </Badge>
-          <h1 className="text-3xl md:text-4xl font-bold">{workout.title}</h1>
-          <p className="text-muted-foreground mt-1">{workout.category?.replace(/_/g, ' ')}</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{workout.title}</h1>
+          <p className="text-muted-foreground mt-1 capitalize">{workout.category?.replace(/_/g, ' ')}</p>
         </div>
       </div>
 
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 -mt-4">
+      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 mt-2">
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2">
           {[
