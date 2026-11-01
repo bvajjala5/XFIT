@@ -26,7 +26,7 @@ export default function Workouts() {
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(query(collection(db, 'workouts'), orderBy('title')));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(w => w.id !== 'locked-in');
     }
   });
 

@@ -65,7 +65,7 @@ export default function WeeklyPlan() {
   })
   const { data: library = [] } = useQuery({
     queryKey: ['workouts'],
-    queryFn: async () => (await getDocs(collection(db, 'workouts'))).docs.map((d) => ({ id: d.id, ...d.data() })),
+    queryFn: async () => (await getDocs(collection(db, 'workouts'))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((w) => w.id !== 'locked-in'),
   })
 
   const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: ['schedule', uid] }), qc.invalidateQueries({ queryKey: ['custom-workouts', uid] })])

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -127,6 +127,7 @@ export default function WorkoutDetail() {
       <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
     </div>
   );
+  if (id === 'locked-in') return <Navigate to="/workouts" replace />;
   if (!workout) return (
     <div className="flex items-center justify-center min-h-screen text-muted-foreground">Workout not found</div>
   );
