@@ -359,3 +359,4 @@ export default function Profile() {
   );
 }
 const followingCount = 0; const followersCount = 0;
+const followerCount = 0;
