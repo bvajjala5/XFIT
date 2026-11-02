@@ -200,14 +200,14 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   }
 
   return (
-    <div className={`relative flex flex-col ${fullScreen ? 'h-full min-h-screen' : 'h-auto'}`}>
+    <div className={`relative flex flex-col ${fullScreen ? 'flex-1' : 'h-auto'}`}>
       {/* Map */}
-      <div className={`${fullScreen ? 'flex-1' : 'h-[400px]'} rounded-2xl overflow-hidden`}>
+      <div className={`${fullScreen ? 'flex-1' : 'h-[400px]'} rounded-2xl overflow-hidden relative`}>
         {currentPos ? (
           <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer
-              attribution=""
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapFollower position={currentPos} />
             {pathSegments.map((seg, i) => (

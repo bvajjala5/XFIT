@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Dumbbell, Footprints, Clock, Flame } from 'lucide-react';
+import { Search, Filter, Dumbbell, Footprints, Clock, Flame, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutCard from '@/components/shared/WorkoutCard';
 import { Input } from '@/components/ui/input';
@@ -151,17 +151,20 @@ export default function WorkoutsAndRun() {
       </div>
 
       {/* ── RUN SECTION ──────────────────────────────────────── */}
-      <AnimatePresence mode="wait">
-        {runSummary ? (
-          <motion.div key="summary" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-            <RunSummary summary={runSummary} userId={user?.uid} onClose={() => setRunSummary(null)}/>
-          </motion.div>
-        ) : (
-          <motion.div key="tracker" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-            <RunTracker onComplete={setRunSummary} fullScreen={false}/>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="flex items-center justify-between p-4 glass rounded-3xl active:scale-[0.98] transition-transform">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+            <Footprints className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold">Run Tracker</span>
+            <span className="text-xs text-muted-foreground">GPS Tracking & Pace</span>
+          </div>
+        </div>
+        <Link to="/run" className="p-2 rounded-full bg-primary/10 text-primary">
+          <ChevronRight className="w-5 h-5" />
+        </Link>
+      </div>
     </div>
   );
 }

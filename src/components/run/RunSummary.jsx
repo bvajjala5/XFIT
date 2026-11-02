@@ -7,6 +7,7 @@ import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, Share2, Rotat
 import { db } from '@/lib/firebase'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 function formatTime(s) {
   const m = Math.floor(s / 60)
@@ -15,6 +16,7 @@ function formatTime(s) {
 }
 
 export default function RunSummary({ summary, userId, onClose }) {
+  const navigate = useNavigate()
   const { distance = 0, elapsed = 0, steps = 0, calories = 0, pace = 0, splits = [] } = summary || {}
 
   const distKm = (distance / 1000).toFixed(2)
@@ -138,7 +140,7 @@ export default function RunSummary({ summary, userId, onClose }) {
 
       {/* Actions */}
       <div className="flex gap-3 pb-6">
-        <Button variant="outline" className="flex-1 rounded-xl h-12 gap-2" onClick={onClose}>
+        <Button variant="outline" className="flex-1 rounded-xl h-12 gap-2" onClick={() => navigate('/')}>
           <RotateCcw className="w-4 h-4" /> Done
         </Button>
         <Button className="flex-1 rounded-xl h-12 gap-2" onClick={saveRun}>
