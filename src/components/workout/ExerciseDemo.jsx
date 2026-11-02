@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as Tabs from '@radix-ui/react-tabs';
 import MuscleMapModel from '@/components/workout/MuscleMapModel';
 import { createMatcher } from '@/lib/exerciseLookup';
 
@@ -94,26 +95,50 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
   }
 
   return (
-    <div className="w-full max-w-sm mx-auto space-y-2">
-      <div className="flex items-center gap-2 rounded-2xl bg-black/30 p-2">
-        <div
-          className="relative flex-1 aspect-square rounded-xl overflow-hidden bg-white/5"
-          onClick={() => reduced && setFrame((f) => 1 - f)}
-        >
-          {!ready && <div className="absolute inset-0 animate-pulse bg-white/5" />}
-          {current.frames.map((url, i) => (
-            <img
-              key={url} src={url} alt={`${current.name} - ${i === 0 ? 'start' : 'end'} position`}
-              draggable={false}
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
-              style={{ opacity: ready && frame === i ? 1 : 0 }}
+    <div className="w-full max-w-sm mx-auto space-y-4">
+      <Tabs.Root defaultValue="demo" className="w-full">
+        <Tabs.List className="flex p-1 bg-black/30 rounded-xl mb-4">
+          <Tabs.Trigger
+            value="demo"
+            className="flex-1 py-1.5 text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground"
+          >
+            Demo
+          </Tabs.Trigger>
+          <Tabs.Trigger
+            value="map"
+            className="flex-1 py-1.5 text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground"
+          >
+            Body Map
+          </Tabs.Trigger>
+        </Tabs.List>
+
+        <Tabs.Content value="demo" className="outline-none">
+          <div
+            className="relative aspect-square rounded-2xl overflow-hidden bg-white/5"
+            onClick={() => reduced && setFrame((f) => 1 - f)}
+          >
+            {!ready && <div className="absolute inset-0 animate-pulse bg-white/5" />}
+            {current.frames.map((url, i) => (
+              <img
+                key={url} src={url} alt={`${current.name} - ${i === 0 ? 'start' : 'end'} position`}
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
+                style={{ opacity: ready && frame === i ? 1 : 0 }}
+              />
+            ))}
+          </div>
+        </Tabs.Content>
+
+        <Tabs.Content value="map" className="outline-none">
+          <div className="flex justify-center">
+            <MuscleMapModel
+              exerciseName={exerciseName}
+              muscles={{ primary: current.primary, secondary: current.secondary }}
             />
-          ))}
-        </div>
-        <div className="shrink-0" aria-label="Muscles worked">
-          <MuscleMapModel exerciseName={exerciseName} showLabel={false} scale={0.62} muscles={{ primary: current.primary, secondary: current.secondary }} />
-        </div>
-      </div>
+          </div>
+        </Tabs.Content>
+      </Tabs.Root>
+
       {reduced && ready && <p className="text-[10px] text-center text-muted-foreground">Tap the photo to switch between start and end position</p>}
 
       {matches.length > 1 && (
