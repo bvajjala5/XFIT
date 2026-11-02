@@ -74,7 +74,6 @@ async function getMockResponse(prompt = '') {
   await new Promise(resolve => setTimeout(resolve, 1500));
   const p = prompt.toLowerCase();
 
-  // Identify targets
   const targets = [];
   if (p.includes('bicep') || p.includes('arm')) targets.push('biceps');
   if (p.includes('tricep')) targets.push('triceps');
@@ -90,11 +89,9 @@ async function getMockResponse(prompt = '') {
     targets.push('fullbody');
   }
 
-  // Generate exercises based on targets
   const exercises = [];
   targets.forEach(cat => {
     const lib = EXERCISE_LIBRARY[cat];
-    // Pick 2-3 exercises per target category
     const count = Math.min(lib.length, 2 + Math.floor(Math.random() * 2));
     const shuffled = [...lib].sort(() => 0.5 - Math.random());
     shuffled.slice(0, count).forEach((ex, i) => {
@@ -102,7 +99,6 @@ async function getMockResponse(prompt = '') {
     });
   });
 
-  // Shuffle the final list
   const finalExercises = exercises.sort(() => 0.5 - Math.random());
 
   const workout = {
@@ -118,37 +114,6 @@ async function getMockResponse(prompt = '') {
 
 export async function callAI({ system, messages, maxTokens = 1000 }) {
   const userPrompt = messages?.find(m => m.role === 'user')?.content || '';
-
-  if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
-    return getMockResponse(userPrompt);
-  }
-
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Please sign in to use AI features.');
-
-    const token = await user.getIdToken();
-    const res = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ system, messages, maxTokens }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || `AI error ${res.status}`);
-    }
-
-    const data = await res.json();
-    if (!data.text) throw new Error('No response from AI');
-
-    return data.text;
-  } catch (err) {
-    console.warn('AI request failed, falling back to mock:', err);
-    if (err.message.includes('sign in')) throw err;
-    return getMockResponse(userPrompt);
-  }
-}.role === 'user')?.content || '';
 
   if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
     return getMockResponse(userPrompt);
