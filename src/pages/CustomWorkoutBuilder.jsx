@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore'
 import { useQueryClient } from '@tanstack/react-query'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Sparkles, Play, Pencil, ChevronRight, ChevronLeft, Trash2, Plus, Clock, Flame, Dumbbell } from 'lucide-react'
+import { Loader2, Sparkles, Play, Pencil, ChevronRight, ChevronLeft, Trash2, Plus, Clock, Flame, Dumbbell, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { callAI } from '@/lib/ai'
 
@@ -23,6 +23,7 @@ const EXAMPLE_PROMPTS = [
   'Leg day: squats, lunges, hip raises — 30 mins intermediate',
   "Intense 20 min dumbbell strength circuit",
   '5 min abs finisher after any workout',
+  'Weekly plan for weight loss and muscle gain',
 ]
 
 function guessAnimation(name) {
@@ -51,12 +52,14 @@ export default function CustomWorkoutBuilder() {
   const [workoutName, setWorkoutName] = useState('')
   const [exercises, setExercises] = useState([])
   const [saving, setSaving] = useState(false)
+  const [isPlan, setIsPlan] = useState(false)
+  const [plan, setPlan] = useState(null)
 
   async function generateWorkout() {
     if (!prompt.trim()) { toast.error('Describe your workout first'); return }
     setLoading(true)
     try {
-      const systemPrompt = `You are a personal trainer AI that creates structured workouts. 
+      const systemPrompt = `You are a personal trainer AI that creates structured workouts.
 Given a workout description, respond ONLY with valid JSON (no markdown fences, no extra text) in this exact shape:
 {
   "name": "Workout Name",
@@ -74,6 +77,15 @@ Given a workout description, respond ONLY with valid JSON (no markdown fences, n
     }
   ]
 }
+OR if they ask for a plan/weekly schedule:
+{
+  "type": "plan",
+  "plan": {
+    "Monday": { "type": "workout", "workout_title": "Chest Day", "workout_duration": 45, "exercises": [...] },
+    "Tuesday": { "type": "rest", "label": "Rest Day" },
+    ...
+  }
+}
 Rules:
 - duration_seconds: how long to perform the exercise (or null if pure reps)
 - reps: can be a number string like "12" or a range like "8-12" or "To failure"
@@ -82,15 +94,23 @@ Rules:
       const text = await callAI({ system: systemPrompt, messages: [{ role: 'user', content: prompt }], maxTokens: 1500 })
       const clean = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
-      setWorkoutName(parsed.name || 'My Workout')
-      setExercises(
-        (parsed.exercises || []).map((ex, i) => ({
-          ...ex,
-          id: `ex-${i}-${Date.now()}`,
-          animation: guessAnimation(ex.name),
-        }))
-      )
-      setStep(2)
+
+      if (parsed.type === 'plan') {
+        setIsPlan(true)
+        setPlan(parsed.plan)
+        setStep(2)
+      } else {
+        setIsPlan(false)
+        setWorkoutName(parsed.name || 'My Workout')
+        setExercises(
+          (parsed.exercises || []).map((ex, i) => ({
+            ...ex,
+            id: `ex-${i}-${Date.now()}`,
+            animation: guessAnimation(ex.name),
+          }))
+        )
+        setStep(2)
+      }
     } catch (err) {
       console.error(err)
       toast.error('Failed to generate workout. Check your API key.')
@@ -139,6 +159,44 @@ Rules:
     }
   }
 
+  async function savePlanToSchedule() {
+    setSaving(true)
+    try {
+      const days = Object.entries(plan);
+      for (const [day, data] of days) {
+        if (data.type === 'rest') {
+          await setDoc(doc(db, 'users', user.uid, 'schedule', day), {
+            is_rest_day: true,
+            label: 'Rest Day'
+          });
+        } else {
+          const workoutDoc = await addDoc(collection(db, 'users', user.uid, 'customWorkouts'), {
+            name: data.workout_title,
+            exercises: data.exercises.map((ex, i) => ({ ...ex, id: `ex-${day}-${i}-${Date.now()}` })),
+            prompt: prompt,
+            created_at: serverTimestamp(),
+            estimated_duration: data.workout_duration,
+          });
+
+          await setDoc(doc(db, 'users', user.uid, 'schedule', day), {
+            workout_id: workoutDoc.id,
+            workout_title: data.workout_title,
+            workout_duration: data.workout_duration,
+            custom: true
+          });
+        }
+      }
+      queryClient.invalidateQueries(['schedule', user?.uid]);
+      toast.success('Weekly plan saved to schedule!');
+      navigate('/weekly-plan');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save plan');
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 pb-24">
       {/* Header */}
@@ -151,10 +209,10 @@ Rules:
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Pencil className="w-6 h-6 text-primary" />
-            {step === 1 ? 'Build Workout' : 'Preview & Edit'}
+            {step === 1 ? 'Build Workout' : isPlan ? 'Preview Weekly Plan' : 'Preview & Edit'}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {step === 1 ? 'Describe your workout — AI structures it for you' : 'Tweak exercises before starting'}
+            {step === 1 ? 'Describe your workout — AI structures it for you' : isPlan ? 'Your AI-generated weekly split' : 'Tweak exercises before starting'}
           </p>
         </div>
       </motion.div>
@@ -191,6 +249,32 @@ Rules:
                   </button>
                 ))}
               </div>
+            </div>
+          </motion.div>
+        ) : isPlan ? (
+          <motion.div key="step2plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <div className="space-y-3">
+              {Object.entries(plan).map(([day, data]) => (
+                <GlassCard key={day} className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 font-bold text-sm text-primary">{day}</div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">{data.label || data.workout_title}</span>
+                      {data.type === 'workout' && <span className="text-[10px] text-muted-foreground">{data.workout_duration} min · {data.exercises?.length} exercises</span>}
+                    </div>
+                  </div>
+                  {data.type === 'rest' ? <Badge variant="secondary" className="text-[10px]">Rest</Badge> : <Badge className="text-[10px]">Workout</Badge>}
+                </GlassCard>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1 rounded-xl h-12 gap-2" onClick={() => setStep(1)} disabled={saving}>
+                Re-generate
+              </Button>
+              <Button className="flex-1 rounded-xl h-12 gap-2" onClick={savePlanToSchedule} disabled={saving}>
+                <Calendar className="w-4 h-4" />
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save to Schedule'}
+              </Button>
             </div>
           </motion.div>
         ) : (
