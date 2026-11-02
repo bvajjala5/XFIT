@@ -24,6 +24,7 @@ const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
 const Profile = lazy(() => import('@/pages/Profile'))
+const Stats = lazy(() => import('@/pages/Stats'))
 const HealthHub = lazy(() => import('@/pages/HealthHub'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
@@ -85,7 +86,7 @@ export default function App() {
         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />
         {/* Redirects for old routes */}
         <Route path="ranks" element={<Navigate to="/" replace />} />
-        <Route path="stats" element={<Navigate to="/" replace />} />
+        <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
         <Route path="leaderboard" element={<Navigate to="/" replace />} />
         <Route path="friends" element={<Navigate to="/profile" replace />} />
         <Route path="progress" element={<Navigate to="/" replace />} />

@@ -7,22 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { applyTheme } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Moon, ChevronDown, ChevronUp, Pencil, Check, X, Palette, Utensils, Footprints, Target, Trophy, ChevronRight } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
-
-const GOAL_CATEGORIES = [
-  {key:'workout',Icon:Dumbbell,label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
-  {key:'nutrition',Icon:Utensils,label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
-  {key:'sleep',Icon:Moon,label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
-  {key:'activity',Icon:Footprints,label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
-];
 
 export default function Profile() {
   const { user, userData, updateUserData, logout } = useAuth();
@@ -30,19 +20,10 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
-  const [recentOpen, setRecentOpen] = useState(false);
-  const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
-  const [editingGoal, setEditingGoal] = useState(null);
-  const [editGoalVal, setEditGoalVal] = useState('');
-  const [goalData, setGoalData] = useState({});
 
   useEffect(() => {
     if (userData) {
       setForm({fitness_goal:userData.fitness_goal||'',experience_level:userData.experience_level||'',preferred_types:userData.preferred_types||[],distance_unit:userData.distance_unit||'miles'});
-      const saved = userData.goals||{};
-      const result = {};
-      GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
-      setGoalData(result);
     }
   }, [userData]);
 
@@ -63,33 +44,6 @@ export default function Profile() {
     setEditing(false);
   };
 
-  const saveGoal = async (id, newVal) => {
-    const prev = goalData[id]?.current;
-    const history = [...(goalData[id]?.history||[]),{value:prev,updatedAt:new Date().toISOString()}];
-    const updated = {...goalData,[id]:{current:newVal,history}};
-    setGoalData(updated);
-    setEditingGoal(null);
-    await updateUserData({goals:updated});
-    // Sync to localStorage so WaterTracker, MealTracker, HealthHub pick up changes
-    const v = Number(newVal);
-    if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
-    if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
-    if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
-    if (id === 'active_calories') localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
-    if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
-    if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
-    if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
-    if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
-    if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
-      const ng = JSON.parse(localStorage.getItem('xfit_nutrition_goals') || '{"calories":2000,"protein":150,"carbs":250,"fat":65}');
-      const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
-      ng[km[id]] = v;
-      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
-      window.dispatchEvent(new Event('storage'));
-    }
-    if (id === 'daily_water') window.dispatchEvent(new Event('storage'));
-  };
-
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
@@ -102,12 +56,6 @@ export default function Profile() {
 
   const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
   const totalCals = logs.reduce((s,l)=>s+(l.calories_burned||0),0);
-
-  function getTrend(current, prev) {
-    if (prev==null) return null;
-    const c=parseFloat(current), p=parseFloat(prev);
-    if (c>p) return 'up'; if (c<p) return 'down'; return 'same';
-  }
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
@@ -150,71 +98,6 @@ export default function Profile() {
           </div>
         )}
       </GlassCard>
-      <GlassCard className="space-y-3">
-        <h2 className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> My Goals</h2>
-        {GOAL_CATEGORIES.map(cat=>(
-          <div key={cat.key}>
-            <button className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" onClick={()=>setGoalExpanded(e=>({...e,[cat.key]:!e[cat.key]}))}>
-              <span className="flex items-center gap-2"><cat.Icon className="w-4 h-4" />{cat.label}</span>{goalExpanded[cat.key]?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}
-            </button>
-            {goalExpanded[cat.key] && (
-              <div className="space-y-2 pb-2">
-                {cat.goals.map(g=>{
-                  const gd=goalData[g.id]||{current:g.default,history:[]};
-                  const prev=gd.history?.slice(-1)[0]?.value;
-                  const trend=getTrend(gd.current,prev);
-                  const isEdit=editingGoal===g.id;
-                  return (
-                    <div key={g.id} className="flex items-center justify-between gap-2 bg-secondary/30 rounded-xl px-3 py-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium truncate">{g.label}</div>
-                        {prev!=null&&<div className="text-[10px] text-muted-foreground">Previously: {prev} {g.unit}</div>}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {trend==='up'&&<span className="text-green-400 text-xs font-bold">↑</span>}
-                        {trend==='down'&&<span className="text-red-400 text-xs font-bold">↓</span>}
-                        {isEdit ? (
-                          <div className="flex items-center gap-1">
-                            <Input value={editGoalVal} onChange={e=>setEditGoalVal(e.target.value)} className="w-20 h-7 text-xs bg-background border-border rounded-lg px-2" autoFocus/>
-                            <button onClick={()=>saveGoal(g.id,editGoalVal)} className="text-green-400 p-1"><Check className="w-3 h-3"/></button>
-                            <button onClick={()=>setEditingGoal(null)} className="text-muted-foreground p-1"><X className="w-3 h-3"/></button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-primary">{gd.current} <span className="text-[10px] text-muted-foreground font-normal">{g.unit}</span></span>
-                            <button onClick={()=>{setEditingGoal(g.id);setEditGoalVal(String(gd.current));}} className="text-muted-foreground hover:text-foreground p-1"><Pencil className="w-3 h-3"/></button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
-      </GlassCard>
-      {logs.length>0 && (
-        <div className="glass rounded-2xl overflow-hidden">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors" onClick={()=>setRecentOpen(o=>!o)}>
-            <h2 className="font-semibold text-sm">Recent Workouts</h2>
-            {recentOpen?<ChevronUp className="w-4 h-4 text-muted-foreground"/>:<ChevronDown className="w-4 h-4 text-muted-foreground"/>}
-          </button>
-          <div style={{maxHeight:recentOpen?'600px':'0',overflow:'hidden',transition:'max-height 0.3s ease'}}>
-            <div className="px-4 pb-4 space-y-2">
-              {logs.slice(0,10).map((log,i)=>(
-                <motion.div key={log.id} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.03}} className="glass rounded-xl p-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-sm">{log.workout_title}</div>
-                    <div className="text-[11px] text-muted-foreground">{log.completedAt?.toDate?format(log.completedAt.toDate(),'MMM d, yyyy'):'—'} · {Math.round((log.duration_seconds||0)/60)} min</div>
-                  </div>
-                  <div className="text-xs text-primary font-semibold">{log.calories_burned||0} cal</div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
       <GlassCard className="space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Palette className="w-4 h-4 text-primary" />
