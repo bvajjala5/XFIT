@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, Plus } from 'lucide-react';
+import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, Plus, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
