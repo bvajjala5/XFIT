@@ -32,25 +32,42 @@ const MOCK_WORKOUTS = [
   }
 ];
 
+async function getMockResponse() {
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  const mock = MOCK_WORKOUTS[Math.floor(Math.random() * MOCK_WORKOUTS.length)];
+  return JSON.stringify(mock);
+}
+
 export async function callAI({ system, messages, maxTokens = 1000 }) {
-  if (!PROXY_URL) {
-    // Mock AI response for development
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network lag
-    const mock = MOCK_WORKOUTS[Math.floor(Math.random() * MOCK_WORKOUTS.length)];
-    return JSON.stringify(mock);
+  // 1. Immediate fallback if URL is missing or looks like a placeholder
+  if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
+    return getMockResponse();
   }
-  const user = auth.currentUser;
-  if (!user) throw new Error('Please sign in to use AI features.');
 
-  const token = await user.getIdToken();
-  const res = await fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ system, messages, maxTokens }),
-  });
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Please sign in to use AI features.');
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `AI error ${res.status}`);
-  if (!data.text) throw new Error('No response from AI');
-  return data.text;
+    const token = await user.getIdToken();
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ system, messages, maxTokens }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || `AI error ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.text) throw new Error('No response from AI');
+
+    return data.text;
+  } catch (err) {
+    console.warn('AI request failed, falling back to mock:', err);
+    // Only fallback to mock if it's not an authentication error
+    if (err.message.includes('sign in')) throw err;
+    return getMockResponse();
+  }
 }
