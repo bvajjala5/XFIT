@@ -3,19 +3,21 @@ import { useAuth } from '@/lib/AuthContext';
 import RunTracker from '@/components/run/RunTracker';
 import RunSummary from '@/components/run/RunSummary';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { useQuery } from '@tanstack/react-query';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Dumbbell, Footprints, Clock, Flame, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutCard from '@/components/shared/WorkoutCard';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 const TYPES = ['All','hiit','strength','cardio','yoga','mobility'];
 const DIFFICULTIES = ['All','beginner','intermediate','advanced'];
 
 export default function WorkoutsAndRun() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [type, setType] = useState('All');
   const [difficulty, setDifficulty] = useState('All')
@@ -27,9 +29,22 @@ export default function WorkoutsAndRun() {
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(collection(db, 'workouts'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(w => w.id !== 'locked-in');
+      return snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: false })).filter(w => w.id !== 'locked-in');
     },
   });
+
+  const { data: customWorkouts = [], isLoading: customLoading } = useQuery({
+    queryKey: ['custom-workouts', user?.uid],
+    queryFn: async () => {
+      if (!user) return []
+      const snap = await getDocs(collection(db, 'users', user.uid, 'customWorkouts'))
+      return snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }))
+    },
+    enabled: !!user,
+  });
+
+  const allWorkouts = [...workouts, ...customWorkouts];
+  const isLoading = workoutsLoading || customLoading;
 
   const MUSCLE_MAP = {
     Chest: ['chest','push','press','fly'],
@@ -41,17 +56,34 @@ export default function WorkoutsAndRun() {
     Glutes: ['glute','hip raise','bridge','bulgarian'],
   }
 
-  const filtered = workouts.filter(w => {
-    const matchSearch = !search || w.title?.toLowerCase().includes(search.toLowerCase()) || w.trainer?.toLowerCase().includes(search.toLowerCase());
+  const filtered = allWorkouts.filter(w => {
+    const title = w.title || w.name || '';
+    const trainer = w.trainer || '';
+    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase()) || trainer.toLowerCase().includes(search.toLowerCase());
     const matchType = type === 'All' || w.type === type;
     const matchDiff = difficulty === 'All' || w.difficulty === difficulty;
     const matchMuscle = muscleGroup === 'All' || (MUSCLE_MAP[muscleGroup] || []).some(kw =>
-      w.title?.toLowerCase().includes(kw) ||
+      title.toLowerCase().includes(kw) ||
       w.category?.toLowerCase().includes(kw) ||
       w.exercises?.some(e => e.name?.toLowerCase().includes(kw))
     );
     return matchSearch && matchType && matchDiff && matchMuscle;
   });
+
+  async function handleDeleteWorkout(workout) {
+    if (!workout.isCustom) return;
+
+    if (!confirm(`Are you sure you want to delete "${workout.title || workout.name}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'customWorkouts', workout.id));
+      qc.invalidateQueries(['custom-workouts', user.uid]);
+      toast.success('Workout deleted');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete workout');
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-7 pb-28 space-y-5">
@@ -62,7 +94,7 @@ export default function WorkoutsAndRun() {
           <h1 className="text-2xl font-black flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-primary"/> Workouts
           </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{workouts.length} workouts available</p>
+          <p className="text-muted-foreground text-sm mt-0.5">{allWorkouts.length} workouts available</p>
         </div>
         <div className="flex items-center">
         <Link to="/plan">
@@ -116,7 +148,7 @@ export default function WorkoutsAndRun() {
         ))}
       </div>
 
-      {workoutsLoading && (
+      {isLoading && (
         <div className="grid grid-cols-2 gap-3">
           {[1,2,3,4,5,6].map(i => (
             <div key={i} className="bg-card border border-border/60 rounded-2xl overflow-hidden">
@@ -130,14 +162,14 @@ export default function WorkoutsAndRun() {
         </div>
       )}
       {/* Workout grid */}
-      {!workoutsLoading && filtered.length === 0 ? (
+      {!isLoading && filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Dumbbell className="w-10 h-10 mx-auto mb-3 opacity-30"/>
           <p>No workouts found</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((w, i) => <WorkoutCard key={w.id} workout={w} index={i}/>)}
+          {filtered.map((w, i) => <WorkoutCard key={w.id} workout={w} index={i} isCustom={w.isCustom} onDelete={handleDeleteWorkout}/>)}
         </div>
       )}
 
