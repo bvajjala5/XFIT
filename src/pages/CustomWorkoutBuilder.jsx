@@ -164,21 +164,22 @@ Rules:
     try {
       const days = Object.entries(plan);
       for (const [day, data] of days) {
+        const dayKey = day.toLowerCase();
         if (data.type === 'rest') {
-          await setDoc(doc(db, 'users', user.uid, 'schedule', day), {
+          await setDoc(doc(db, 'users', user.uid, 'schedule', dayKey), {
             is_rest_day: true,
             label: 'Rest Day'
           });
         } else {
           const workoutDoc = await addDoc(collection(db, 'users', user.uid, 'customWorkouts'), {
             name: data.workout_title,
-            exercises: data.exercises.map((ex, i) => ({ ...ex, id: `ex-${day}-${i}-${Date.now()}` })),
+            exercises: data.exercises.map((ex, i) => ({ ...ex, id: `ex-${dayKey}-${i}-${Date.now()}` })),
             prompt: prompt,
             created_at: serverTimestamp(),
             estimated_duration: data.workout_duration,
           });
 
-          await setDoc(doc(db, 'users', user.uid, 'schedule', day), {
+          await setDoc(doc(db, 'users', user.uid, 'schedule', dayKey), {
             workout_id: workoutDoc.id,
             workout_title: data.workout_title,
             workout_duration: data.workout_duration,
