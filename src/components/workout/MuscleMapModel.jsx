@@ -79,9 +79,24 @@ const SECONDARY = '#f97316';
 const BASE = 'hsl(var(--secondary, #1e293b))';
 const STROKE = 'hsl(var(--border, #334155))';
 
-export default function MuscleMapModel({ exerciseName = '', showLabel = true }) {
+// Free Exercise DB muscle names -> body-map regions
+const DB_MUSCLES = {
+  quadriceps: ['quad_l', 'quad_r'], hamstrings: ['ham_l', 'ham_r'], glutes: ['glute_l', 'glute_r'],
+  calves: ['calf_l', 'calf_r'], abdominals: ['abs', 'oblique_l', 'oblique_r'], chest: ['chest_l', 'chest_r'],
+  biceps: ['biceps_l', 'biceps_r'], triceps: ['triceps_l', 'triceps_r'], lats: ['lat_l', 'lat_r'],
+  'middle back': ['upper_back'], 'lower back': ['lower_back'], traps: ['upper_back'],
+  shoulders: ['front_delt_l', 'front_delt_r', 'side_delt_l', 'side_delt_r', 'rear_delt_l', 'rear_delt_r'],
+  adductors: ['quad_l', 'quad_r'], abductors: ['glute_l', 'glute_r'],
+};
+const fromDb = (list = []) => [...new Set(list.flatMap((m) => DB_MUSCLES[m] || []))];
+
+export default function MuscleMapModel({ exerciseName = '', showLabel = true, scale = 1, muscles = null }) {
   if (!exerciseName) return null;
-  const { primary, secondary } = getMuscles(exerciseName);
+  const guessed = getMuscles(exerciseName);
+  const dbPrimary = muscles ? fromDb(muscles.primary) : [];
+  const useDb = dbPrimary.length > 0;
+  const primary = useDb ? dbPrimary : guessed.primary;
+  const secondary = useDb ? fromDb(muscles.secondary).filter((id) => !dbPrimary.includes(id)) : guessed.secondary;
 
   const fill = (id) => {
     if (primary.includes(id)) return PRIMARY;
@@ -123,7 +138,7 @@ export default function MuscleMapModel({ exerciseName = '', showLabel = true }) 
         {/* FRONT VIEW */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'hsl(var(--muted-foreground, #94a3b8))', margin: 0 }}>Front</p>
-          <svg width="90" height="200" viewBox="0 0 90 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width={90 * scale} height={200 * scale} viewBox="0 0 90 200" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* HEAD */}
             <ellipse cx="45" cy="13" rx="10" ry="12" fill={BASE} stroke={STROKE} strokeWidth="0.8"/>
             {/* NECK */}
@@ -179,7 +194,7 @@ export default function MuscleMapModel({ exerciseName = '', showLabel = true }) 
         {/* BACK VIEW */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'hsl(var(--muted-foreground, #94a3b8))', margin: 0 }}>Back</p>
-          <svg width="90" height="200" viewBox="0 0 90 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width={90 * scale} height={200 * scale} viewBox="0 0 90 200" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* HEAD */}
             <ellipse cx="45" cy="13" rx="10" ry="12" fill={BASE} stroke={STROKE} strokeWidth="0.8"/>
             {/* NECK */}

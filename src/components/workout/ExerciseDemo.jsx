@@ -38,7 +38,6 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
   const [indexFailed, setIndexFailed] = useState(false);  // the exercise list couldn't load
   const [imgFailed, setImgFailed] = useState(false);      // this exercise's photos couldn't load
   const [alt, setAlt] = useState(0);                    // which alternative (e.g. "Push-Ups or Diamond Push-Ups")
-  const [tab, setTab] = useState('demo');               // 'demo' | 'muscles'
   const [frame, setFrame] = useState(0);
   const [ready, setReady] = useState(false);            // both photos downloaded
   const reduced = usePrefersReducedMotion();
@@ -50,7 +49,7 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
   const current = matches?.[Math.min(alt, (matches?.length || 1) - 1)] || null;
 
   // New exercise → start from its first alternative and the demo tab.
-  useEffect(() => { setAlt(0); setTab('demo'); setImgFailed(false); }, [exerciseName]);
+  useEffect(() => { setAlt(0); setImgFailed(false); }, [exerciseName]);
 
   // Download both photos before animating, so we never flash a half-loaded frame.
   useEffect(() => {
@@ -70,10 +69,10 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
   // Flip between the two poses.
   useEffect(() => {
     clearInterval(timer.current);
-    if (!ready || reduced || tab !== 'demo') return;
+    if (!ready || reduced) return;
     timer.current = setInterval(() => setFrame((f) => 1 - f), FRAME_MS);
     return () => clearInterval(timer.current);
-  }, [ready, reduced, tab, current?.id]);
+  }, [ready, reduced, current?.id]);
 
   // Warm the browser cache for the next exercise so its demo appears instantly.
   useEffect(() => {
@@ -96,36 +95,26 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
 
   return (
     <div className="w-full max-w-sm mx-auto space-y-2">
-      <div className="flex justify-center gap-1 text-xs" role="tablist" aria-label="Exercise view">
-        {[['demo', 'Demo'], ['muscles', 'Muscle map']].map(([key, label]) => (
-          <button
-            key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
-            className={`px-3 py-1 rounded-full transition-colors ${tab === key ? 'bg-primary/20 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-          >{label}</button>
-        ))}
+      <div className="flex items-center gap-2 rounded-2xl bg-black/30 p-2">
+        <div
+          className="relative flex-1 aspect-square rounded-xl overflow-hidden bg-white/5"
+          onClick={() => reduced && setFrame((f) => 1 - f)}
+        >
+          {!ready && <div className="absolute inset-0 animate-pulse bg-white/5" />}
+          {current.frames.map((url, i) => (
+            <img
+              key={url} src={url} alt={`${current.name} - ${i === 0 ? 'start' : 'end'} position`}
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
+              style={{ opacity: ready && frame === i ? 1 : 0 }}
+            />
+          ))}
+        </div>
+        <div className="shrink-0" aria-label="Muscles worked">
+          <MuscleMapModel exerciseName={exerciseName} showLabel={false} scale={0.62} muscles={{ primary: current.primary, secondary: current.secondary }} />
+        </div>
       </div>
-
-      {tab === 'demo' ? (
-        <>
-          <div
-            className="relative w-full aspect-[3/2] rounded-2xl overflow-hidden bg-black/30"
-            onClick={() => reduced && setFrame((f) => 1 - f)}
-          >
-            {!ready && <div className="absolute inset-0 animate-pulse bg-white/5" />}
-            {current.frames.map((url, i) => (
-              <img
-                key={url} src={url} alt={`${current.name} – ${i === 0 ? 'start' : 'end'} position`}
-                draggable={false}
-                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
-                style={{ opacity: ready && frame === i ? 1 : 0 }}
-              />
-            ))}
-          </div>
-          {reduced && ready && <p className="text-[10px] text-center text-muted-foreground">Tap the photo to switch between start and end position</p>}
-        </>
-      ) : (
-        <MuscleMapModel exerciseName={exerciseName} />
-      )}
+      {reduced && ready && <p className="text-[10px] text-center text-muted-foreground">Tap the photo to switch between start and end position</p>}
 
       {matches.length > 1 && (
         <div className="flex flex-wrap justify-center gap-1.5">
