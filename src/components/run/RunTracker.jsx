@@ -184,16 +184,22 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
 
   if (status === 'idle') {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-12">
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-          <Navigation className="w-10 h-10 text-primary" />
+      <div className="h-full w-full flex flex-col items-center justify-center gap-8 p-6 text-center">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center shadow-xl shadow-primary/10"
+        >
+          <Navigation className="w-12 h-12 text-primary" />
+        </motion.div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black tracking-tight">Start a Run</h2>
+          <p className="text-muted-foreground text-sm max-w-[240px] mx-auto leading-relaxed">
+            GPS tracking • Pace coloring • Auto splits
+          </p>
         </div>
-        <div className="text-center">
-          <h2 className="text-xl font-bold">Start a Run</h2>
-          <p className="text-muted-foreground text-sm mt-1">GPS tracking • Pace coloring • Auto splits</p>
-        </div>
-        <Button onClick={startRun} size="lg" className="rounded-full w-40 h-14 text-lg gap-2">
-          <Play className="w-5 h-5 fill-current" /> Go
+        <Button onClick={startRun} size="lg" className="rounded-full w-44 h-16 text-xl font-bold gap-3 shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+          <Play className="w-6 h-6 fill-current" /> Go
         </Button>
       </div>
     )
