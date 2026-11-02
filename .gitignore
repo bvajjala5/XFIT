@@ -12,3 +12,4 @@ worker/.dev.vars
 # OS / editor junk
 .DS_Store
 **/.DS_Store
+.env
