@@ -6,12 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Play, Pause, SkipForward, X, Trophy, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2 } from 'lucide-react';
+import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import { toast } from 'sonner';
 import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
+import { savePR } from '@/lib/personalRecords';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
 const GOOD_VOICES = [
@@ -179,12 +180,19 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
 
 
-  // Post-workout modal
   const [showLogModal, setShowLogModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [logDifficulty, setLogDifficulty] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [sharing, setSharing] = useState(false);
+
+  // PR State
+  const [showPRModal, setShowPRModal] = useState(false);
+  const [prExercise, setPrExercise] = useState(null);
+  const [prValue, setPrValue] = useState('');
+  const [prUnit, setPrUnit] = useState('lbs');
+  const [prNotes, setPrNotes] = useState('');
+  const [savingPR, setSavingPR] = useState(false);
 
   const timerRef = useRef(null);
   const timeLeftRef = useRef(0);
@@ -327,6 +335,24 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     navigate('/');
   };
 
+  const handleSavePR = async () => {
+    if (!prExercise || !prValue) { toast.error('Please enter a value'); return; }
+    setSavingPR(true);
+    try {
+      await savePR(user.uid, prExercise, prValue, prUnit, prNotes);
+      toast.success(`New PR for ${prExercise}!`);
+      setShowPRModal(false);
+      setPrExercise(null);
+      setPrValue('');
+      setPrNotes('');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save PR');
+    } finally {
+      setSavingPR(false);
+    }
+  };
+
   const handleShare = async () => {
     setSharing(true);
     try {
@@ -380,6 +406,9 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           <div className="flex gap-3">
             <Button className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowLogModal(true)}>
               Log Workout <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Button variant="secondary" className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowPRModal(true)}>
+              <Trophy className="w-5 h-5 mr-2" /> New PR
             </Button>
             <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl shrink-0" onClick={handleShare} disabled={sharing}>
               {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
@@ -455,6 +484,68 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
                     Save and log
                   </button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── PR MODAL ── */}
+        <AnimatePresence>
+          {showPRModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+                transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                  </div>
+                  <h2 className="text-xl font-black">New Personal Record!</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Celebrate your growth</p>
+                </div>
+
+                {!prExercise ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-none">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center mb-2">Select Exercise</p>
+                    {exercises.map((ex, i) => (
+                      <button key={i} onClick={() => setPrExercise(ex.name)}
+                        className="w-full p-3 text-left bg-secondary/40 hover:bg-primary/20 rounded-xl transition-colors flex items-center justify-between group">
+                        <span className="text-sm font-medium">{ex.name}</span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-primary">{prExercise}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Value" value={prValue}
+                        onChange={e => setPrValue(e.target.value)}
+                        className="flex-1 bg-background border border-border/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
+                      <select value={prUnit} onChange={e => setPrUnit(e.target.value)}
+                        className="bg-background border border-border/40 rounded-xl px-3 py-2 text-sm outline-none">
+                        <option>lbs</option><option>kg</option><option>reps</option><option>sec</option><option>min</option>
+                      </select>
+                    </div>
+                    <input placeholder="Notes (optional)" value={prNotes}
+                      onChange={e => setPrNotes(e.target.value)}
+                      className="w-full bg-background border border-border/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
+                    <div className="flex gap-2">
+                      <button onClick={() => setPrExercise(null)}
+                        className="flex-1 h-11 rounded-2xl bg-secondary/50 text-sm font-semibold hover:bg-secondary transition-colors">
+                        Back
+                      </button>
+                      <button onClick={handleSavePR} disabled={savingPR}
+                        className="flex-1 h-11 rounded-2xl primary-gradient text-white text-sm font-bold active:scale-[0.98] transition-transform disabled:opacity-50">
+                        {savingPR ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Save Record'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <Button variant="ghost" className="w-full" onClick={() => { setShowPRModal(false); setPrExercise(null); }}>Cancel</Button>
               </motion.div>
             </motion.div>
           )}
