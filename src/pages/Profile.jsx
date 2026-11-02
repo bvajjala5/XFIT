@@ -21,10 +21,10 @@ import { format } from 'date-fns';
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 const GOAL_CATEGORIES = [
-  {key:'workout',label:'💪 Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
-  {key:'nutrition',label:'🥗 Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
-  {key:'sleep',label:'😴 Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
-  {key:'activity',label:'🏃 Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
+  {key:'workout',label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
+  {key:'nutrition',label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
+  {key:'sleep',label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
+  {key:'activity',label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
 ];
 
 export default function Profile() {
@@ -33,26 +33,6 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
-  const [lbPrivacy, setLbPrivacy] = useState({ joined: true, name: null });
-  const [lbNameInput, setLbNameInput] = useState('');
-  const saveLbPrivacy = async (update) => {
-    const next = { ...lbPrivacy, ...update };
-    setLbPrivacy(next);
-    localStorage.setItem('xfit_lb_privacy', JSON.stringify(next));
-    // Save to Firestore so it's user-specific
-    await updateUserData({ lbPrivacy: next });
-    // Sync with Firestore
-    if (user) {
-      const lbRef = doc(db, 'leaderboard', user.uid);
-      if (next.joined === false) {
-        // Remove from leaderboard
-        try { await deleteDoc(lbRef); } catch(e) {}
-      } else if (next.name !== undefined) {
-        // Update display name
-        try { await setDoc(lbRef, { displayName: next.name || user.displayName?.split(' ')[0] || 'Athlete' }, { merge: true }); } catch(e) {}
-      }
-    }
-  };
   const [recentOpen, setRecentOpen] = useState(false);
   const [showSupportInfo, setShowSupportInfo] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
@@ -60,6 +40,7 @@ export default function Profile() {
   const [editGoalVal, setEditGoalVal] = useState('');
   const [goalData, setGoalData] = useState({});
   const queryClient = useQueryClient();
+
 
   useEffect(() => {
     if (userData) {
@@ -87,29 +68,10 @@ export default function Profile() {
     enabled: !!user
   });
 
-  const { data: followingCount = 0 } = useQuery({
-    queryKey: ['following-count', user?.uid],
-    queryFn: async () => {
-      const snap = await getDocs(collection(db, 'users', user.uid, 'following'));
-      return snap.size;
-    },
-    enabled: !!user,
-    refetchOnWindowFocus: true,
-    staleTime: 15_000,
-  });
 
-  const { data: followerCount = 0 } = useQuery({
-    queryKey: ['follower-count', user?.uid],
-    queryFn: async () => {
-      if (!user) return 0;
-      const snap = await getDocs(collection(db, 'users', user.uid, 'followers'));
-      return snap.size;
-    },
-    enabled: !!user,
-    refetchOnWindowFocus: true,
-    staleTime: 15_000,
-  });
-  const newFollowers = useNewFollowers();
+
+
+
   const toggleTheme = () => {
     const next = theme==='dark'?'light':'dark';
     setTheme(next);
