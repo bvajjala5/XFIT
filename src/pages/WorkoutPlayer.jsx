@@ -41,6 +41,22 @@ function pickVoice() {
   return list.find(v => v.name === saved) || list[0] || null;
 }
 
+function playBeep(freq = 440, duration = 0.1) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { console.warn('Audio failed', e); }
+}
+
 function cleanForSpeech(text) {
   return text
     .replace(/\bSpO2\b/gi, 'blood oxygen').replace(/(\d+)\s*x\s*(\d+)/gi, '$1 by $2')
@@ -171,6 +187,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const customDurations = customDurationsParam ? JSON.parse(decodeURIComponent(customDurationsParam)) : null;
 
   const [currentEx, setCurrentEx] = useState(0);
+  const [currentSet, setCurrentSet] = useState(1);
+  const [isResting, setIsResting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -196,8 +214,12 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   const timerRef = useRef(null);
   const timeLeftRef = useRef(0);
-  const [voiceName, setVoiceName] = useState(() => pickVoice()?.name || '');
-  const announcedRef = useRef({ exIndex:-1, countdown:false });
+  const [flash, setFlash] = useState(false);
+  const triggerFlash = () => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 500);
+  };
+
 
   useEffect(() => {
     const on = () => { unlockSpeech(); window.removeEventListener('pointerdown', on); };
@@ -256,19 +278,29 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   useEffect(() => {
     if (!exercises.length || isComplete) return;
     const ex = exercises[currentEx];
-    const dur = ex?.duration || (ex?.sets ? ex.sets*(ex.reps||10)*3 : 30);
-    timeLeftRef.current = dur;
-    setTimeLeft(dur);
+    if (!ex) return;
+
+    const dur = ex.duration || (ex.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
+    const rest = ex.rest_seconds || 30;
+
+    if (isResting) {
+      timeLeftRef.current = rest;
+      setTimeLeft(rest);
+    } else {
+      timeLeftRef.current = dur;
+      setTimeLeft(dur);
+    }
+
     announcedRef.current.countdown = false;
     if (announcedRef.current.exIndex !== currentEx) {
       announcedRef.current.exIndex = currentEx;
-      const isLast = currentEx === exercises.length-1;
+      const isLast = currentEx === exercises.length - 1;
       const amount = amountText(ex, dur);
       if (currentEx === 0) speakText(`Let’s go. First up, ${ex.name}. ${amount}.`, voiceEnabled);
       else if (isLast) speakText(`${pick(PRAISE)} Last one. ${ex.name}. ${amount}. Give it everything.`, voiceEnabled);
       else speakText(`${pick(PRAISE)} Next, ${ex.name}. ${amount}.`, voiceEnabled);
     }
-  }, [currentEx, isComplete, exercises.length]);
+  }, [currentEx, isComplete, exercises.length, isResting]);
 
   // Exercise countdown — use refs to avoid stale closures
   const exercisesRef = useRef(exercises);
@@ -285,32 +317,76 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     timerRef.current = setInterval(() => {
       if (!mountedRef.current) return;
       const prev = timeLeftRef.current;
-      if (prev <= 0) return; // timer not set yet — never advance on a zero
+      if (prev <= 0) return;
       if (prev === 4 && !announcedRef.current.countdown) {
         announcedRef.current.countdown = true;
         speakText('3, 2, 1', voiceEnabled, { rate: 1.0 });
       }
       setTotalTime(t => t + 1);
       if (prev > 1) { timeLeftRef.current = prev - 1; setTimeLeft(prev - 1); return; }
-      const exs = exercisesRef.current;
-      const cur = currentExRef.current;
+
       timeLeftRef.current = 0; setTimeLeft(0);
-      if (cur < exs.length - 1) {
-        setCurrentEx(c => c + 1);
-        setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
-        setTimeout(() => setMotivation(''), 3000);
+      const ex = exercisesRef.current[currentExRef.current];
+      const totalSets = ex?.sets || 1;
+      const rest = ex?.rest_seconds || 30;
+
+      if (isResting) {
+        playBeep(880, 0.2); // High beep for end of rest
+        setIsResting(false);
+        setCurrentSet(s => s + 1);
+        speakText(`Set ${currentSet + 1}`, voiceEnabled);
       } else {
-        speakText('Workout complete. You crushed it today.', voiceEnabled);
-        setIsComplete(true);
-        clearInterval(timerRef.current);
+        if (currentSet < totalSets) {
+          playBeep(440, 0.2); // Low beep for start of rest
+          setIsResting(true);
+          speakText(`Rest for ${rest} seconds`, voiceEnabled);
+        } else {
+          triggerFlash();
+          if (currentExRef.current < exercisesRef.current.length - 1) {
+            setCurrentEx(c => c + 1);
+            setCurrentSet(1);
+            setIsResting(false);
+            setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
+            setTimeout(() => setMotivation(''), 3000);
+          } else {
+            speakText('Workout complete. You crushed it today.', voiceEnabled);
+            setIsComplete(true);
+            clearInterval(timerRef.current);
+          }
+        }
       }
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx, exercises.length, voiceEnabled]);
+  }, [isPaused, isComplete, currentEx, exercises.length, voiceEnabled, isResting, currentSet]);
+
+  const completeSet = () => {
+    const ex = exercises[currentEx];
+    if (!ex) return;
+    const totalSets = ex.sets || 1;
+    if (currentSet < totalSets) {
+      playBeep(440, 0.2);
+      setIsResting(true);
+      speakText(`Rest for ${ex.rest_seconds || 30} seconds`, voiceEnabled);
+    } else {
+      triggerFlash();
+      if (currentEx < exercises.length - 1) {
+        setCurrentEx(c => c + 1);
+        setCurrentSet(1);
+        setIsResting(false);
+      } else {
+        setIsComplete(true);
+      }
+    }
+  };
 
   const skipExercise = useCallback(() => {
-    if (currentEx < exercises.length-1) setCurrentEx(c=>c+1);
-    else setIsComplete(true);
+    if (currentEx < exercises.length-1) {
+      setCurrentEx(c => c + 1);
+      setCurrentSet(1);
+      setIsResting(false);
+    } else {
+      setIsComplete(true);
+    }
   }, [currentEx, exercises]);
 
   const handleLogWorkout = async () => {
@@ -557,6 +633,12 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   // ── ACTIVE WORKOUT ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <AnimatePresence>
+        {flash && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-primary pointer-events-none" />
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between p-4">
         <button onClick={() => navigate(-1)} className="glass rounded-full p-2"><X className="w-5 h-5" /></button>
         <div className="text-sm font-medium text-muted-foreground">{currentEx+1} / {exercises.length}</div>
@@ -573,6 +655,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8">
         <AnimatePresence mode="wait">
           <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-3 w-full">
+            <div className="flex justify-center gap-2 mb-2">
+              {exercises[currentEx]?.sets > 1 && (
+                <Badge variant="outline" className="text-[10px] uppercase tracking-widest">
+                  Set {currentSet} of {exercises[currentEx].sets}
+                </Badge>
+              )}
+            </div>
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
@@ -582,10 +671,11 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         <div className="relative w-48 h-48">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
-            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(211,100%,52%)" strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(currentExercise?.duration||30))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
+            <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : (currentExercise?.duration || 30)))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-5xl font-black tabular-nums">{formatTime(timeLeft)}</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className={`text-5xl font-black tabular-nums ${isResting ? 'text-green-400' : ''}`}>{formatTime(timeLeft)}</span>
+            {isResting && <span className="text-xs font-bold uppercase tracking-widest text-green-400">Resting</span>}
           </div>
         </div>
         <AnimatePresence>
@@ -598,10 +688,15 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           </div>
         )}
       </div>
-      <div className="flex items-center justify-center gap-6 p-8">
+      <div className="flex items-center justify-center gap-4 p-8">
         <Button variant="secondary" size="icon" className="w-14 h-14 rounded-full" onClick={() => setIsPaused(!isPaused)}>
           {isPaused?<Play className="w-6 h-6" fill="currentColor"/>:<Pause className="w-6 h-6"/>}
         </Button>
+        {!isPaused && !isComplete && (
+          <Button className="flex-1 max-w-[160px] h-14 rounded-full font-bold" onClick={completeSet}>
+            {isResting ? 'Skip Rest' : 'Complete Set'}
+          </Button>
+        )}
         <Button variant="secondary" size="icon" className="w-12 h-12 rounded-full" onClick={skipExercise}>
           <SkipForward className="w-5 h-5" />
         </Button>
