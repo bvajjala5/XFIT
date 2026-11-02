@@ -158,7 +158,7 @@ export default function WorkoutsAndRun() {
           </motion.div>
         ) : (
           <motion.div key="tracker" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-            <RunTracker onComplete={setRunSummary}/>
+            <RunTracker onComplete={setRunSummary} fullScreen={false}/>
           </motion.div>
         )}
       </AnimatePresence>

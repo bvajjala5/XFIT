@@ -31,7 +31,7 @@ export default function Run() {
           </motion.div>
         ) : (
           <motion.div key="tracker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 w-full">
-            <RunTracker onComplete={handleComplete} />
+            <RunTracker onComplete={handleComplete} fullScreen={true} />
           </motion.div>
         )}
       </AnimatePresence>

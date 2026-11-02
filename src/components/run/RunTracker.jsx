@@ -35,7 +35,7 @@ function getPaceColor(pace) {
 
 const SPLIT_DIST = 1000 // 1km splits
 
-export default function RunTracker({ onComplete }) {
+export default function RunTracker({ onComplete, fullScreen = false }) {
   const [status, setStatus] = useState('idle') // idle | running | paused | done
   const [positions, setPositions] = useState([]) // [{lat, lng, timestamp, pace}]
   const [currentPos, setCurrentPos] = useState(null)
@@ -200,9 +200,9 @@ export default function RunTracker({ onComplete }) {
   }
 
   return (
-    <div className="relative h-full min-h-screen flex flex-col">
+    <div className={`relative flex flex-col ${fullScreen ? 'h-full min-h-screen' : 'h-auto'}`}>
       {/* Map */}
-      <div className="flex-1 overflow-hidden">
+      <div className={`${fullScreen ? 'flex-1' : 'h-[400px]'} rounded-2xl overflow-hidden`}>
         {currentPos ? (
           <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer
@@ -225,8 +225,8 @@ export default function RunTracker({ onComplete }) {
         )}
       </div>
 
-      {/* Stats overlay - fixed at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4 bg-gradient-to-t from-background via-background/80 to-transparent">
+      {/* Stats overlay */}
+      <div className={`${fullScreen ? 'absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/80 to-transparent' : 'p-4 space-y-4'} space-y-4`}>
         {/* Primary stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center">

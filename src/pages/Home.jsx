@@ -312,30 +312,12 @@ export default function Home() {
         )}
 
         {/* Quick links */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-3">
-          {[['/plan', CalendarDays, 'Plan'], ['/builder', Pencil, 'Build']].map(([to, Icon, label]) => (
-            <Link key={to} to={to} className={`${cardCls} px-5 py-4 flex items-center justify-between active:scale-[0.98] transition-transform`}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="font-semibold">{label}</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-3 gap-3">
+          {[['/plan', CalendarDays, 'Plan'], ['/builder', Pencil, 'Build'], ['/run', Zap, 'Run']].map(([to, Icon, label]) => (
+            <Link key={to} to={to} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+              <Icon className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">{label}</span>
             </Link>
           ))}
-          <Link to="/run" className={`${cardCls} px-5 py-4 flex items-center justify-between active:scale-[0.98] transition-transform bg-primary/10 border-primary/20`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-primary">Run Workout</span>
-                <span className="text-xs text-muted-foreground">GPS Tracking & Pace</span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-primary" />
-          </Link>
         </motion.div>
       </div>
     </div>
