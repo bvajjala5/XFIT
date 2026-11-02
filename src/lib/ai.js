@@ -58,6 +58,14 @@ const EXERCISE_LIBRARY = {
     { name: "Leg Raises", sets: 3, reps: "12", duration_seconds: null, rest_seconds: 30, notes: "Lower slowly" },
     { name: "Crunches", sets: 3, reps: "15", duration_seconds: null, rest_seconds: 30, notes: "Upper back only" },
   ],
+  stretches: [
+    { name: "Child's Pose", sets: 1, reps: "1", duration_seconds: 30, rest_seconds: 0, notes: "Breathe deeply" },
+    { name: "Cobra Stretch", sets: 1, reps: "1", duration_seconds: 30, rest_seconds: 0, notes: "Stretch abs" },
+    { name: "Cat-Cow", sets: 1, reps: "10", duration_seconds: null, rest_seconds: 0, notes: "Fluid movement" },
+    { name: "Quad Stretch", sets: 1, reps: "30s per leg", duration_seconds: 30, rest_seconds: 0, notes: "Hold balance" },
+    { name: "Hamstring Stretch", sets: 1, reps: "30s per leg", duration_seconds: 30, rest_seconds: 0, notes: "Reach for toes" },
+    { name: "Pigeon Pose", sets: 1, reps: "30s per leg", duration_seconds: 30, rest_seconds: 0, notes: "Opens hips" },
+  ],
   fullbody: [
     { name: "Burpees", sets: 3, reps: "10", duration_seconds: null, rest_seconds: 60, notes: "Full chest to floor" },
     { name: "Mountain Climbers", sets: 3, reps: "30", duration_seconds: 30, rest_seconds: 30, notes: "High intensity" },
@@ -73,6 +81,38 @@ function getRandom(arr) {
 async function getMockResponse(prompt = '') {
   await new Promise(resolve => setTimeout(resolve, 1500));
   const p = prompt.toLowerCase();
+
+  if (p.includes('plan') || p.includes('weekly') || p.includes('schedule')) {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const plan = {};
+
+    days.forEach(day => {
+      if (Math.random() < 0.3) {
+        plan[day] = { type: 'rest', label: 'Rest Day' };
+      } else {
+        const themes = ['legs', 'upper', 'core', 'fullbody'];
+        const theme = themes[Math.floor(Math.random() * themes.length)];
+        const targetCat = theme === 'upper' ? 'chest' : theme;
+
+        const lib = EXERCISE_LIBRARY[targetCat] || EXERCISE_LIBRARY.fullbody;
+        const count = 3 + Math.floor(Math.random() * 3);
+        const shuffled = [...lib].sort(() => 0.5 - Math.random());
+
+        const dayExercises = shuffled.slice(0, count).map((ex, i) => ({
+          ...ex, id: `ex-${day}-${i}-${Date.now()}`
+        }));
+
+        plan[day] = {
+          type: 'workout',
+          workout_title: `${theme.charAt(0).toUpperCase() + theme.slice(1)} Focus`,
+          workout_duration: 30 + Math.floor(Math.random() * 20),
+          exercises: dayExercises
+        };
+      }
+    });
+
+    return JSON.stringify({ type: 'plan', plan });
+  }
 
   const targets = [];
   if (p.includes('bicep') || p.includes('arm')) targets.push('biceps');
@@ -97,6 +137,13 @@ async function getMockResponse(prompt = '') {
     shuffled.slice(0, count).forEach((ex, i) => {
       exercises.push({ ...ex, id: `ex-${cat}-${i}-${Date.now()}` });
     });
+  });
+
+  const stretchLib = EXERCISE_LIBRARY.stretches;
+  const stretchCount = 1 + Math.floor(Math.random() * 2);
+  const shuffledStretches = [...stretchLib].sort(() => 0.5 - Math.random());
+  shuffledStretches.slice(0, stretchCount).forEach((ex, i) => {
+    exercises.push({ ...ex, id: `stretch-${i}-${Date.now()}` });
   });
 
   const finalExercises = exercises.sort(() => 0.5 - Math.random());
