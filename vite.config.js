@@ -11,7 +11,7 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'Direct your greatness. Live Uttar.',
+        name: 'Uttar Fitness: Direct Your Greatness, Live Uttar',
         short_name: 'Uttar Fitness',
         description: 'Your AI-powered fitness companion.',
         theme_color: '#20212d',

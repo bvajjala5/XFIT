@@ -68,7 +68,7 @@ export default function RunSummary({ summary, userId, onClose }) {
     <div className="p-4 space-y-5 max-w-md mx-auto">
       {/* Hero */}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-6">
-        <div className="text-6xl mb-3">🏃</div>
+        <Footprints className="w-14 h-14 mx-auto mb-3 text-primary" strokeWidth={1.5} />
         <h2 className="text-2xl font-black">Run Complete!</h2>
         {isPR && (
           <div className="mt-2 inline-flex items-center gap-1.5 bg-yellow-500/20 text-yellow-300 text-xs font-bold px-3 py-1 rounded-full">

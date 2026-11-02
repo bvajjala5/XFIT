@@ -111,7 +111,7 @@ export default function WorkoutsAndRun() {
         {['All','Chest','Back','Shoulders','Arms','Core','Legs','Glutes'].map(mg => (
           <button key={mg} onClick={() => setMuscleGroup(mg)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${muscleGroup===mg?'bg-primary/20 text-primary border border-primary/30':'bg-secondary/50 text-muted-foreground hover:text-foreground border border-transparent'}`}>
-            {mg === 'All' ? '💪 All' : mg}
+            {mg}
           </button>
         ))}
       </div>

@@ -74,7 +74,7 @@ export default function PersonalRecords() {
                           <div>
                             <p className="text-sm font-medium">{ex}</p>
                             {best ? (
-                              <p className="text-xs text-yellow-500 font-bold">🏆 Best: {best.value} {best.unit}</p>
+                              <p className="text-xs text-yellow-500 font-bold flex items-center gap-1"><Trophy className="w-3 h-3" /> Best: {best.value} {best.unit}</p>
                             ) : (
                               <p className="text-xs text-muted-foreground">No record yet</p>
                             )}

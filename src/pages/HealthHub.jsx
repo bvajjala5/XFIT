@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
 import MealTracker from '@/components/nutrition/MealTracker';
-import { Footprints, Heart, Moon, Flame, Wind, Plus, Activity, Scale, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { Footprints, Heart, Moon, Flame, Wind, Plus, Activity, Scale, TrendingDown, TrendingUp, Minus, BarChart3, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -269,7 +269,7 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
               Cancel
             </Button>
             <Button size="lg" className="flex-1 rounded-2xl h-14 text-base font-bold" onClick={() => onSave(form)} disabled={saving}>
-              {saving ? 'Saving...' : '✓ Save'}
+              {saving ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>
@@ -331,10 +331,10 @@ export default function HealthHub() {
 
       {/* Tab switcher */}
       <div className="flex gap-2">
-        {[{ key:'overview', label:'📊 Overview' },{ key:'weight', label:'⚖️ Weight' },{ key:'nutrition', label:'🍽️ Nutrition' }].map(t => (
+        {[{ key:'overview', label:'Overview', Icon:BarChart3 },{ key:'weight', label:'Weight', Icon:Scale },{ key:'nutrition', label:'Nutrition', Icon:Utensils }].map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab===t.key?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-            {t.label}
+            <span className="inline-flex items-center justify-center gap-1.5"><t.Icon className="w-4 h-4" />{t.label}</span>
           </button>
         ))}
       </div>

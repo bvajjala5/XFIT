@@ -88,7 +88,7 @@ export default function Home() {
       } else {
         const name = userDoc?.full_name || user.displayName || 'Anonymous'
         await shareWorkout(user.uid, name, w)
-        toast.success('Workout shared with community! 🎉')
+        toast.success('Workout shared with the community')
       }
     } catch (err) {
       toast.error('Could not share workout')

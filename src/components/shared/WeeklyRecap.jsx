@@ -45,7 +45,7 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
             className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5">
             <button onClick={() => { setShow(false); onDismiss?.(); }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             <div className="space-y-1">
-              <p className="text-xs font-bold text-primary uppercase tracking-wider">Weekly Recap 🎉</p>
+              <p className="text-xs font-bold text-primary uppercase tracking-wider">Weekly recap</p>
               <h2 className="text-2xl font-black">Great week!</h2>
               <p className="text-muted-foreground text-sm">Here is what you accomplished this week</p>
             </div>
@@ -64,7 +64,7 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
             </div>
             <button onClick={() => { setShow(false); onDismiss?.(); }}
               className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-all">
-              Keep it up! 💪
+              Keep it up
             </button>
           </motion.div>
         </motion.div>

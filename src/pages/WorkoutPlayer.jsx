@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
-import { getRank } from '@/components/shared/RankBadge';
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -83,7 +82,7 @@ const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it u
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const amountText = (ex) => amountLabel(ex);
 
-const motivations = ["You're crushing it! 💪","Push through the burn!","Almost there, don't give up!","You're stronger than yesterday!","Feel the power! 🔥","Every rep counts!","Let's go, champion!"];
+const motivations = ["You're crushing it.","Push through the burn.","Almost there, don't give up.","You're stronger than yesterday.","Feel the power.","Every rep counts.","Let's go."];
 
 async function generateShareCard({ workoutTitle, duration, calories, rating, difficulty }) {
   const size = 1080;
@@ -112,7 +111,7 @@ async function generateShareCard({ workoutTitle, duration, calories, rating, dif
   ctx.fillStyle = accentGrad;
   ctx.beginPath(); ctx.roundRect(80, 80, 300, 56, 16); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui, sans-serif';
-  ctx.fillText('⚡ Uttar Fitness', 105, 118);
+  ctx.fillText('Uttar Fitness', 105, 118);
 
   // Accent line
   ctx.fillStyle = accentGrad;
@@ -124,15 +123,14 @@ async function generateShareCard({ workoutTitle, duration, calories, rating, dif
   ctx.fillText(title, 80, 290);
 
   // Stats
-  const drawStat = (emoji, label, val, y) => {
+  const drawStat = (label, val, y) => {
     ctx.fillStyle = 'rgba(255,255,255,0.07)';
     ctx.beginPath(); ctx.roundRect(80, y, 420, 86, 20); ctx.fill();
-    ctx.font = '40px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(emoji, 110, y + 55);
-    ctx.font = 'bold 40px system-ui, sans-serif'; ctx.fillStyle = '#c7d2fe'; ctx.fillText(val, 175, y + 55);
-    ctx.font = '28px system-ui, sans-serif'; ctx.fillStyle = '#6366f1'; ctx.fillText(label, 175, y + 80);
+    ctx.font = 'bold 40px system-ui, sans-serif'; ctx.fillStyle = '#c7d2fe'; ctx.fillText(val, 110, y + 55);
+    ctx.font = '28px system-ui, sans-serif'; ctx.fillStyle = '#6366f1'; ctx.fillText(label, 110, y + 80);
   };
-  drawStat('⏱', 'Duration', duration, 330);
-  drawStat('🔥', 'Calories burned', `${calories} cal`, 440);
+  drawStat('Duration', duration, 330);
+  drawStat('Calories burned', `${calories} cal`, 440);
 
   // Stars
   if (rating > 0) {
@@ -305,19 +303,6 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
     try {
-      const expectedSecs = (workout?.duration || workout?.estimated_duration || 30) * 60;
-      const pct = totalTime / expectedSecs;
-      const suspicious = pct < 0.5;
-      const countTowardRank = pct >= 0.6;
-
-      if (!countTowardRank) {
-        toast.warning(suspicious
-          ? `Workout logged, but completed too fast (${Math.round(pct*100)}% of expected time) — not counted toward rank.`
-          : `Logged! Complete at least 60% of the workout time to count toward rank.`,
-          { duration: 5000 }
-        );
-      }
-
       const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
       await addDoc(collection(db,'users',user.uid,'workouts'), {
         workout_id: workoutId,
@@ -331,32 +316,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         rating: rating || null,
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
-        ...(suspicious ? { suspicious: true } : {}),
       });
 
-      if (countTowardRank) {
-        const privacyStr = localStorage.getItem('xfit_lb_privacy');
-        const privacy = privacyStr ? JSON.parse(privacyStr) : { joined: true, name: null };
-        if (privacy.joined !== false) {
-          const lbRef = doc(db, 'leaderboard', user.uid);
-          const lbSnap = await getDoc(lbRef);
-          const today = new Date().toISOString().split('T')[0];
-          const displayName = privacy.name || user.displayName?.split(' ')[0] || 'Athlete';
-          if (!lbSnap.exists()) {
-            const newTotal = 1;
-            await setDoc(lbRef, { displayName, totalWorkouts: newTotal, weeklyWorkouts: 1, streak: 1, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
-          } else {
-            const data = lbSnap.data();
-            const last = data.lastWorkoutDate || '';
-            const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
-            const newStreak = last===today ? (data.streak||1) : last===yesterday ? (data.streak||0)+1 : 1;
-            const daysSince = last ? Math.floor((Date.now()-new Date(last+'T12:00:00').getTime())/86400000) : 999;
-            const newWeekly = daysSince>=7 ? 1 : (data.weeklyWorkouts||0)+(last===today?0:1);
-            const newTotal = (data.totalWorkouts||0) + 1;
-            await updateDoc(lbRef, { displayName, totalWorkouts: newTotal, weeklyWorkouts: newWeekly, streak: newStreak, lastWorkoutDate: today, rank: getRank(newTotal), updatedAt: new Date() });
-          }
-        }
-      }
     } catch(e) { console.error('handleLogWorkout error:', e); }
     navigate('/');
   };
@@ -375,7 +336,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'uttar-workout.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Uttar Fitness Workout Complete!', text: `Just crushed a workout on Uttar Fitness! 💪` });
+        await navigator.share({ files: [file], title: 'Uttar Fitness Workout Complete!', text: `Just finished a workout on Uttar Fitness.` });
       } else {
         const a = document.createElement('a');
         a.href = dataUrl; a.download = 'uttar-workout.png'; a.click();
@@ -405,7 +366,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
             <Trophy className="w-10 h-10 text-primary" />
           </div>
-          <div><h1 className="text-3xl font-bold">Workout Complete! 💪</h1></div>
+          <div><h1 className="text-3xl font-bold">Workout complete</h1></div>
           <div className="grid grid-cols-3 gap-3">
             <GlassCard className="text-center"><div className="text-xl font-bold">{formatTime(totalTime)}</div><div className="text-[10px] text-muted-foreground">Duration</div></GlassCard>
             <GlassCard className="text-center"><div className="text-xl font-bold">{calories}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
@@ -486,7 +447,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
                   </button>
                   <button onClick={handleLogWorkout}
                     className="flex-1 h-11 rounded-2xl primary-gradient text-white text-sm font-bold active:scale-[0.98] transition-transform">
-                    Save & Log 🏆
+                    Save and log
                   </button>
                 </div>
               </motion.div>

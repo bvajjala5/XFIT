@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, ChevronDown, Apple } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, Apple, Sunrise, Sun, Moon } from 'lucide-react'
 import FoodPicker from '@/components/nutrition/FoodPicker'
 import { localDateStr } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -128,12 +128,12 @@ export default function MealTracker({ userId }) {
           const items = byMeal[meal]
           const mealCals = items.reduce((s,f) => s+(f.calories||0),0)
           const isExpanded = expandedMeal===meal
-          const icons = {Breakfast:'🌅',Lunch:'☀️',Dinner:'🌙',Snack:'🍎'}
+          const icons = {Breakfast:Sunrise,Lunch:Sun,Dinner:Moon,Snack:Apple}
           return (
             <GlassCard key={meal} className="space-y-2">
               <button className="w-full flex items-center justify-between" onClick={() => setExpandedMeal(isExpanded?null:meal)}>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{icons[meal]}</span>
+                  {React.createElement(icons[meal], { className: "w-5 h-5 text-muted-foreground" })}
                   <span className="font-semibold">{meal}</span>
                   {items.length>0 && <span className="text-xs text-muted-foreground">({items.length})</span>}
                 </div>

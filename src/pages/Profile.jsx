@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { db, auth } from '@/lib/firebase';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, setDoc, where } from 'firebase/firestore';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { applyTheme } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import RankBadge, { getRank } from '@/components/shared/RankBadge';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Sun, Moon, ChevronDown, ChevronUp, Pencil, Check, X, Palette} from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Moon, ChevronDown, ChevronUp, Pencil, Check, X, Palette, Utensils, Footprints, Target, Trophy, ChevronRight } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { calcStreak, localDateStr } from '@/lib/utils';
-import { useNewFollowers } from '@/hooks/useNewFollowers';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 const GOAL_CATEGORIES = [
-  {key:'workout',label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
-  {key:'nutrition',label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
-  {key:'sleep',label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
-  {key:'activity',label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
+  {key:'workout',Icon:Dumbbell,label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
+  {key:'nutrition',Icon:Utensils,label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
+  {key:'sleep',Icon:Moon,label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
+  {key:'activity',Icon:Footprints,label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
 ];
 
 export default function Profile() {
@@ -34,23 +31,14 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
   const [recentOpen, setRecentOpen] = useState(false);
-  const [showSupportInfo, setShowSupportInfo] = useState(false);
   const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
   const [editingGoal, setEditingGoal] = useState(null);
   const [editGoalVal, setEditGoalVal] = useState('');
   const [goalData, setGoalData] = useState({});
-  const queryClient = useQueryClient();
-
 
   useEffect(() => {
     if (userData) {
       setForm({fitness_goal:userData.fitness_goal||'',experience_level:userData.experience_level||'',preferred_types:userData.preferred_types||[],distance_unit:userData.distance_unit||'miles'});
-      // Load leaderboard privacy from Firestore (user-specific)
-      if (userData.lbPrivacy) {
-        setLbPrivacy(userData.lbPrivacy);
-        setLbNameInput(userData.lbPrivacy.name || '');
-        localStorage.setItem('xfit_lb_privacy', JSON.stringify(userData.lbPrivacy));
-      }
       const saved = userData.goals||{};
       const result = {};
       GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
@@ -67,18 +55,6 @@ export default function Profile() {
     },
     enabled: !!user
   });
-
-
-
-
-
-  const toggleTheme = () => {
-    const next = theme==='dark'?'light':'dark';
-    setTheme(next);
-    localStorage.setItem('xfit-theme',next);
-    document.documentElement.classList.remove('dark','light');
-    document.documentElement.classList.add(next);
-  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -124,8 +100,6 @@ export default function Profile() {
     } catch(e) { await logout(); }
   };
 
-  const streak = calcStreak(logs);
-  const rank = getRank(logs.length);
   const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
   const totalCals = logs.reduce((s,l)=>s+(l.calories_burned||0),0);
 
@@ -144,16 +118,10 @@ export default function Profile() {
         <div>
           <h1 className="text-2xl font-bold">{userData?.full_name||'Athlete'}</h1>
           <p className="text-sm text-muted-foreground">{userData?.email}</p>
-          <p className="text-xs text-muted-foreground mt-1.5">
-            <Link to="/friends?tab=following" className="hover:text-primary"><span className="font-semibold text-foreground">{followingCount}</span> Following</Link>
-            <span className="mx-2 opacity-40">·</span>
-            <Link to="/friends?tab=followers" className="hover:text-primary"><span className="font-semibold text-foreground">{followerCount}</span> Followers{newFollowers > 0 && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{newFollowers} new</span>}</Link>
-          </p>
         </div>
         <div className="flex items-center justify-center gap-2 flex-wrap">
           {userData?.fitness_goal && <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full capitalize">{goalLabels[userData.fitness_goal]||userData.fitness_goal}</span>}
           {userData?.experience_level && <span className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full capitalize">{userData.experience_level}</span>}
-          <RankBadge rank={rank}/>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
@@ -183,11 +151,11 @@ export default function Profile() {
         )}
       </GlassCard>
       <GlassCard className="space-y-3">
-        <h2 className="font-semibold text-sm flex items-center gap-2">🎯 My Goals</h2>
+        <h2 className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> My Goals</h2>
         {GOAL_CATEGORIES.map(cat=>(
           <div key={cat.key}>
             <button className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" onClick={()=>setGoalExpanded(e=>({...e,[cat.key]:!e[cat.key]}))}>
-              <span>{cat.label}</span>{goalExpanded[cat.key]?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}
+              <span className="flex items-center gap-2"><cat.Icon className="w-4 h-4" />{cat.label}</span>{goalExpanded[cat.key]?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}
             </button>
             {goalExpanded[cat.key] && (
               <div className="space-y-2 pb-2">
@@ -284,68 +252,17 @@ export default function Profile() {
           ))}
         </div>
       </GlassCard>
-      <GlassCard className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold">Join Leaderboard</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Show your stats on the Ranks tab</p>
-              </div>
-              <button onClick={() => saveLbPrivacy({ joined: !lbPrivacy.joined })}
-                className={`relative w-12 h-6 rounded-full transition-colors ${lbPrivacy.joined ? 'bg-primary' : 'bg-secondary'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${lbPrivacy.joined ? 'translate-x-6' : 'translate-x-0'}`}/>
-              </button>
-            </div>
-            {lbPrivacy.joined && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Display name (leave blank for real name)</p>
-                <div className="flex gap-2">
-                  <input value={lbNameInput} onChange={e => setLbNameInput(e.target.value)}
-                    placeholder={user?.displayName?.split(' ')[0] || 'Your name'}
-                    className="flex-1 bg-secondary/40 border border-border/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
-                  <button onClick={() => saveLbPrivacy({ name: lbNameInput.trim() || null })}
-                    className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary/80 transition-colors">
-                    Save
-                  </button>
-                </div>
-                <p className="text-[11px] text-muted-foreground">Use a nickname to stay anonymous 🕵️</p>
-              </div>
-            )}
-          </GlassCard>
-
-          <GlassCard className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm font-semibold">Support Uttar Fitness 💪</p><p className="text-xs text-muted-foreground mt-0.5">Help keep the app free & growing</p></div>
-              <button onClick={() => setShowSupportInfo(s => !s)} className="w-6 h-6 rounded-full bg-secondary/60 text-muted-foreground text-xs font-bold flex items-center justify-center hover:bg-secondary transition-colors">i</button>
-            </div>
-            {showSupportInfo && (
-              <div className="bg-secondary/30 rounded-2xl p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">About Uttar Fitness</p>
-                <p>Uttar Fitness is an independently developed fitness platform built to give everyone access to premium fitness tools. Your support helps fund continued development, server costs, and new features.</p>
-                <p className="mt-1">Your contribution goes toward:</p>
-                <p>• Server and hosting costs</p>
-                <p>• New features and improvements</p>
-                <p>• Turning Uttar Fitness into a full mobile app</p>
-                <p className="text-primary font-medium mt-1">100% voluntary — every contribution is appreciated 🙏</p>
-              </div>
-            )}
-            <a href="https://ko-fi.com/xfit" target="_blank" rel="noopener noreferrer"
-              className="w-full h-11 rounded-2xl bg-primary/20 text-primary font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/30 active:scale-[0.98] transition-all">
-              ❤️ Consider Supporting Uttar Fitness
-            </a>
-          </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
-            <Link to="/history" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>🏋️ Workout History</span><span>→</span></Link>
+            <Link to="/history" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span className="flex items-center gap-3"><Dumbbell className="w-4 h-4 text-muted-foreground" /> Workout History</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/records" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>🏆 Personal Records</span><span>→</span></Link>
-            <div className="border-t border-border/30" />
-            <Link to="/friends" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>👥 Friends & Following{newFollowers > 0 && <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{newFollowers} new</span>}</span><span>→</span></Link>
+            <Link to="/records" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span className="flex items-center gap-3"><Trophy className="w-4 h-4 text-muted-foreground" /> Personal Records</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>
-            <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><span>→</span></Link>
+            <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><span>→</span></Link>
+            <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
           </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>

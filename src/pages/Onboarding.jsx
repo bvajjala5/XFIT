@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { ArrowRight, ArrowLeft, Target, Gauge, Heart } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Target, Gauge, Heart, Flame, Dumbbell, Footprints, Flower2, Zap, HeartPulse, PersonStanding } from 'lucide-react';
 
 const goals = [
-  {id:'lose_weight',label:'Lose Weight',icon:'🔥',desc:'Burn fat and get lean'},
-  {id:'build_muscle',label:'Build Muscle',icon:'💪',desc:'Gain strength and size'},
-  {id:'improve_endurance',label:'Improve Endurance',icon:'🏃',desc:'Run further, last longer'},
-  {id:'flexibility',label:'Flexibility',icon:'🧘',desc:'Move better, feel better'},
+  {id:'lose_weight',label:'Lose Weight',icon:Flame,desc:'Burn fat and get lean'},
+  {id:'build_muscle',label:'Build Muscle',icon:Dumbbell,desc:'Gain strength and size'},
+  {id:'improve_endurance',label:'Improve Endurance',icon:Footprints,desc:'Run further, last longer'},
+  {id:'flexibility',label:'Flexibility',icon:Flower2,desc:'Move better, feel better'},
 ];
 const levels = [
   {id:'beginner',label:'Beginner',desc:'New to working out'},
@@ -16,11 +16,11 @@ const levels = [
   {id:'advanced',label:'Advanced',desc:'2+ years experience'},
 ];
 const workoutTypes = [
-  {id:'hiit',label:'HIIT',icon:'⚡'},
-  {id:'yoga',label:'Yoga',icon:'🧘'},
-  {id:'strength',label:'Strength',icon:'🏋️'},
-  {id:'cardio',label:'Cardio',icon:'❤️'},
-  {id:'mobility',label:'Mobility',icon:'🤸'},
+  {id:'hiit',label:'HIIT',icon:Zap},
+  {id:'yoga',label:'Yoga',icon:Flower2},
+  {id:'strength',label:'Strength',icon:Dumbbell},
+  {id:'cardio',label:'Cardio',icon:HeartPulse},
+  {id:'mobility',label:'Mobility',icon:PersonStanding},
 ];
 
 export default function Onboarding({ onComplete }) {
@@ -53,7 +53,7 @@ export default function Onboarding({ onComplete }) {
         {goals.map(g => (
           <button key={g.id} onClick={() => setGoal(g.id)} className={`glass rounded-2xl p-4 text-left transition-all ${goal===g.id?'border-primary bg-primary/10 ring-1 ring-primary':'hover:bg-secondary/50'}`}>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{g.icon}</span>
+              <g.icon className="w-6 h-6 text-primary" strokeWidth={1.75} />
               <div><div className="font-semibold">{g.label}</div><div className="text-xs text-muted-foreground">{g.desc}</div></div>
             </div>
           </button>
@@ -84,7 +84,7 @@ export default function Onboarding({ onComplete }) {
       <div className="grid grid-cols-2 gap-3">
         {workoutTypes.map(t => (
           <button key={t.id} onClick={() => toggleType(t.id)} className={`glass rounded-2xl p-4 text-center transition-all ${types.includes(t.id)?'border-primary bg-primary/10 ring-1 ring-primary':'hover:bg-secondary/50'}`}>
-            <div className="text-2xl mb-1">{t.icon}</div>
+            <t.icon className="w-6 h-6 mx-auto mb-1 text-primary" strokeWidth={1.75} />
             <div className="font-semibold text-sm">{t.label}</div>
           </button>
         ))}

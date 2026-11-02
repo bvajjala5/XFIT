@@ -1,16 +1,14 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, User, Heart, BarChart2 } from 'lucide-react';
+import { Home, Dumbbell, User, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
-import { useNewFollowers } from '@/hooks/useNewFollowers';
 
 const navItems = [
   { path: '/',          icon: Home,           label: 'Home'     },
   { path: '/health',    icon: Heart,          label: 'Health'   },
   { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
-  { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
   { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
 
@@ -24,7 +22,6 @@ export { applyTheme };
 
 export default function AppLayout() {
   const location = useLocation();
-  const newFollowers = useNewFollowers();
 
   useEffect(() => {
     const saved = localStorage.getItem('xfit-theme');
@@ -51,7 +48,6 @@ export default function AppLayout() {
               className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl w-16 transition-all ${isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
               {isActive && <motion.div layoutId="activeNav" className="absolute inset-0 bg-primary/10 rounded-2xl" />}
               <Icon className="w-[18px] h-[18px] relative z-10" />
-              {path === '/profile' && newFollowers > 0 && <span className="absolute top-2 right-3 z-20 w-2.5 h-2.5 rounded-full bg-red-500" aria-label={`${newFollowers} new followers`} />}
               <span className="text-[9px] font-semibold relative z-10 leading-tight text-center">{label}</span>
             </Link>
           );
@@ -78,7 +74,6 @@ export default function AppLayout() {
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
                 )}
                 <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                {path === '/profile' && newFollowers > 0 && <span className="absolute top-0.5 right-1.5 z-20 w-2.5 h-2.5 rounded-full bg-red-500" aria-label={`${newFollowers} new followers`} />}
                 <span className={`text-[9px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
               </Link>
             );

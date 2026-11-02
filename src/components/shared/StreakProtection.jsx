@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, X } from "lucide-react";
+import { Shield, X, RefreshCw, Zap } from "lucide-react";
 
 export default function StreakProtection({ streak, userId, onUseFreeze }) {
   const [show, setShow] = useState(false);
@@ -33,9 +33,9 @@ export default function StreakProtection({ streak, userId, onUseFreeze }) {
                 <p className="text-sm text-muted-foreground mt-1">Use a freeze to protect your {streak}-day streak if you miss a day</p>
               </div>
               <div className="bg-secondary/30 rounded-2xl p-4 text-sm text-muted-foreground space-y-1">
-                <p>🛡️ {freezesLeft} freeze{freezesLeft !== 1 ? "s" : ""} remaining this month</p>
-                <p>🔄 Freezes refresh every 4 uses</p>
-                <p>⚡ Activates automatically if you miss a day</p>
+                <p className="flex items-center gap-2"><Shield className="w-4 h-4 shrink-0" /> {freezesLeft} freeze{freezesLeft !== 1 ? "s" : ""} remaining this month</p>
+                <p className="flex items-center gap-2"><RefreshCw className="w-4 h-4 shrink-0" /> Freezes refresh every 4 uses</p>
+                <p className="flex items-center gap-2"><Zap className="w-4 h-4 shrink-0" /> Activates automatically if you miss a day</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setShow(false)} className="flex-1 h-11 rounded-2xl bg-secondary/50 text-sm font-semibold">Cancel</button>

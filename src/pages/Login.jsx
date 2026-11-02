@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Dumbbell, Footprints, Utensils } from 'lucide-react'
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '@/components/layout/AnimatedBackground';
@@ -36,7 +37,6 @@ export default function Login() {
     applyTheme(resolved);
   };
 
-  const btnLabel = themeMode === 'auto' ? '🌓 Auto' : themeMode === 'sunrise' ? '🌙 Night' : '☀️ Day';
 
   const handleLogin = async () => {
     setLoading(true); setError('');
@@ -62,13 +62,13 @@ export default function Login() {
 
           <div className="space-y-2">
             <h1 className="text-4xl font-black tracking-tight whitespace-nowrap" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>Uttar Fitness</h1>
-            <p style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Direct your greatness. Live Uttar.</p>
+            <p style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Direct Your Greatness, Live Uttar</p>
           </div>
 
           <div className="flex justify-center gap-6 pt-2">
-            {[['🏋️', 'Workouts'], ['🏃', 'Run tracking'], ['🥗', 'Nutrition']].map(([emoji, label]) => (
+            {[[Dumbbell, 'Workouts'], [Footprints, 'Run tracking'], [Utensils, 'Nutrition']].map(([Icon, label]) => (
               <div key={label} className="text-center">
-                <div className="text-xl">{emoji}</div>
+                <Icon className="w-5 h-5 mx-auto" style={{ color: isDark ? '#94a3b8' : '#78716c' }} />
                 <div className="text-[10px] mt-1 font-medium" style={{ color: isDark ? '#64748b' : '#a8a29e' }}>{label}</div>
               </div>
             ))}

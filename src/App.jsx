@@ -23,7 +23,6 @@ const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
 const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
-const Stats = lazy(() => import('@/pages/Stats'))
 const Profile = lazy(() => import('@/pages/Profile'))
 const HealthHub = lazy(() => import('@/pages/HealthHub'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
@@ -31,9 +30,7 @@ const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const PersonalRecords = lazy(() => import('@/pages/PersonalRecords'))
 const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
-const Friends = lazy(() => import('@/pages/Friends'))
 const Community = lazy(() => import('@/pages/Community'))
-const Progress = lazy(() => import('@/pages/Progress'))
 
 function LoadingScreen() {
   return (
@@ -83,21 +80,21 @@ export default function App() {
         <Route path="workouts" element={<Suspense fallback={<PageLoader />}><WorkoutsAndRun /></Suspense>} />
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
         <Route path="plan" element={<Suspense fallback={<PageLoader />}><WeeklyPlan /></Suspense>} />
-        <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
         <Route path="health" element={<Suspense fallback={<PageLoader />}><HealthHub /></Suspense>} />
         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />
         {/* Redirects for old routes */}
-        <Route path="ranks" element={<Navigate to="/stats" replace />} />
-        <Route path="progress" element={<Navigate to="/stats" replace />} />
+        <Route path="ranks" element={<Navigate to="/" replace />} />
+        <Route path="stats" element={<Navigate to="/" replace />} />
+        <Route path="leaderboard" element={<Navigate to="/" replace />} />
+        <Route path="friends" element={<Navigate to="/profile" replace />} />
+        <Route path="progress" element={<Navigate to="/" replace />} />
         <Route path="run" element={<Navigate to="/workouts" replace />} />
         <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
         <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
         <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />
         <Route path="history" element={<Suspense fallback={<PageLoader />}><WorkoutHistory /></Suspense>} />
-        <Route path="friends" element={<Suspense fallback={<PageLoader />}><Friends /></Suspense>} />
         <Route path="community" element={<Suspense fallback={<PageLoader />}><Community /></Suspense>} />
-        <Route path="progress" element={<Suspense fallback={<PageLoader />}><Progress /></Suspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

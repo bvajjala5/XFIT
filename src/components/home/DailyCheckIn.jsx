@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Droplets, X } from 'lucide-react'
+import { Droplets, X, CheckCircle2, Frown, Annoyed, Meh, Smile, Laugh, BatteryWarning, BatteryLow, BatteryMedium, BatteryFull, Zap } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
 import { localDateStr } from '@/lib/utils'
 
-const SLEEP_FEEL = [['😫', 'Awful'], ['😕', 'Poor'], ['😐', 'Okay'], ['🙂', 'Good'], ['😁', 'Great']]
-const ENERGY = [['🪫', 'Drained'], ['😴', 'Low'], ['😐', 'Okay'], ['⚡', 'Good'], ['🔥', 'Charged']]
+const SLEEP_FEEL = [[Frown, 'Awful'], [Annoyed, 'Poor'], [Meh, 'Okay'], [Smile, 'Good'], [Laugh, 'Great']]
+const ENERGY = [[BatteryWarning, 'Drained'], [BatteryLow, 'Low'], [BatteryMedium, 'Okay'], [BatteryFull, 'Good'], [Zap, 'Charged']]
 const SORE = [['None', 1], ['Light', 2], ['Some', 3], ['Sore', 4], ['Very', 5]]
 const FOOD = [['Yes', 'yes'], ['Partly', 'partly'], ['No', 'no']]
 
@@ -132,7 +132,7 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
 
             {result ? (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center py-8 space-y-2">
-                <p className="text-4xl">✅</p>
+                <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto" />
                 <p className="text-xl font-extrabold">{result.title}</p>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto">{result.body}</p>
                 <button onClick={() => onDismiss?.()} className="mt-5 w-full min-h-[48px] rounded-2xl primary-gradient text-white font-semibold">Done</button>
@@ -144,9 +144,9 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
                     onChange={(e) => { setSleepHours(Number(e.target.value)); setSleepTouched(true) }}
                     className="w-full accent-[hsl(var(--primary))] h-8" />
                   <div className="flex gap-1.5">
-                    {SLEEP_FEEL.map(([e, l], i) => (
+                    {SLEEP_FEEL.map(([Icon, l], i) => (
                       <Choice key={l} active={sleepFeel === i + 1} onClick={() => setSleepFeel(i + 1)}>
-                        <span className="block text-lg leading-none">{e}</span>
+                        <Icon className="w-5 h-5 mx-auto" strokeWidth={1.75} />
                         <span className="block text-[10px] mt-1">{l}</span>
                       </Choice>
                     ))}
@@ -155,9 +155,9 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
 
                 <Row title="Energy right now">
                   <div className="flex gap-1.5">
-                    {ENERGY.map(([e, l], i) => (
+                    {ENERGY.map(([Icon, l], i) => (
                       <Choice key={l} active={energy === i + 1} onClick={() => setEnergy(i + 1)}>
-                        <span className="block text-lg leading-none">{e}</span>
+                        <Icon className="w-5 h-5 mx-auto" strokeWidth={1.75} />
                         <span className="block text-[10px] mt-1">{l}</span>
                       </Choice>
                     ))}
