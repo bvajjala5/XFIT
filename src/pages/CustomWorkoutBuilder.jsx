@@ -159,7 +159,7 @@ Rules:
     }
   }
 
-  async function savePlanToSchedule() {
+  async function savePlan() {
     setSaving(true)
     try {
       const days = Object.entries(plan);
@@ -187,7 +187,7 @@ Rules:
         }
       }
       queryClient.invalidateQueries(['schedule', user?.uid]);
-      toast.success('Weekly plan saved to schedule!');
+      toast.success('Weekly plan saved to plan!');
       navigate('/weekly-plan');
     } catch (err) {
       console.error(err);
@@ -271,7 +271,7 @@ Rules:
               <Button variant="outline" className="flex-1 rounded-xl h-12 gap-2" onClick={() => setStep(1)} disabled={saving}>
                 Re-generate
               </Button>
-              <Button className="flex-1 rounded-xl h-12 gap-2" onClick={savePlanToSchedule} disabled={saving}>
+              <Button className="flex-1 rounded-xl h-12 gap-2" onClick={savePlan} disabled={saving}>
                 <Calendar className="w-4 h-4" />
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save to Plan'}
               </Button>
