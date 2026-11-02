@@ -223,6 +223,11 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         const snap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
         return snap.exists() ? { id: snap.id, ...snap.data() } : null;
       }
+      // Check if it's a custom workout but the route was /player/:id instead of /player/custom/:id
+      if (user) {
+        const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
+        if (customSnap.exists()) return { id: customSnap.id, ...customSnap.data(), isCustom: true };
+      }
       const snap = await getDoc(doc(db, 'workouts', workoutId));
       return snap.exists() ? { id: snap.id, ...snap.data() } : null;
     },

@@ -273,7 +273,7 @@ Rules:
               </Button>
               <Button className="flex-1 rounded-xl h-12 gap-2" onClick={savePlanToSchedule} disabled={saving}>
                 <Calendar className="w-4 h-4" />
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save to Schedule'}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save to Plan'}
               </Button>
             </div>
           </motion.div>
