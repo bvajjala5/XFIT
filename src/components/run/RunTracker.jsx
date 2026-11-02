@@ -200,11 +200,11 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   }
 
   return (
-    <div className={`relative flex flex-col ${fullScreen ? 'flex-1' : 'h-auto'}`}>
+    <div className={`relative flex flex-col ${fullScreen ? 'h-full w-full' : 'h-auto'}`}>
       {/* Map */}
-      <div className={`${fullScreen ? 'flex-1' : 'h-[400px]'} rounded-2xl overflow-hidden relative`}>
+      <div className={`${fullScreen ? 'absolute inset-0 z-0' : 'h-[400px] rounded-2xl overflow-hidden relative z-0'}`}>
         {currentPos ? (
-          <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+          <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={false}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -226,7 +226,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
       </div>
 
       {/* Stats overlay */}
-      <div className={`${fullScreen ? 'absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/80 to-transparent' : 'p-4 space-y-4'} space-y-4`}>
+      <div className={`${fullScreen ? 'absolute bottom-0 left-0 right-0 p-4 z-10' : 'p-4 space-y-4 relative z-10'} space-y-4 bg-gradient-to-t from-background via-background/80 to-transparent`}>
         {/* Primary stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center">
