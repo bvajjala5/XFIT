@@ -358,3 +358,4 @@ export default function Profile() {
     </div>
   );
 }
+const followingCount = 0; const followersCount = 0;
