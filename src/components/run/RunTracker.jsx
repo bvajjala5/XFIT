@@ -200,11 +200,11 @@ export default function RunTracker({ onComplete }) {
   }
 
   return (
-    <div className="relative h-full min-h-[60vh] flex flex-col">
+    <div className="relative h-full min-h-screen flex flex-col">
       {/* Map */}
-      <div className="flex-1 rounded-2xl overflow-hidden min-h-[300px]">
+      <div className="flex-1 overflow-hidden">
         {currentPos ? (
-          <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%', minHeight: 300 }} zoomControl={false}>
+          <MapContainer center={currentPos} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer
               attribution=""
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -216,7 +216,7 @@ export default function RunTracker({ onComplete }) {
             <Circle center={currentPos} radius={5} color="#60a5fa" fillColor="#60a5fa" fillOpacity={1} />
           </MapContainer>
         ) : (
-          <div className="h-full min-h-[300px] bg-secondary/30 rounded-2xl flex items-center justify-center">
+          <div className="h-full w-full bg-secondary/30 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <Navigation className="w-8 h-8 mx-auto mb-2 animate-pulse" />
               <p className="text-sm">Acquiring GPS...</p>
@@ -225,8 +225,8 @@ export default function RunTracker({ onComplete }) {
         )}
       </div>
 
-      {/* Stats overlay */}
-      <div className="mt-4 space-y-4">
+      {/* Stats overlay - fixed at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4 bg-gradient-to-t from-background via-background/80 to-transparent">
         {/* Primary stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center">
@@ -257,7 +257,7 @@ export default function RunTracker({ onComplete }) {
 
         {/* Splits */}
         {splits.length > 0 && (
-          <div className="glass rounded-2xl p-3 space-y-1">
+          <div className="glass rounded-2xl p-3 space-y-1 max-h-32 overflow-y-auto">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Splits</p>
             {splits.map((sp) => (
               <div key={sp.km} className="flex justify-between text-sm">

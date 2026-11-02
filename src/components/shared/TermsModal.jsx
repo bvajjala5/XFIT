@@ -29,10 +29,10 @@ export default function TermsModal({ userId, onDismiss }) {
       {show && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background p-0">
           <motion.div
             initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-            className="bg-card border border-border/50 rounded-3xl p-7 w-full max-w-lg shadow-2xl flex flex-col items-center text-center space-y-5">
+            className="bg-card border-0 rounded-none p-7 w-full h-full shadow-none flex flex-col items-center justify-center text-center space-y-5">
 
             <img src="/icons/icon-192.png" alt="Uttar Fitness" width="64" height="64" className="w-16 h-16 rounded-2xl" />
 

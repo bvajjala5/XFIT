@@ -182,9 +182,6 @@ export default function WorkoutDetail() {
           </div>
           <div>
             <div className="font-semibold">{workout.trainer}</div>
-            <div className="text-xs text-muted-foreground">
-              {workout.trainer_bio || 'Certified Personal Trainer'}
-            </div>
           </div>
         </GlassCard>
 

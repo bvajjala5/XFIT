@@ -1,0 +1,828 @@
+From a772cbf74f749595b527c14b8007c68e46fec705 Mon Sep 17 00:00:00 2001
+From: Bhanu Vajjala <bhanu.charan.vajjala@gmail.com>
+Date: Mon, 2 Nov 2026 07:41:18 -0600
+Subject: [PATCH] Restore Stats tab without leaderboard; move My Goals and
+ Recent Workouts out of Profile
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017FiLe6b8DYso7bCVHUN5VP
+---
+ src/App.jsx                         |   3 +-
+ src/components/layout/AppLayout.jsx |   3 +-
+ src/components/shared/Badges.jsx    | 209 ++++++++++++++++++++++
+ src/components/stats/GoalsCard.jsx  | 109 ++++++++++++
+ src/pages/Profile.jsx               | 119 +------------
+ src/pages/Stats.jsx                 | 261 ++++++++++++++++++++++++++++
+ 6 files changed, 584 insertions(+), 120 deletions(-)
+ create mode 100644 src/components/shared/Badges.jsx
+ create mode 100644 src/components/stats/GoalsCard.jsx
+ create mode 100644 src/pages/Stats.jsx
+
+diff --git a/src/App.jsx b/src/App.jsx
+index 45db0c26..e2c56a58 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -24,6 +24,7 @@ const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))
+ const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
+ const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
+ const Profile = lazy(() => import('@/pages/Profile'))
++const Stats = lazy(() => import('@/pages/Stats'))
+ const HealthHub = lazy(() => import('@/pages/HealthHub'))
+ const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
+ const Privacy = lazy(() => import('@/pages/Privacy'))
+@@ -85,7 +86,7 @@ export default function App() {
+         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />
+         {/* Redirects for old routes */}
+         <Route path="ranks" element={<Navigate to="/" replace />} />
+-        <Route path="stats" element={<Navigate to="/" replace />} />
++        <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
+         <Route path="leaderboard" element={<Navigate to="/" replace />} />
+         <Route path="friends" element={<Navigate to="/profile" replace />} />
+         <Route path="progress" element={<Navigate to="/" replace />} />
+diff --git a/src/components/layout/AppLayout.jsx b/src/components/layout/AppLayout.jsx
+index 7a9f5d38..237a8c37 100644
+--- a/src/components/layout/AppLayout.jsx
++++ b/src/components/layout/AppLayout.jsx
+@@ -1,6 +1,6 @@
+ import { useEffect } from 'react';
+ import { Outlet, Link, useLocation } from 'react-router-dom';
+-import { Home, Dumbbell, User, Heart } from 'lucide-react';
++import { Home, Dumbbell, User, Heart, BarChart2 } from 'lucide-react';
+ import { motion } from 'framer-motion';
+ import AnimatedBackground from './AnimatedBackground';
+ import InstallBanner from '@/components/shared/InstallBanner';
+@@ -9,6 +9,7 @@ const navItems = [
+   { path: '/',          icon: Home,           label: 'Home'     },
+   { path: '/health',    icon: Heart,          label: 'Health'   },
+   { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
++  { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
+   { path: '/profile',   icon: User,           label: 'Profile'  },
+ ];
+ 
+diff --git a/src/components/shared/Badges.jsx b/src/components/shared/Badges.jsx
+new file mode 100644
+index 00000000..1f7a9275
+--- /dev/null
++++ b/src/components/shared/Badges.jsx
+@@ -0,0 +1,209 @@
++import React, { useMemo, useEffect, useRef } from 'react';
++import { motion, AnimatePresence } from 'framer-motion';
++import { Dumbbell, Flame, Zap, Activity, Medal, Trophy, Footprints, Wrench, Moon, Sunrise } from 'lucide-react';
++
++const BADGE_DEFS = [
++  {
++    id: 'first_workout',
++    label: 'First Step',
++    Icon: Dumbbell,
++    desc: 'Complete your first workout',
++    check: ({ logs }) => logs.length >= 1,
++  },
++  {
++    id: 'streak_7',
++    label: '7-Day Streak',
++    Icon: Flame,
++    desc: 'Work out 7 days in a row',
++    check: ({ streak }) => streak >= 7,
++  },
++  {
++    id: 'streak_30',
++    label: '30-Day Streak',
++    Icon: Zap,
++    desc: 'Work out 30 days in a row',
++    check: ({ streak }) => streak >= 30,
++  },
++  {
++    id: 'ten_workouts',
++    label: 'Getting Serious',
++    Icon: Activity,
++    desc: 'Log 10 total workouts',
++    check: ({ logs }) => logs.length >= 10,
++  },
++  {
++    id: 'fifty_workouts',
++    label: 'Half Century',
++    Icon: Medal,
++    desc: 'Log 50 total workouts',
++    check: ({ logs }) => logs.length >= 50,
++  },
++  {
++    id: 'hundred_workouts',
++    label: 'Centurion',
++    Icon: Trophy,
++    desc: 'Log 100 total workouts',
++    check: ({ logs }) => logs.length >= 100,
++  },
++  {
++    id: 'first_run',
++    label: 'Road Runner',
++    Icon: Footprints,
++    desc: 'Complete your first GPS run',
++    check: ({ logs }) => logs.some(l => l.type === 'run' || l.workout_type === 'run'),
++  },
++  {
++    id: 'first_custom',
++    label: 'Builder',
++    Icon: Wrench,
++    desc: 'Complete a custom-built workout',
++    check: ({ logs }) => logs.some(l => l.is_custom || l.workout_category === 'custom'),
++  },
++  {
++    id: 'night_owl',
++    label: 'Night Owl',
++    Icon: Moon,
++    desc: 'Work out after 10 PM',
++    check: ({ logs }) => logs.some(l => {
++      const h = new Date(l.completedAt?.toDate?.() || l.completedAt || 0).getHours();
++      return h >= 22;
++    }),
++  },
++  {
++    id: 'early_bird',
++    label: 'Early Bird',
++    Icon: Sunrise,
++    desc: 'Work out before 7 AM',
++    check: ({ logs }) => logs.some(l => {
++      const h = new Date(l.completedAt?.toDate?.() || l.completedAt || 0).getHours();
++      return h >= 1 && h < 7; // exclude midnight edge cases
++    }),
++  },
++];
++
++const STORAGE_KEY = 'xfit_unlocked_badges';
++
++function getStoredBadges() {
++  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
++  catch { return new Set(); }
++}
++
++function storeBadges(set) {
++  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
++}
++
++export default function Badges({ logs = [], streak = 0 }) {
++  const ctx = { logs, streak };
++
++  const { unlocked, newlyUnlocked } = useMemo(() => {
++    const prev = getStoredBadges();
++    const unlocked = new Set();
++    BADGE_DEFS.forEach(b => { if (b.check(ctx)) unlocked.add(b.id); });
++    const newlyUnlocked = [...unlocked].filter(id => !prev.has(id));
++    return { unlocked, newlyUnlocked };
++  }, [logs.length, streak]);
++
++  // Persist newly unlocked
++  const persistedRef = useRef(false);
++  useEffect(() => {
++    if (persistedRef.current) return;
++    persistedRef.current = true;
++    if (unlocked.size > 0) storeBadges(unlocked);
++  }, [unlocked]);
++
++  const unlockedCount = unlocked.size;
++
++  return (
++    <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-4">
++      <div className="flex items-center justify-between">
++        <div>
++          <h3 className="font-bold text-sm">Badges</h3>
++          <p className="text-[11px] text-muted-foreground">{unlockedCount} / {BADGE_DEFS.length} unlocked</p>
++        </div>
++        {/* Progress bar */}
++        <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
++          <motion.div
++            initial={{ width: 0 }}
++            animate={{ width: `${(unlockedCount / BADGE_DEFS.length) * 100}%` }}
++            transition={{ duration: 1, ease: 'easeOut' }}
++            className="h-full primary-gradient rounded-full"
++          />
++        </div>
++      </div>
++
++      <div className="grid grid-cols-5 gap-2">
++        {BADGE_DEFS.map((badge, i) => {
++          const isUnlocked = unlocked.has(badge.id);
++          const isNew = newlyUnlocked.includes(badge.id);
++          return (
++            <motion.div
++              key={badge.id}
++              initial={{ opacity: 0, scale: 0.7 }}
++              animate={{ opacity: 1, scale: 1 }}
++              transition={{ delay: i * 0.05, type: 'spring', damping: 14, stiffness: 200 }}
++              title={`${badge.label} — ${badge.desc}`}
++              className="relative flex flex-col items-center gap-1.5"
++            >
++              {/* Badge circle */}
++              <motion.div
++                animate={isNew ? { scale: [1, 1.3, 0.95, 1.05, 1] } : {}}
++                transition={{ duration: 0.6, delay: i * 0.08 }}
++                className={`w-12 h-12 rounded-2xl flex items-center justify-center relative
++                  ${isUnlocked
++                    ? 'bg-primary/15 ring-2 ring-primary/40 shadow-lg shadow-primary/10'
++                    : 'bg-secondary/40 grayscale opacity-40'
++                  }`}
++              >
++                <badge.Icon className={`w-5 h-5 ${isUnlocked ? 'text-primary' : 'text-muted-foreground'}`} />
++                {/* Sparkle ring for newly unlocked */}
++                {isNew && (
++                  <motion.div
++                    initial={{ scale: 0.8, opacity: 1 }}
++                    animate={{ scale: 1.8, opacity: 0 }}
++                    transition={{ duration: 0.6, delay: i * 0.08 }}
++                    className="absolute inset-0 rounded-2xl ring-2 ring-primary"
++                  />
++                )}
++              </motion.div>
++
++              <p className="text-[9px] text-center leading-tight font-medium px-0.5"
++                style={{ color: isUnlocked ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>
++                {badge.label}
++              </p>
++
++              {isUnlocked && (
++                <motion.div
++                  initial={{ scale: 0 }}
++                  animate={{ scale: 1 }}
++                  className="w-1.5 h-1.5 rounded-full bg-primary"
++                />
++              )}
++            </motion.div>
++          );
++        })}
++      </div>
++
++      {/* Newly unlocked toast-style banner */}
++      <AnimatePresence>
++        {newlyUnlocked.length > 0 && (
++          <motion.div
++            initial={{ opacity: 0, y: 8 }}
++            animate={{ opacity: 1, y: 0 }}
++            exit={{ opacity: 0, y: 8 }}
++            className="bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-3"
++          >
++            {(() => { const NI = BADGE_DEFS.find(b => b.id === newlyUnlocked[0])?.Icon; return NI ? <NI className="w-6 h-6 text-primary" /> : null; })()}
++            <div>
++              <p className="text-sm font-bold text-primary">
++                {newlyUnlocked.length === 1
++                  ? `New badge: ${BADGE_DEFS.find(b => b.id === newlyUnlocked[0])?.label}!`
++                  : `${newlyUnlocked.length} new badges unlocked!`}
++              </p>
++              <p className="text-[11px] text-muted-foreground">Keep going</p>
++            </div>
++          </motion.div>
++        )}
++      </AnimatePresence>
++    </div>
++  );
++}
+diff --git a/src/components/stats/GoalsCard.jsx b/src/components/stats/GoalsCard.jsx
+new file mode 100644
+index 00000000..cd719d53
+--- /dev/null
++++ b/src/components/stats/GoalsCard.jsx
+@@ -0,0 +1,109 @@
++import React, { useState, useEffect } from 'react';
++import { useAuth } from '@/lib/AuthContext';
++import GlassCard from '@/components/shared/GlassCard';
++import { Input } from '@/components/ui/input';
++import { Dumbbell, Moon, Utensils, Footprints, Target, ChevronDown, ChevronUp, Pencil, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
++
++const GOAL_CATEGORIES = [
++  {key:'workout',Icon:Dumbbell,label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
++  {key:'nutrition',Icon:Utensils,label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
++  {key:'sleep',Icon:Moon,label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
++  {key:'activity',Icon:Footprints,label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
++];
++
++export default function GoalsCard() {
++  const { userData, updateUserData } = useAuth();
++  const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
++  const [editingGoal, setEditingGoal] = useState(null);
++  const [editGoalVal, setEditGoalVal] = useState('');
++  const [goalData, setGoalData] = useState({});
++
++  useEffect(() => {
++    if (userData) {
++      const saved = userData.goals||{};
++      const result = {};
++      GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
++      setGoalData(result);
++    }
++  }, [userData]);
++
++  const saveGoal = async (id, newVal) => {
++    const prev = goalData[id]?.current;
++    const history = [...(goalData[id]?.history||[]),{value:prev,updatedAt:new Date().toISOString()}];
++    const updated = {...goalData,[id]:{current:newVal,history}};
++    setGoalData(updated);
++    setEditingGoal(null);
++    await updateUserData({goals:updated});
++    // Sync to localStorage so WaterTracker, MealTracker, HealthHub pick up changes
++    const v = Number(newVal);
++    if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
++    if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
++    if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
++    if (id === 'active_calories') localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
++    if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
++    if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
++    if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
++    if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
++    if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
++      const ng = JSON.parse(localStorage.getItem('xfit_nutrition_goals') || '{"calories":2000,"protein":150,"carbs":250,"fat":65}');
++      const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
++      ng[km[id]] = v;
++      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
++      window.dispatchEvent(new Event('storage'));
++    }
++    if (id === 'daily_water') window.dispatchEvent(new Event('storage'));
++  };
++
++  function getTrend(current, prev) {
++    if (prev==null) return null;
++    const c=parseFloat(current), p=parseFloat(prev);
++    if (c>p) return 'up'; if (c<p) return 'down'; return 'same';
++  }
++
++  return (
++      <GlassCard className="space-y-3">
++        <h2 className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> My Goals</h2>
++        {GOAL_CATEGORIES.map(cat=>(
++          <div key={cat.key}>
++            <button className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" onClick={()=>setGoalExpanded(e=>({...e,[cat.key]:!e[cat.key]}))}>
++              <span className="flex items-center gap-2"><cat.Icon className="w-4 h-4" />{cat.label}</span>{goalExpanded[cat.key]?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}
++            </button>
++            {goalExpanded[cat.key] && (
++              <div className="space-y-2 pb-2">
++                {cat.goals.map(g=>{
++                  const gd=goalData[g.id]||{current:g.default,history:[]};
++                  const prev=gd.history?.slice(-1)[0]?.value;
++                  const trend=getTrend(gd.current,prev);
++                  const isEdit=editingGoal===g.id;
++                  return (
++                    <div key={g.id} className="flex items-center justify-between gap-2 bg-secondary/30 rounded-xl px-3 py-2">
++                      <div className="flex-1 min-w-0">
++                        <div className="text-xs font-medium truncate">{g.label}</div>
++                        {prev!=null&&<div className="text-[10px] text-muted-foreground">Previously: {prev} {g.unit}</div>}
++                      </div>
++                      <div className="flex items-center gap-2 flex-shrink-0">
++                        {trend==='up'&&<ArrowUp className="w-3.5 h-3.5 text-green-400"/>}
++                        {trend==='down'&&<ArrowDown className="w-3.5 h-3.5 text-red-400"/>}
++                        {isEdit ? (
++                          <div className="flex items-center gap-1">
++                            <Input value={editGoalVal} onChange={e=>setEditGoalVal(e.target.value)} className="w-20 h-7 text-xs bg-background border-border rounded-lg px-2" autoFocus/>
++                            <button onClick={()=>saveGoal(g.id,editGoalVal)} className="text-green-400 p-1"><Check className="w-3 h-3"/></button>
++                            <button onClick={()=>setEditingGoal(null)} className="text-muted-foreground p-1"><X className="w-3 h-3"/></button>
++                          </div>
++                        ) : (
++                          <div className="flex items-center gap-2">
++                            <span className="text-sm font-bold text-primary">{gd.current} <span className="text-[10px] text-muted-foreground font-normal">{g.unit}</span></span>
++                            <button onClick={()=>{setEditingGoal(g.id);setEditGoalVal(String(gd.current));}} className="text-muted-foreground hover:text-foreground p-1"><Pencil className="w-3 h-3"/></button>
++                          </div>
++                        )}
++                      </div>
++                    </div>
++                  );
++                })}
++              </div>
++            )}
++          </div>
++        ))}
++      </GlassCard>
++  );
++}
+diff --git a/src/pages/Profile.jsx b/src/pages/Profile.jsx
+index 0d6ca635..ca75704a 100644
+--- a/src/pages/Profile.jsx
++++ b/src/pages/Profile.jsx
+@@ -7,42 +7,23 @@ import { useQuery } from '@tanstack/react-query';
+ import { useAuth } from '@/lib/AuthContext';
+ import { applyTheme } from '@/components/layout/AppLayout';
+ import { Button } from '@/components/ui/button';
+-import { Input } from '@/components/ui/input';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+ import GlassCard from '@/components/shared/GlassCard';
+-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Moon, ChevronDown, ChevronUp, Pencil, Check, X, Palette, Utensils, Footprints, Target, Trophy, ChevronRight } from 'lucide-react';
++import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight } from 'lucide-react';
+ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+-import { motion } from 'framer-motion';
+-import { format } from 'date-fns';
+ 
+ const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
+ 
+-const GOAL_CATEGORIES = [
+-  {key:'workout',Icon:Dumbbell,label:'Workout Goals',goals:[{id:'workouts_per_week',label:'Workouts per week',unit:'days/week',default:3},{id:'mins_per_session',label:'Minutes per session',unit:'min',default:30},{id:'weekly_minutes',label:'Total weekly minutes',unit:'min/week',default:150}]},
+-  {key:'nutrition',Icon:Utensils,label:'Nutrition Goals',goals:[{id:'daily_calories',label:'Daily calories',unit:'cal',default:2200},{id:'daily_protein',label:'Daily protein',unit:'g',default:150},{id:'daily_water',label:'Daily water',unit:'glasses',default:8}]},
+-  {key:'sleep',Icon:Moon,label:'Sleep Goals',goals:[{id:'sleep_hours',label:'Sleep duration',unit:'hrs/night',default:8},{id:'bedtime',label:'Target bedtime',unit:'PM',default:'10:30'},{id:'wake_time',label:'Target wake time',unit:'AM',default:'6:30'}]},
+-  {key:'activity',Icon:Footprints,label:'Activity Goals',goals:[{id:'daily_steps',label:'Daily steps',unit:'steps',default:10000},{id:'weekly_distance',label:'Weekly distance',unit:'miles',default:15},{id:'active_calories',label:'Active calories/day',unit:'cal',default:500}]},
+-];
+-
+ export default function Profile() {
+   const { user, userData, updateUserData, logout } = useAuth();
+   const [editing, setEditing] = useState(false);
+   const [form, setForm] = useState({});
+   const [saving, setSaving] = useState(false);
+   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
+-  const [recentOpen, setRecentOpen] = useState(false);
+-  const [goalExpanded, setGoalExpanded] = useState({workout:false,nutrition:false,sleep:false,activity:false});
+-  const [editingGoal, setEditingGoal] = useState(null);
+-  const [editGoalVal, setEditGoalVal] = useState('');
+-  const [goalData, setGoalData] = useState({});
+ 
+   useEffect(() => {
+     if (userData) {
+       setForm({fitness_goal:userData.fitness_goal||'',experience_level:userData.experience_level||'',preferred_types:userData.preferred_types||[],distance_unit:userData.distance_unit||'miles'});
+-      const saved = userData.goals||{};
+-      const result = {};
+-      GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
+-      setGoalData(result);
+     }
+   }, [userData]);
+ 
+@@ -63,33 +44,6 @@ export default function Profile() {
+     setEditing(false);
+   };
+ 
+-  const saveGoal = async (id, newVal) => {
+-    const prev = goalData[id]?.current;
+-    const history = [...(goalData[id]?.history||[]),{value:prev,updatedAt:new Date().toISOString()}];
+-    const updated = {...goalData,[id]:{current:newVal,history}};
+-    setGoalData(updated);
+-    setEditingGoal(null);
+-    await updateUserData({goals:updated});
+-    // Sync to localStorage so WaterTracker, MealTracker, HealthHub pick up changes
+-    const v = Number(newVal);
+-    if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
+-    if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
+-    if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
+-    if (id === 'active_calories') localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
+-    if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
+-    if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
+-    if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
+-    if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
+-    if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
+-      const ng = JSON.parse(localStorage.getItem('xfit_nutrition_goals') || '{"calories":2000,"protein":150,"carbs":250,"fat":65}');
+-      const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
+-      ng[km[id]] = v;
+-      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
+-      window.dispatchEvent(new Event('storage'));
+-    }
+-    if (id === 'daily_water') window.dispatchEvent(new Event('storage'));
+-  };
+-
+   const handleDeleteAccount = async () => {
+     if (!user) return;
+     try {
+@@ -103,12 +57,6 @@ export default function Profile() {
+   const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
+   const totalCals = logs.reduce((s,l)=>s+(l.calories_burned||0),0);
+ 
+-  function getTrend(current, prev) {
+-    if (prev==null) return null;
+-    const c=parseFloat(current), p=parseFloat(prev);
+-    if (c>p) return 'up'; if (c<p) return 'down'; return 'same';
+-  }
+-
+   return (
+     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
+       <div className="text-center space-y-3">
+@@ -150,71 +98,6 @@ export default function Profile() {
+           </div>
+         )}
+       </GlassCard>
+-      <GlassCard className="space-y-3">
+-        <h2 className="font-semibold text-sm flex items-center gap-2"><Target className="w-4 h-4" /> My Goals</h2>
+-        {GOAL_CATEGORIES.map(cat=>(
+-          <div key={cat.key}>
+-            <button className="w-full flex items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" onClick={()=>setGoalExpanded(e=>({...e,[cat.key]:!e[cat.key]}))}>
+-              <span className="flex items-center gap-2"><cat.Icon className="w-4 h-4" />{cat.label}</span>{goalExpanded[cat.key]?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}
+-            </button>
+-            {goalExpanded[cat.key] && (
+-              <div className="space-y-2 pb-2">
+-                {cat.goals.map(g=>{
+-                  const gd=goalData[g.id]||{current:g.default,history:[]};
+-                  const prev=gd.history?.slice(-1)[0]?.value;
+-                  const trend=getTrend(gd.current,prev);
+-                  const isEdit=editingGoal===g.id;
+-                  return (
+-                    <div key={g.id} className="flex items-center justify-between gap-2 bg-secondary/30 rounded-xl px-3 py-2">
+-                      <div className="flex-1 min-w-0">
+-                        <div className="text-xs font-medium truncate">{g.label}</div>
+-                        {prev!=null&&<div className="text-[10px] text-muted-foreground">Previously: {prev} {g.unit}</div>}
+-                      </div>
+-                      <div className="flex items-center gap-2 flex-shrink-0">
+-                        {trend==='up'&&<span className="text-green-400 text-xs font-bold">↑</span>}
+-                        {trend==='down'&&<span className="text-red-400 text-xs font-bold">↓</span>}
+-                        {isEdit ? (
+-                          <div className="flex items-center gap-1">
+-                            <Input value={editGoalVal} onChange={e=>setEditGoalVal(e.target.value)} className="w-20 h-7 text-xs bg-background border-border rounded-lg px-2" autoFocus/>
+-                            <button onClick={()=>saveGoal(g.id,editGoalVal)} className="text-green-400 p-1"><Check className="w-3 h-3"/></button>
+-                            <button onClick={()=>setEditingGoal(null)} className="text-muted-foreground p-1"><X className="w-3 h-3"/></button>
+-                          </div>
+-                        ) : (
+-                          <div className="flex items-center gap-2">
+-                            <span className="text-sm font-bold text-primary">{gd.current} <span className="text-[10px] text-muted-foreground font-normal">{g.unit}</span></span>
+-                            <button onClick={()=>{setEditingGoal(g.id);setEditGoalVal(String(gd.current));}} className="text-muted-foreground hover:text-foreground p-1"><Pencil className="w-3 h-3"/></button>
+-                          </div>
+-                        )}
+-                      </div>
+-                    </div>
+-                  );
+-                })}
+-              </div>
+-            )}
+-          </div>
+-        ))}
+-      </GlassCard>
+-      {logs.length>0 && (
+-        <div className="glass rounded-2xl overflow-hidden">
+-          <button className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors" onClick={()=>setRecentOpen(o=>!o)}>
+-            <h2 className="font-semibold text-sm">Recent Workouts</h2>
+-            {recentOpen?<ChevronUp className="w-4 h-4 text-muted-foreground"/>:<ChevronDown className="w-4 h-4 text-muted-foreground"/>}
+-          </button>
+-          <div style={{maxHeight:recentOpen?'600px':'0',overflow:'hidden',transition:'max-height 0.3s ease'}}>
+-            <div className="px-4 pb-4 space-y-2">
+-              {logs.slice(0,10).map((log,i)=>(
+-                <motion.div key={log.id} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}} transition={{delay:i*0.03}} className="glass rounded-xl p-3 flex items-center justify-between">
+-                  <div>
+-                    <div className="font-medium text-sm">{log.workout_title}</div>
+-                    <div className="text-[11px] text-muted-foreground">{log.completedAt?.toDate?format(log.completedAt.toDate(),'MMM d, yyyy'):'—'} · {Math.round((log.duration_seconds||0)/60)} min</div>
+-                  </div>
+-                  <div className="text-xs text-primary font-semibold">{log.calories_burned||0} cal</div>
+-                </motion.div>
+-              ))}
+-            </div>
+-          </div>
+-        </div>
+-      )}
+       <GlassCard className="space-y-3">
+         <div className="flex items-center gap-2 mb-1">
+           <Palette className="w-4 h-4 text-primary" />
+diff --git a/src/pages/Stats.jsx b/src/pages/Stats.jsx
+new file mode 100644
+index 00000000..33821883
+--- /dev/null
++++ b/src/pages/Stats.jsx
+@@ -0,0 +1,261 @@
++import React, { useState } from 'react';
++import { db } from '@/lib/firebase';
++import { collection, getDocs, query, orderBy } from 'firebase/firestore';
++import { useQuery } from '@tanstack/react-query';
++import { useAuth } from '@/lib/AuthContext';
++import { AreaChart, Area, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
++import { Trophy, Flame, Calendar, Clock, TrendingUp, Zap } from 'lucide-react';
++import { motion } from 'framer-motion';
++import { localDateStr, calcStreak } from '@/lib/utils';
++import Badges from '@/components/shared/Badges';
++import GoalsCard from '@/components/stats/GoalsCard';
++
++// ── RANGE OPTIONS ─────────────────────────────────────────────────────────
++const RANGE_OPTIONS = [
++  { key: '1W', days: 7 },
++  { key: '1M', days: 30 },
++  { key: '3M', days: 90 },
++  { key: 'All', days: 365 },
++];
++
++const TYPE_COLORS = {
++  strength: '#60a5fa', hiit: '#f87171', cardio: '#4ade80',
++  yoga: '#c084fc', mobility: '#fbbf24', full_body: '#fb923c', other: '#94a3b8',
++};
++
++
++function buildDailyData(logs, days) {
++  const today = new Date();
++  return Array.from({ length: days }, (_, i) => {
++    const d = new Date(today.getTime() - (days - 1 - i) * 86400000);
++    const key = localDateStr(d);
++    const dayLogs = logs.filter(l => {
++      const raw = l.completedAt?.toDate ? l.completedAt.toDate() : new Date(l.completedAt || 0);
++      return localDateStr(raw) === key;
++    });
++    const showLabel = i % Math.max(Math.floor(days / 5), 1) === 0;
++    return {
++      date: key,
++      label: showLabel ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
++      workouts: dayLogs.length,
++      calories: dayLogs.reduce((s, l) => s + (l.calories_burned || 0), 0),
++      minutes: Math.round(dayLogs.reduce((s, l) => s + (l.duration_seconds || 0), 0) / 60),
++    };
++  });
++}
++
++function buildWeeklyData(logs) {
++  const weeks = {};
++  logs.forEach(l => {
++    const raw = l.completedAt?.toDate ? l.completedAt.toDate() : new Date(l.completedAt || 0);
++    const d = new Date(raw);
++    const weekStart = new Date(d);
++    weekStart.setDate(d.getDate() - d.getDay());
++    const key = localDateStr(weekStart);
++    if (!weeks[key]) weeks[key] = { key, workouts: 0, calories: 0, minutes: 0 };
++    weeks[key].workouts++;
++    weeks[key].calories += l.calories_burned || 0;
++    weeks[key].minutes += Math.round((l.duration_seconds || 0) / 60);
++  });
++  return Object.values(weeks)
++    .sort((a, b) => a.key.localeCompare(b.key))
++    .slice(-8)
++    .map(w => ({ ...w, label: new Date(w.key + 'T12:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }) }));
++}
++
++const CustomTooltip = ({ active, payload }) => {
++  if (!active || !payload?.length) return null;
++  return (
++    <div className="bg-card border border-border rounded-xl px-3 py-2 text-xs shadow-xl">
++      <p className="text-muted-foreground mb-1">{payload[0]?.payload?.label}</p>
++      {payload.map(p => (
++        <p key={p.dataKey} className="font-semibold" style={{ color: p.color }}>{p.value} {p.dataKey}</p>
++      ))}
++    </div>
++  );
++};
++
++
++export default function Stats() {
++  const { user } = useAuth();
++  const [range, setRange] = useState('1M');
++  const [metric, setMetric] = useState('workouts');
++
++  const { data: logs = [] } = useQuery({
++    queryKey: ['workout-logs-stats', user?.uid],
++    queryFn: async () => {
++      if (!user) return [];
++      const snap = await getDocs(query(collection(db, 'users', user.uid, 'workouts'), orderBy('completedAt', 'desc')));
++      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
++    },
++    enabled: !!user,
++  });
++
++  const streak = calcStreak(logs);
++  const days = RANGE_OPTIONS.find(r => r.key === range)?.days || 30;
++  const dailyData = buildDailyData(logs, days);
++  const weeklyData = buildWeeklyData(logs);
++  const totalMins = Math.round(logs.reduce((s, l) => s + (l.duration_seconds || 0), 0) / 60);
++  const totalCals = logs.reduce((s, l) => s + (l.calories_burned || 0), 0);
++  const bestWeek = Math.max(...weeklyData.map(w => w.workouts), 0);
++
++  const typeCounts = {};
++  logs.forEach(l => { const t = l.workout_type || 'other'; typeCounts[t] = (typeCounts[t] || 0) + 1; });
++  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
++  const maxTypeCount = Math.max(...typeEntries.map(e => e[1]), 1);
++
++  return (
++    <div className="max-w-2xl mx-auto px-4 pt-7 pb-28 space-y-6">
++      <h1 className="text-2xl font-bold">Stats</h1>
++      <div className="grid grid-cols-3 gap-3">
++        {[
++          { label: 'Workouts', value: logs.length,  color: 'text-primary',    icon: Calendar },
++          { label: 'Streak',   value: streak,        color: 'text-orange-400', icon: Flame    },
++          { label: 'Best Week',value: bestWeek,      color: 'text-green-400',  icon: Trophy   },
++        ].map(({ label, value, color, icon: Icon }) => (
++          <div key={label} className="bg-card border border-border/60 rounded-2xl p-4 flex flex-col gap-1">
++            <Icon className={`w-4 h-4 ${color} mb-1`} />
++            <div className={`text-2xl font-black ${color}`}>{value}</div>
++            <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
++          </div>
++        ))}
++      </div>
++      <div className="grid grid-cols-2 gap-3">
++        {[
++          { label: 'Total Minutes',  value: totalMins,  color: 'text-blue-400',   icon: Clock      },
++          { label: 'Total Calories', value: totalCals,  color: 'text-orange-400', icon: TrendingUp },
++        ].map(({ label, value, color, icon: Icon }) => (
++          <div key={label} className="bg-card border border-border/60 rounded-2xl p-4 flex flex-col gap-1">
++            <Icon className={`w-4 h-4 ${color} mb-1`} />
++            <div className={`text-2xl font-black ${color}`}>{value}</div>
++            <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
++          </div>
++        ))}
++      </div>
++
++      {/* Activity chart */}
++      <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-4">
++        <div className="flex items-center justify-between flex-wrap gap-2">
++          <div>
++            <h3 className="font-bold text-sm">Activity</h3>
++            <p className="text-[11px] text-muted-foreground">Workouts per day</p>
++          </div>
++          <div className="flex gap-1 bg-secondary/50 rounded-xl p-1">
++            {RANGE_OPTIONS.map(r => (
++              <button key={r.key} onClick={() => setRange(r.key)}
++                className={`text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all ${range===r.key?'bg-primary text-white':'text-muted-foreground hover:text-foreground'}`}>
++                {r.key}
++              </button>
++            ))}
++          </div>
++        </div>
++        {logs.length === 0 ? (
++          <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">Complete a workout to see your activity here</div>
++        ) : (
++          <ResponsiveContainer width="100%" height={160}>
++            <AreaChart data={dailyData} margin={{ top:4, right:4, left:-20, bottom:0 }}>
++              <defs>
++                <linearGradient id="actGrad" x1="0" y1="0" x2="0" y2="1">
++                  <stop offset="5%"  stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
++                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
++                </linearGradient>
++              </defs>
++              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false}/>
++              <XAxis dataKey="label" tick={{fontSize:9,fill:'hsl(var(--muted-foreground))'}} axisLine={false} tickLine={false}/>
++              <YAxis tick={{fontSize:9,fill:'hsl(var(--muted-foreground))'}} axisLine={false} tickLine={false} allowDecimals={false}/>
++              <Tooltip content={<CustomTooltip/>}/>
++              <Area type="monotone" dataKey="workouts" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#actGrad)" dot={false} activeDot={{r:5,fill:'hsl(var(--primary))',strokeWidth:0}}/>
++            </AreaChart>
++          </ResponsiveContainer>
++        )}
++      </div>
++
++      {/* Weekly chart */}
++      <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-4">
++        <div className="flex items-center justify-between flex-wrap gap-2">
++          <div>
++            <h3 className="font-bold text-sm">Weekly Volume</h3>
++            <p className="text-[11px] text-muted-foreground">Workouts per week</p>
++          </div>
++          <div className="flex gap-1 bg-secondary/50 rounded-xl p-1">
++            {['workouts','calories','minutes'].map(m => (
++              <button key={m} onClick={() => setMetric(m)}
++                className={`text-[10px] px-2.5 py-1.5 rounded-lg font-semibold capitalize transition-all ${metric===m?'bg-primary text-white':'text-muted-foreground hover:text-foreground'}`}>
++                {m}
++              </button>
++            ))}
++          </div>
++        </div>
++        {weeklyData.length === 0 ? (
++          <div className="h-36 flex items-center justify-center text-muted-foreground text-sm">No data yet!</div>
++        ) : (
++          <ResponsiveContainer width="100%" height={140}>
++            <BarChart data={weeklyData} margin={{top:4,right:4,left:-20,bottom:0}}>
++              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false}/>
++              <XAxis dataKey="label" tick={{fontSize:9,fill:'hsl(var(--muted-foreground))'}} axisLine={false} tickLine={false}/>
++              <YAxis tick={{fontSize:9,fill:'hsl(var(--muted-foreground))'}} axisLine={false} tickLine={false} allowDecimals={false}/>
++              <Tooltip content={<CustomTooltip/>}/>
++              <Bar dataKey={metric} fill="hsl(var(--primary))" radius={[6,6,0,0]} maxBarSize={40}/>
++            </BarChart>
++          </ResponsiveContainer>
++        )}
++      </div>
++
++      {/* Workout type breakdown */}
++      {typeEntries.length > 0 && (
++        <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-3">
++          <h3 className="font-bold text-sm">Workout Types</h3>
++          <div className="space-y-2.5">
++            {typeEntries.map(([type, count]) => (
++              <div key={type} className="space-y-1">
++                <div className="flex justify-between text-xs">
++                  <span className="capitalize font-medium">{type.replace('_',' ')}</span>
++                  <span className="text-muted-foreground">{count} session{count!==1?'s':''}</span>
++                </div>
++                <div className="h-2 bg-secondary rounded-full overflow-hidden">
++                  <motion.div initial={{width:0}} animate={{width:`${(count/maxTypeCount)*100}%`}}
++                    transition={{duration:0.8,ease:'easeOut'}} className="h-full rounded-full"
++                    style={{backgroundColor:TYPE_COLORS[type]||'#94a3b8'}}/>
++                </div>
++              </div>
++            ))}
++          </div>
++        </div>
++      )}
++
++      {/* Recent workouts */}
++      {logs.slice(0,5).length > 0 && (
++        <div className="bg-card border border-border/60 rounded-3xl p-5 space-y-3">
++          <h3 className="font-bold text-sm">Recent Workouts</h3>
++          <div className="space-y-2">
++            {logs.slice(0,5).map(log => {
++              const date = log.completedAt?.toDate ? log.completedAt.toDate() : new Date(log.completedAt||0);
++              return (
++                <div key={log.id} className="flex items-center gap-3 py-1">
++                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
++                    style={{backgroundColor:(TYPE_COLORS[log.workout_type]||'#94a3b8')+'25'}}>
++                    <Zap className="w-4 h-4" style={{color:TYPE_COLORS[log.workout_type]||'#94a3b8'}}/>
++                  </div>
++                  <div className="flex-1 min-w-0">
++                    <p className="text-sm font-semibold truncate">{log.workout_title||'Workout'}</p>
++                    <p className="text-[11px] text-muted-foreground">{date.toLocaleDateString('en',{month:'short',day:'numeric'})}</p>
++                  </div>
++                  <div className="text-right text-xs shrink-0">
++                    <p className="font-semibold">{Math.round((log.duration_seconds||0)/60)} min</p>
++                    <p className="text-muted-foreground">{log.calories_burned||0} cal</p>
++                  </div>
++                </div>
++              );
++            })}
++          </div>
++        </div>
++      )}
++
++      {/* Goals */}
++      <GoalsCard />
++
++      {/* Badges */}
++      <Badges logs={logs} streak={streak} />
++    </div>
++  );
++}
+-- 
+2.43.0
+

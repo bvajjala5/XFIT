@@ -32,6 +32,7 @@ const Terms = lazy(() => import('@/pages/Terms'))
 const PersonalRecords = lazy(() => import('@/pages/PersonalRecords'))
 const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
 const Community = lazy(() => import('@/pages/Community'))
+const Run = lazy(() => import('@/pages/Run'))
 
 function LoadingScreen() {
   return (
@@ -74,6 +75,9 @@ export default function App() {
       <Route path="/player/custom/:id" element={
         <AuthGuard><Suspense fallback={<LoadingScreen />}><WorkoutPlayer isCustom /></Suspense></AuthGuard>
       } />
+      <Route path="/run" element={
+        <AuthGuard><Suspense fallback={<LoadingScreen />}><Run /></Suspense></AuthGuard>
+      } />
 
       {/* App pages with layout */}
       <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
@@ -90,7 +94,6 @@ export default function App() {
         <Route path="leaderboard" element={<Navigate to="/" replace />} />
         <Route path="friends" element={<Navigate to="/profile" replace />} />
         <Route path="progress" element={<Navigate to="/" replace />} />
-        <Route path="run" element={<Navigate to="/workouts" replace />} />
         <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
         <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
         <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />

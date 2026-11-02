@@ -1,0 +1,244 @@
+From 71f9de898359b932d98b986ab66b6d01594778c9 Mon Sep 17 00:00:00 2001
+From: Bhanu Vajjala <bhanu.charan.vajjala@gmail.com>
+Date: Sun, 1 Nov 2026 12:10:26 -0600
+Subject: [PATCH] Fix first exercise being skipped; smarter, more natural
+ workout voice with voice picker
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017FiLe6b8DYso7bCVHUN5VP
+---
+ src/pages/WorkoutPlayer.jsx | 171 +++++++++++++++++++++++++-----------
+ 1 file changed, 121 insertions(+), 50 deletions(-)
+
+diff --git a/src/pages/WorkoutPlayer.jsx b/src/pages/WorkoutPlayer.jsx
+index 6fd8d394..88873896 100644
+--- a/src/pages/WorkoutPlayer.jsx
++++ b/src/pages/WorkoutPlayer.jsx
+@@ -13,26 +13,75 @@ import GlassCard from '@/components/shared/GlassCard';
+ import WorkoutDemo from '@/components/workout/WorkoutDemo';
+ import { toast } from 'sonner';
+ 
++// ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
++const GOOD_VOICES = [
++  /Microsoft (Aria|Jenny|Guy|Davis|Sonia|Ryan|Libby).*Online/i, // Edge/Windows neural voices
++  /Google US English/i, /Google UK English (Female|Male)/i,
++  /Ava|Zoe|Allison|Evan|Nicky/i,                                  // Apple premium voices
++  /Samantha|Daniel|Karen|Moira|Tessa|Serena/i,
++];
++function voiceScore(v) {
++  if (!/^en[-_]/i.test(v.lang)) return -1;
++  let score = /^en[-_]US/i.test(v.lang) ? 20 : /^en[-_](GB|AU|IE|ZA)/i.test(v.lang) ? 10 : 5;
++  if (/premium|enhanced|natural|neural|online/i.test(v.name)) score += 60;
++  const i = GOOD_VOICES.findIndex(r => r.test(v.name));
++  if (i >= 0) score += 40 - i * 4;
++  if (/compact|novelty|whisper|bad|bells|boing|organ|zarvox|trinoids|cellos|albert|fred|junior|ralph|kathy|bubbles|jester|hysterical/i.test(v.name)) score -= 100;
++  if (v.localService === false) score += 5;
++  return score;
++}
++function englishVoices() {
++  const all = window.speechSynthesis?.getVoices?.() || [];
++  return all.map(v => ({ v, s: voiceScore(v) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.v);
++}
++function pickVoice() {
++  const list = englishVoices();
++  const saved = localStorage.getItem('xfit_voice_name');
++  return list.find(v => v.name === saved) || list[0] || null;
++}
++
+ function cleanForSpeech(text) {
+-  return text.replace(/\bSpO2\b/gi,'blood oxygen').replace(/(\d+)\s*x\s*(\d+)/gi,'$1 by $2').replace(/\blbs\b/gi,'pounds').replace(/\breps\b/gi,'repetitions').replace(/\bmin\b/gi,'minutes').replace(/\bsec\b/gi,'seconds').replace(/\b([A-Z]{2,})\b/g,m=>m.toLowerCase());
++  return text
++    .replace(/\bSpO2\b/gi, 'blood oxygen').replace(/(\d+)\s*x\s*(\d+)/gi, '$1 by $2')
++    .replace(/\blbs\b/gi, 'pounds').replace(/\breps\b/gi, 'reps').replace(/\bmin\b/gi, 'minutes').replace(/\bsec\b/gi, 'seconds')
++    .replace(/\bHIIT\b/g, 'hit').replace(/\bAMRAP\b/g, 'as many reps as possible')
++    .replace(/[—–]/g, ',').replace(/\s+/g, ' ').trim();
+ }
+ 
+-function speakText(text, enabled=true) {
+-  if (!enabled || !window.speechSynthesis) return;
+-  window.speechSynthesis.cancel();
+-  const cleaned = cleanForSpeech(text);
+-  const speak = (voices) => {
+-    const u = new SpeechSynthesisUtterance(cleaned);
+-    const v = voices.find(v=>v.name==='Google US English')||voices.find(v=>v.name==='Samantha')||voices.find(v=>v.name==='Alex')||voices.find(v=>v.lang==='en-US');
+-    if (v) u.voice=v;
+-    u.lang='en-US'; u.rate=0.88; u.pitch=1.0; u.volume=1.0;
+-    window.speechSynthesis.speak(u);
+-  };
+-  const vv = window.speechSynthesis.getVoices();
+-  if (vv.length>0) speak(vv);
+-  else window.speechSynthesis.onvoiceschanged = () => speak(window.speechSynthesis.getVoices());
++let voicesReady = null;
++function whenVoicesReady() {
++  if (!voicesReady) voicesReady = new Promise((resolve) => {
++    const synth = window.speechSynthesis;
++    if (synth.getVoices().length) return resolve();
++    const done = () => { synth.removeEventListener?.('voiceschanged', done); resolve(); };
++    synth.addEventListener?.('voiceschanged', done);
++    setTimeout(resolve, 1500);
++  });
++  return voicesReady;
++}
++
++function speakText(text, enabled = true, opts = {}) {
++  if (!enabled || typeof window === 'undefined' || !window.speechSynthesis) return;
++  const synth = window.speechSynthesis;
++  whenVoicesReady().then(() => {
++    synth.cancel();
++    const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
++    const v = pickVoice();
++    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
++    u.rate = opts.rate ?? 0.97; u.pitch = opts.pitch ?? 1.0; u.volume = 1.0;
++    synth.speak(u);
++  });
++}
++
++// iOS/Safari only allow speech after a tap: unlock it on the first touch anywhere on the page.
++function unlockSpeech() {
++  try { window.speechSynthesis?.speak(Object.assign(new SpeechSynthesisUtterance(' '), { volume: 0 })); } catch (e) {}
+ }
+ 
++const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it up.', 'Well done.'];
++const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
++const amountText = (ex, dur) => ex.reps ? `${ex.reps} reps` : `${dur} seconds`;
++
+ const motivations = ["You're crushing it! 💪","Push through the burn!","Almost there, don't give up!","You're stronger than yesterday!","Feel the power! 🔥","Every rep counts!","Let's go, champion!"];
+ 
+ async function generateShareCard({ workoutTitle, duration, calories, rating, difficulty }) {
+@@ -138,8 +187,28 @@ export default function WorkoutPlayer() {
+   const [sharing, setSharing] = useState(false);
+ 
+   const timerRef = useRef(null);
++  const timeLeftRef = useRef(0);
++  const [voiceName, setVoiceName] = useState(() => pickVoice()?.name || '');
+   const announcedRef = useRef({ exIndex:-1, countdown:false });
+ 
++  useEffect(() => {
++    const on = () => { unlockSpeech(); window.removeEventListener('pointerdown', on); };
++    window.addEventListener('pointerdown', on);
++    return () => { window.removeEventListener('pointerdown', on); window.speechSynthesis?.cancel(); };
++  }, []);
++
++  // Tap to try the next available voice (saved for next time)
++  useEffect(() => { whenVoicesReady().then(() => setVoiceName(pickVoice()?.name || '')); }, []);
++  const cycleVoice = () => {
++    const list = englishVoices().slice(0, 6);
++    if (!list.length) return;
++    const i = list.findIndex(v => v.name === voiceName);
++    const next = list[(i + 1) % list.length];
++    localStorage.setItem('xfit_voice_name', next.name);
++    setVoiceName(next.name);
++    speakText('Let’s get after it.', true);
++  };
++
+   const toggleVoice = () => {
+     const next = !voiceEnabled;
+     setVoiceEnabled(next);
+@@ -168,22 +237,24 @@ export default function WorkoutPlayer() {
+     });
+   }, [workout?.id, workout?.exercises, customDurations]);
+ 
+-  // Set duration when exercise changes
++  // Set the timer and announce the exercise whenever it changes, and once the workout has loaded
++  // (the exercise list arrives after the first render, which used to leave the timer at 0 and skip exercise 1).
+   useEffect(() => {
+     if (!exercises.length || isComplete) return;
+     const ex = exercises[currentEx];
+     const dur = ex?.duration || (ex?.sets ? ex.sets*(ex.reps||10)*3 : 30);
++    timeLeftRef.current = dur;
+     setTimeLeft(dur);
+     announcedRef.current.countdown = false;
+     if (announcedRef.current.exIndex !== currentEx) {
+       announcedRef.current.exIndex = currentEx;
+       const isLast = currentEx === exercises.length-1;
+-      const desc = ex.reps ? `${ex.reps} repetitions` : `${dur} seconds`;
+-      if (currentEx===0) speakText(`Let's go! Starting with ${ex.name}.`, voiceEnabled);
+-      else if (isLast) speakText(`Last one! Give it everything you've got — ${ex.name}.`, voiceEnabled);
+-      else speakText(`Next up — ${ex.name}. ${desc}. Let's get it.`, voiceEnabled);
++      const amount = amountText(ex, dur);
++      if (currentEx === 0) speakText(`Let’s go. First up, ${ex.name}. ${amount}.`, voiceEnabled);
++      else if (isLast) speakText(`${pick(PRAISE)} Last one. ${ex.name}. ${amount}. Give it everything.`, voiceEnabled);
++      else speakText(`${pick(PRAISE)} Next, ${ex.name}. ${amount}.`, voiceEnabled);
+     }
+-  }, [currentEx, isComplete]);
++  }, [currentEx, isComplete, exercises.length]);
+ 
+   // Exercise countdown — use refs to avoid stale closures
+   const exercisesRef = useRef(exercises);
+@@ -199,36 +270,29 @@ export default function WorkoutPlayer() {
+     clearInterval(timerRef.current);
+     timerRef.current = setInterval(() => {
+       if (!mountedRef.current) return;
+-      setTimeLeft(prev => {
+-        if (prev===5 && !announcedRef.current.countdown) {
+-          announcedRef.current.countdown=true;
+-          speakText('5... 4... 3... 2... 1...', voiceEnabled);
+-        }
+-        if (prev<=1) {
+-          const exs = exercisesRef.current;
+-          const cur = currentExRef.current;
+-          if (cur < exs.length-1) {
+-            const nextEx = exs[cur+1];
+-            if (nextEx) speakText(`Great work! Coming up next — ${nextEx.name}.`, voiceEnabled);
+-            setCurrentEx(c=>c+1);
+-            setMotivation(motivations[Math.floor(Math.random()*motivations.length)]);
+-            setTimeout(() => setMotivation(''), 3000);
+-            return 0;
+-          } else {
+-            speakText('Workout complete! You crushed it today. See you tomorrow.', voiceEnabled);
+-            setIsComplete(true);
+-            clearInterval(timerRef.current);
+-            return 0;
+-          }
+-        }
+-        return prev-1;
+-      });
+-      setTotalTime(t=>t+1);
++      const prev = timeLeftRef.current;
++      if (prev <= 0) return; // timer not set yet — never advance on a zero
++      if (prev === 4 && !announcedRef.current.countdown) {
++        announcedRef.current.countdown = true;
++        speakText('3, 2, 1', voiceEnabled, { rate: 1.0 });
++      }
++      setTotalTime(t => t + 1);
++      if (prev > 1) { timeLeftRef.current = prev - 1; setTimeLeft(prev - 1); return; }
++      const exs = exercisesRef.current;
++      const cur = currentExRef.current;
++      timeLeftRef.current = 0; setTimeLeft(0);
++      if (cur < exs.length - 1) {
++        setCurrentEx(c => c + 1);
++        setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
++        setTimeout(() => setMotivation(''), 3000);
++      } else {
++        speakText('Workout complete. You crushed it today.', voiceEnabled);
++        setIsComplete(true);
++        clearInterval(timerRef.current);
++      }
+     }, 1000);
+     return () => clearInterval(timerRef.current);
+-  }, [isPaused, isComplete, currentEx, exercises.length]);
+-
+-
++  }, [isPaused, isComplete, currentEx, exercises.length, voiceEnabled]);
+ 
+   const skipExercise = useCallback(() => {
+     if (currentEx < exercises.length-1) setCurrentEx(c=>c+1);
+@@ -436,7 +500,14 @@ export default function WorkoutPlayer() {
+       <div className="flex items-center justify-between p-4">
+         <button onClick={() => navigate(-1)} className="glass rounded-full p-2"><X className="w-5 h-5" /></button>
+         <div className="text-sm font-medium text-muted-foreground">{currentEx+1} / {exercises.length}</div>
+-        <button onClick={toggleVoice} className="glass rounded-full p-2">{voiceEnabled?<Volume2 className="w-5 h-5 text-primary"/>:<VolumeX className="w-5 h-5 text-muted-foreground"/>}</button>
++        <div className="flex items-center gap-2">
++          {voiceEnabled && englishVoices().length > 1 && (
++            <button onClick={cycleVoice} className="glass rounded-full px-3 min-h-[44px] text-[11px] text-muted-foreground max-w-[110px] truncate" title="Try another voice">
++              {voiceName.replace(/^(Microsoft|Google)\s+/i, '').replace(/\s*\(.*\)|\s*Online.*/i, '') || 'Voice'}
++            </button>
++          )}
++          <button onClick={toggleVoice} aria-label="Toggle voice" className="glass rounded-full w-11 h-11 flex items-center justify-center">{voiceEnabled?<Volume2 className="w-5 h-5 text-primary"/>:<VolumeX className="w-5 h-5 text-muted-foreground"/>}</button>
++        </div>
+       </div>
+       <Progress value={overallProgress} className="h-1 mx-4 rounded-full" />
+       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8">
+-- 
+2.43.0
+
