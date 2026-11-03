@@ -195,6 +195,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const [totalTime, setTotalTime] = useState(0);
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
+  const announcedRef = useRef({ exIndex:-1, countdown:false });
   const [voiceName, setVoiceName] = useState(() => pickVoice()?.name || '');
 
 
