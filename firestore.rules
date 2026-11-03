@@ -4,11 +4,9 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
-    // Only you can change the shared workout library.
-    // REPLACE the placeholder below with your Firebase Auth UID
-    // (Firebase console → Authentication → Users → copy the "User UID" column).
-    // Until you do, nobody can write to /workouts (everyone can still read it).
-    function isAdmin() { return signedIn() && request.auth.uid == 'PASTE_YOUR_UID'; }
+    // Admin access uses a Firebase Auth custom claim (token.admin == true).
+    // Until that claim is set by a trusted server/script, no one can write /workouts.
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
 
     // Everything under a user's own document is private to that user
     // (profile, workouts, schedule, health logs, photos, goals, tokens, etc.).
@@ -33,24 +31,31 @@ service cloud.firestore {
     }
 
     // Community workouts: anyone signed in can read; you can only publish/edit/remove your own.
+    // Creating a shared workout must not impersonate another user or pre-seed imports.
     // Anyone may bump importCount by exactly 1 (used when importing a workout).
     match /sharedWorkouts/{id} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.sharedBy == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.sharedBy == request.auth.uid
+        && request.resource.data.sharedByName is string
+        && request.resource.data.sharedByName.size() <= 100
+        && request.resource.data.importCount == 0
+        && (!('title' in request.resource.data) || request.resource.data.title is string)
+        && (!('name' in request.resource.data) || request.resource.data.name is string);
       allow update: if signedIn() && (
-        (resource.data.sharedBy == request.auth.uid && request.resource.data.sharedBy == request.auth.uid)
+        (resource.data.sharedBy == request.auth.uid && request.resource.data.sharedBy == request.auth.uid
+          && request.resource.data.sharedByName is string
+          && request.resource.data.sharedByName.size() <= 100
+          && request.resource.data.importCount == resource.data.importCount)
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['importCount'])
             && request.resource.data.importCount == resource.data.importCount + 1)
       );
       allow delete: if signedIn() && resource.data.sharedBy == request.auth.uid;
     }
 
-    // Leaderboard: public to signed-in users, but you can only write your own row.
-    match /leaderboard/{uid} {
-      allow read: if signedIn();
-      allow create, update: if isOwner(uid);
-      allow delete: if isOwner(uid) || isAdmin();
-    }
+    // Leaderboard is intentionally disabled until the product ships. Remove this
+    // lock to implement the feature with an authenticated write path.
+    // The default-deny rule below rejects all reads/writes.
 
     // Anything not listed above is locked.
   }

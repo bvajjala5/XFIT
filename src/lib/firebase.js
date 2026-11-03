@@ -3,7 +3,6 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
-import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,5 +24,3 @@ export let messaging = null;
 isSupported().then(supported => {
   if (supported) messaging = getMessaging(app);
 }).catch(() => {});
-
-try { getAnalytics(app); } catch(e) {}

@@ -46,10 +46,11 @@ export default function AppLayout() {
           const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
           return (
             <Link key={path} to={path}
+              aria-current={isActive ? 'page' : undefined}
               className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl w-16 transition-all ${isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
               {isActive && <motion.div layoutId="activeNav" className="absolute inset-0 bg-primary/10 rounded-2xl" />}
               <Icon className="w-[18px] h-[18px] relative z-10" />
-              <span className="text-[9px] font-semibold relative z-10 leading-tight text-center">{label}</span>
+              <span className="text-[10px] font-semibold relative z-10 leading-tight text-center">{label}</span>
             </Link>
           );
         })}
@@ -68,6 +69,7 @@ export default function AppLayout() {
             const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
             return (
               <Link key={path} to={path}
+                aria-current={isActive ? 'page' : undefined}
                 className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl min-w-0 relative transition-all active:scale-90">
                 {isActive && (
                   <motion.div layoutId="activeMobileNav"
@@ -75,7 +77,7 @@ export default function AppLayout() {
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
                 )}
                 <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-[9px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
+                <span className={`text-[10px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
               </Link>
             );
           })}

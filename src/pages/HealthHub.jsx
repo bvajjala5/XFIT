@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 import { localDateStr } from '@/lib/utils';
 import { toast } from 'sonner';
+import useFocusTrap from '@/hooks/useFocusTrap';
 
 const today = () => localDateStr();
 
@@ -38,12 +39,17 @@ function WeightTracker({ userId }) {
   async function logWeight() {
     const val = parseFloat(input);
     if (!val || val < 50 || val > 700) { toast.error('Enter a valid weight'); return; }
-    await addDoc(collection(db, 'users', userId, 'weightLogs'), {
-      value: val, unit, date: today(),
-    });
-    qc.invalidateQueries({ queryKey: ['weight-logs', userId] });
-    setInput('');
-    toast.success('Weight logged!');
+    try {
+      await addDoc(collection(db, 'users', userId, 'weightLogs'), {
+        value: val, unit, date: today(),
+      });
+      qc.invalidateQueries({ queryKey: ['weight-logs', userId] });
+      setInput('');
+      toast.success('Weight logged!');
+    } catch (error) {
+      console.error('Could not log weight:', error);
+      toast.error("Couldn't log weight — check your connection");
+    }
   }
 
   const chartData = weightLogs.map(l => ({
@@ -182,20 +188,33 @@ function HealthMetricCard({ metric, onClick }) {
 // ── LOG MODAL ─────────────────────────────────────────────────────────────
 function HealthLogModal({ open, onClose, existing, onSave, saving }) {
   const [form, setForm] = useState({});
+  const contentRef = useRef(null);
   useEffect(() => { if (open) setForm(existing || {}); }, [open, existing]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = event => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const num = k => form[k] || '';
+  useFocusTrap(contentRef, open, onClose);
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md bg-card rounded-t-3xl md:rounded-2xl border border-border"
-        style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div ref={contentRef} role="dialog" aria-modal="true" aria-labelledby="health-log-title"
+        className="w-full max-w-md bg-card rounded-t-3xl md:rounded-2xl border border-border focus:outline-none"
+        style={{ maxHeight: '85vh', overflowY: 'auto' }}
+        tabIndex={-1}
+        onClick={event => event.stopPropagation()}>
         
         {/* Sticky header */}
         <div className="sticky top-0 bg-card border-b border-border/50 px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
-          <h2 className="text-lg font-bold">Log Today's Health</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-lg">×</button>
+          <h2 id="health-log-title" className="text-lg font-bold">Log Today's Health</h2>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-lg">×</button>
         </div>
 
         <div className="p-5 space-y-4">

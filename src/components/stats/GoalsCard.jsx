@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { Dumbbell, Moon, Utensils, Footprints, Target, ChevronDown, ChevronUp, Pencil, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
 
 const GOAL_CATEGORIES = [
@@ -33,22 +34,44 @@ export default function GoalsCard() {
     const updated = {...goalData,[id]:{current:newVal,history}};
     setGoalData(updated);
     setEditingGoal(null);
-    await updateUserData({goals:updated});
+
+    try {
+      await updateUserData({goals:updated});
+    } catch (error) {
+      console.error('Could not save goal:', error);
+      toast.error('Could not save goal');
+      setGoalData(goalData);
+      return;
+    }
+
     // Sync to localStorage so WaterTracker, MealTracker, HealthHub pick up changes
     const v = Number(newVal);
+    const isNumber = Number.isFinite(v);
+    if (!isNumber) return;
     if (id === 'daily_water') localStorage.setItem('xfit_water_goal', String(v));
     if (id === 'daily_steps') localStorage.setItem('xfit_steps_goal', String(v));
     if (id === 'workouts_per_week') localStorage.setItem('xfit_goals_workouts_per_week', String(v));
-    if (id === 'active_calories') localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
+    if (id === 'active_calories') {
+      localStorage.setItem('xfit_goals_weekly_calories', String(v * 7));
+      localStorage.setItem('xfit_calories_goal', String(v));
+    }
     if (id === 'weekly_minutes') localStorage.setItem('xfit_goals_weekly_minutes', String(v));
     if (id === 'mins_per_session') localStorage.setItem('xfit_goals_mins_per_session', String(v));
     if (id === 'sleep_hours') localStorage.setItem('xfit_sleep_goal', String(v));
-    if (id === 'active_calories') localStorage.setItem('xfit_calories_goal', String(v));
     if (['daily_calories','daily_protein','daily_carbs','daily_fat'].includes(id)) {
-      const ng = JSON.parse(localStorage.getItem('xfit_nutrition_goals') || '{"calories":2000,"protein":150,"carbs":250,"fat":65}');
+      let goals = { calories: 2000, protein: 150, carbs: 250, fat: 65 };
+      try {
+        const stored = localStorage.getItem('xfit_nutrition_goals');
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          goals = { ...goals, ...parsed };
+        }
+      } catch {
+        localStorage.removeItem('xfit_nutrition_goals');
+      }
       const km = {daily_calories:'calories',daily_protein:'protein',daily_carbs:'carbs',daily_fat:'fat'};
-      ng[km[id]] = v;
-      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(ng));
+      goals[km[id]] = v;
+      localStorage.setItem('xfit_nutrition_goals', JSON.stringify(goals));
       window.dispatchEvent(new Event('storage'));
     }
     if (id === 'daily_water') window.dispatchEvent(new Event('storage'));

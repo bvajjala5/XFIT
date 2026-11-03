@@ -1,15 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Flame, Clock, Dumbbell } from "lucide-react";
+import useFocusTrap from '@/hooks/useFocusTrap';
 
 export default function WeeklyRecap({ logs = [], open, onDismiss }) {
   const controlled = open !== undefined;
   const [show, setShow] = useState(controlled ? open : false);
+  const contentRef = useRef(null);
+
+  // Controlled mode: sync with open prop
+  const dismiss = () => { setShow(false); onDismiss?.(); };
 
   // Controlled mode: sync with open prop
   useEffect(() => {
     if (controlled) setShow(open);
   }, [open, controlled]);
+
+  useEffect(() => {
+    if (!show) return undefined;
+    const onKey = event => {
+      if (event.key === 'Escape') dismiss();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [show]);
 
   // Uncontrolled mode: self-manage (Sundays only, once per week)
   useEffect(() => {
@@ -33,6 +47,7 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
 
   const totalMins = Math.round(weekLogs.reduce((s, l) => s + (l.duration_seconds || 0), 0) / 60);
   const totalCals = weekLogs.reduce((s, l) => s + (l.calories_burned || 0), 0);
+  useFocusTrap(contentRef, show && weekLogs.length > 0, dismiss);
 
   if (!show || weekLogs.length === 0) return null;
 
@@ -40,13 +55,17 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
     <AnimatePresence>
       {show && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5">
-            <button onClick={() => { setShow(false); onDismiss?.(); }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={dismiss}>
+          <motion.div ref={contentRef} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+            className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5 focus:outline-none"
+            role="dialog" aria-modal="true" aria-labelledby="weekly-recap-title"
+            tabIndex={-1}
+            onClick={event => event.stopPropagation()}>
+            <button onClick={dismiss} aria-label="Close" className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             <div className="space-y-1">
               <p className="text-xs font-bold text-primary uppercase tracking-wider">Weekly recap</p>
-              <h2 className="text-2xl font-black">Great week!</h2>
+              <h2 id="weekly-recap-title" className="text-2xl font-black">Great week!</h2>
               <p className="text-muted-foreground text-sm">Here is what you accomplished this week</p>
             </div>
             <div className="grid grid-cols-3 gap-3">

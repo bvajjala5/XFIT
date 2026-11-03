@@ -1,0 +1,31 @@
+/*
+  Content-Security-Policy:
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' data: https://fonts.gstatic.com;
+    img-src 'self' data: blob: https:;
+    manifest-src 'self';
+    connect-src 'self'
+      https://firestore.googleapis.com
+      https://identitytoolkit.googleapis.com
+      https://securetoken.googleapis.com
+      https://firebaseinstallations.googleapis.com
+      https://www.google-analytics.com
+      https://world.openfoodfacts.org
+      https://tile.openstreetmap.org
+      https://*.tile.openstreetmap.org
+      https://*.workers.dev;
+    frame-src 'self'
+      https://accounts.google.com
+      https://xfit-723dd.firebaseapp.com;
+    worker-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self)

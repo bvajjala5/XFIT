@@ -1,6 +1,6 @@
-import { getToken, onMessage } from 'firebase/messaging';
+import { getToken, onMessage, getMessaging, isSupported } from 'firebase/messaging';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { app, db } from './firebase';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
@@ -11,17 +11,22 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
  */
 export async function registerPushNotifications(userId) {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return null;
+  if (!VAPID_KEY) {
+    console.warn('Push notifications are disabled because VITE_FIREBASE_VAPID_KEY is not set.');
+    return null;
+  }
 
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return null;
 
   try {
-    // Lazily import messaging so it doesn't break on unsupported browsers
-    const { messaging } = await import('./firebase');
-    if (!messaging) return null;
+    const supported = await isSupported().catch(() => false);
+    if (!supported) return null;
+    const messaging = getMessaging(app);
 
-    // Register (or reuse) our dedicated SW
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    // Register (or reuse) our dedicated SW and wait until it can receive config.
+    await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const ready = await navigator.serviceWorker.ready;
 
     // Send the Firebase config to the SW so it can initialise
     const config = {
@@ -32,15 +37,15 @@ export async function registerPushNotifications(userId) {
       messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
       appId: import.meta.env.VITE_FIREBASE_APP_ID,
     };
-    registration.active?.postMessage({ type: 'FIREBASE_CONFIG', config });
+    ready.active?.postMessage({ type: 'FIREBASE_CONFIG', config });
 
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: ready });
     if (!token) return null;
 
     // Persist token so Cloud Functions can target this device
     await setDoc(
       doc(db, 'users', userId, 'fcmTokens', token),
-      { token, updatedAt: serverTimestamp(), platform: navigator.userAgent }
+      { token, updatedAt: serverTimestamp(), platform: 'web' }
     );
 
     return token;
@@ -57,8 +62,17 @@ export async function registerPushNotifications(userId) {
  */
 export function onForegroundMessage(callback) {
   let unsub = () => {};
-  import('./firebase').then(({ messaging }) => {
-    if (messaging) unsub = onMessage(messaging, callback);
-  });
-  return () => unsub();
+  let cancelled = false;
+
+  isSupported()
+    .then(supported => {
+      if (!supported || cancelled) return;
+      unsub = onMessage(getMessaging(app), callback) || (() => {});
+    })
+    .catch(() => {});
+
+  return () => {
+    cancelled = true;
+    unsub();
+  };
 }

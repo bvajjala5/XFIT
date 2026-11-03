@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -6,6 +6,7 @@ import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, C
 import { toast } from 'sonner'
 import { db } from '@/lib/firebase'
 import GlassCard from '@/components/shared/GlassCard'
+import useFocusTrap from '@/hooks/useFocusTrap'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createFoodSearch, calcNutrition, compositeFromItems, defaultGrams } from '@/lib/foodSearch'
@@ -115,6 +116,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const [onlineBusy, setOnlineBusy] = useState(false)
   const [custom, setCustom] = useState({ name: '', serving: '100', calories: '', protein: '', carbs: '', fat: '' })
   const qc = useQueryClient()
+  const contentRef = useRef(null)
 
   useEffect(() => { if (open) loadEngine().then(setEngine).catch(() => setEngineError(true)) }, [open])
   useEffect(() => {
@@ -138,7 +140,17 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     const q = text.trim().toLowerCase()
     return q ? myFoods.filter((f) => f.name.toLowerCase().includes(q)) : myFoods.slice(0, 6)
   }, [myFoods, text])
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = event => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   const recent = useMemo(() => (open && userId ? loadRecent(userId) : []), [open, userId, view])
+  useFocusTrap(contentRef, open, onClose)
 
   if (!open) return null
 
@@ -324,8 +336,12 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 p-0 md:p-4" role="dialog" aria-modal="true" aria-label="Add food">
-      <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl" style={{ maxHeight: '88vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 p-0 md:p-4" onClick={onClose}>
+      <motion.div ref={contentRef} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}
+        initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl focus:outline-none"
+        style={{ maxHeight: '88vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        onClick={event => event.stopPropagation()}>
         {header}
         <div className="p-5 space-y-4">{body}</div>
       </motion.div>

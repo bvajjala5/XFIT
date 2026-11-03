@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
+import NotFound from '@/components/shared/NotFound';
 
 const typeColors = {
   hiit:'bg-red-500/20 text-red-400', yoga:'bg-purple-500/20 text-purple-400',
@@ -69,9 +70,16 @@ export default function WorkoutDetail() {
     if (!workout) return;
     const stored = localStorage.getItem(storageKey);
     if (stored) {
-      const p = JSON.parse(stored);
-      setCustomDurations(p);
-      setSavedDurations(p);
+      try {
+        const parsed = JSON.parse(stored);
+        const value = parsed && typeof parsed === 'object' ? parsed : {};
+        setCustomDurations(value);
+        setSavedDurations(value);
+      } catch {
+        localStorage.removeItem(storageKey);
+        setCustomDurations({});
+        setSavedDurations({});
+      }
     }
   }, [workout?.id]);
 
@@ -128,9 +136,12 @@ export default function WorkoutDetail() {
     </div>
   );
   if (id === 'locked-in') return <Navigate to="/workouts" replace />;
-  if (!workout) return (
-    <div className="flex items-center justify-center min-h-screen text-muted-foreground">Workout not found</div>
-  );
+  if (!workout) return <NotFound
+    title="Workout not found"
+    message="This workout doesn’t exist or may have been removed."
+    actionTo="/workouts"
+    actionLabel="Browse workouts"
+  />;
 
   const hasAnyCustom = Object.keys(customDurations).length > 0;
 

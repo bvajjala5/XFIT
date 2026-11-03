@@ -67,7 +67,7 @@ export default function MealTracker({ userId }) {
   async function addFood(food) {
     try {
       await addDoc(collection(db,'users',userId,'foodLogs',dateKey,'entries'), food)
-      queryClient.invalidateQueries(['food-logs',userId,dateKey])
+      queryClient.invalidateQueries({ queryKey: ['food-logs', userId, dateKey] })
       toast.success(`${food.name.slice(0,30)} added!`)
     } catch { toast.error('Failed to add food') }
   }
@@ -75,7 +75,7 @@ export default function MealTracker({ userId }) {
   async function deleteFood(docId) {
     try {
       await deleteDoc(doc(db,'users',userId,'foodLogs',dateKey,'entries',docId))
-      queryClient.invalidateQueries(['food-logs',userId,dateKey])
+      queryClient.invalidateQueries({ queryKey: ['food-logs', userId, dateKey] })
     } catch { toast.error('Failed to remove') }
   }
 

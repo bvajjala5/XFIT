@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db, auth } from '@/lib/firebase';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, where } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { clearAppCaches } from '@/lib/cache';
 import { applyTheme } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,9 +48,14 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
-      const colls = ['workouts','customWorkouts','goals','healthLogs','messages','schedule','foodLogs','runs','journal','preferences'];
+      const colls = ['workouts','customWorkouts','goals','healthLogs','messages','schedule','foodLogs','runs','journal','preferences',
+        'personalRecords','fcmTokens','customFoods','weightLogs','checkins','followers'];
       for (const c of colls) { const snap = await getDocs(collection(db,'users',user.uid,c)); for (const d of snap.docs) await deleteDoc(d.ref); }
+      // Remove public community workouts this user published, so deletion is complete.
+      const shared = await getDocs(query(collection(db, 'sharedWorkouts'), where('sharedBy', '==', user.uid)));
+      for (const d of shared.docs) await deleteDoc(d.ref);
       await deleteDoc(doc(db,'users',user.uid));
+      await clearAppCaches();
       await deleteUser(auth.currentUser);
     } catch(e) { await logout(); }
   };

@@ -5,19 +5,6 @@ import AppLayout from '@/components/layout/AppLayout'
 import Login from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
-// Force-clear stale PWA service worker cache on version bump
-const CACHE_VERSION = 'v5';
-if (typeof window !== 'undefined' && localStorage.getItem('xfit_cache_version') !== CACHE_VERSION) {
-  localStorage.setItem('xfit_cache_version', CACHE_VERSION);
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-  }
-  if ('caches' in window) {
-    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-  }
-  window.location.reload();
-}
-
 const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
 const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))

@@ -12,3 +12,9 @@ worker/.dev.vars
 # OS / editor junk
 .DS_Store
 **/.DS_Store
+
+# AI/editor artifacts that must not return
+.aider*
+.claude/
+* 2.*
+xfit-*.patch

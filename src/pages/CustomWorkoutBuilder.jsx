@@ -147,7 +147,7 @@ Rules:
           exercises.reduce((s, ex) => s + (ex.duration_seconds || 40) * (ex.sets || 1) + (ex.rest_seconds || 30) * (ex.sets || 1), 0) / 60
         ),
       })
-      queryClient.invalidateQueries(['custom-workouts', user.uid])
+      queryClient.invalidateQueries({ queryKey: ['custom-workouts', user.uid] })
       toast.success('Workout saved!')
       if (startNow) navigate(`/player/custom/${docRef.id}`)
       else navigate('/')
@@ -187,7 +187,7 @@ Rules:
           });
         }
       }
-      queryClient.invalidateQueries(['schedule', user?.uid]);
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.uid] });
       toast.success('Weekly plan saved to plan!');
       navigate('/weekly-plan');
     } catch (err) {

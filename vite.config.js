@@ -32,11 +32,17 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: [
+          // Large lazy chunks are cached on demand instead of downloaded at install time.
+          '**/foods-*.js',
+          '**/vendor-charts-*.js',
+        ],
+        maximumFileSizeToCacheInBytes: 800 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'firebase-cache', networkTimeoutSeconds: 10 }
+            urlPattern: /\/assets\/(foods|vendor-charts)-.*\.js$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'lazy-code', expiration: { maxEntries: 4, maxAgeSeconds: 86400 * 30 } }
           },
           {
             urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,

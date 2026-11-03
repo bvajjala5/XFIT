@@ -53,6 +53,10 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   const splitDistRef = useRef(0)
   const startTimeRef = useRef(null)
   const pausedTimeRef = useRef(0)
+  const positionsRef = useRef([])
+  const distanceRef = useRef(0)
+  const caloriesRef = useRef(0)
+  const elapsedRef = useRef(0)
 
   // Format elapsed time
   const formatTime = (s) => {
@@ -89,7 +93,10 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   // Timer
   useEffect(() => {
     if (status === 'running') {
-      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
+      timerRef.current = setInterval(() => {
+        elapsedRef.current += 1
+        setElapsed(elapsedRef.current)
+      }, 1000)
     } else {
       clearInterval(timerRef.current)
     }
@@ -103,26 +110,40 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           const newPt = [pos.coords.latitude, pos.coords.longitude]
+          const previous = positionsRef.current[positionsRef.current.length - 1]
+
+          if (!previous) {
+            const firstPoint = { pos: newPt, pace: 0, timestamp: pos.timestamp }
+            positionsRef.current = [firstPoint]
+            setPositions(positionsRef.current)
+            setCurrentPos(newPt)
+            return
+          }
+
+          const d = haversine(previous.pos, newPt)
+          if (d < 3) return // ignore noise < 3m
+
+          const newDist = distanceRef.current + d
+          distanceRef.current = newDist
+          const newCalories = Math.round((newDist / 1000) * 60) // ~60kcal/km average
+          caloriesRef.current = newCalories
+          setDistance(newDist)
+          setCalories(newCalories)
+
+          // Splits
+          const totalSplitDistance = splitDistRef.current + d
+          if (totalSplitDistance >= SPLIT_DIST) {
+            splitDistRef.current = totalSplitDistance - SPLIT_DIST
+            setSplits((sp) => [...sp, { km: sp.length + 1, time: elapsedRef.current }])
+          } else {
+            splitDistRef.current = totalSplitDistance
+          }
+
+          const segPace = d > 0 ? ((pos.timestamp - (previous.timestamp || pos.timestamp)) / 60000) / (d / 1000) : 0
+          const point = { pos: newPt, pace: segPace, timestamp: pos.timestamp }
+          positionsRef.current = [...positionsRef.current, point]
+          setPositions(positionsRef.current)
           setCurrentPos(newPt)
-          setPositions((prev) => {
-            if (prev.length === 0) return [{ pos: newPt, pace: 0 }]
-            const last = prev[prev.length - 1].pos
-            const d = haversine(last, newPt)
-            if (d < 3) return prev // ignore noise < 3m
-            const newDist = distance + d
-            setDistance(newDist)
-            setCalories(Math.round((newDist / 1000) * 60)) // ~60kcal/km average
-
-            // Splits
-            splitDistRef.current += d
-            if (splitDistRef.current >= SPLIT_DIST) {
-              splitDistRef.current -= SPLIT_DIST
-              setSplits((sp) => [...sp, { km: sp.length + 1, time: elapsed }])
-            }
-
-            const segPace = d > 0 ? ((pos.timestamp - (prev[prev.length - 1].timestamp || pos.timestamp)) / 60000) / (d / 1000) : 0
-            return [...prev, { pos: newPt, pace: segPace, timestamp: pos.timestamp }]
-          })
         },
         (err) => console.warn('GPS error', err),
         { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
@@ -149,6 +170,18 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
 
   function startRun() {
     startTimeRef.current = Date.now()
+    positionsRef.current = []
+    distanceRef.current = 0
+    caloriesRef.current = 0
+    elapsedRef.current = 0
+    splitDistRef.current = 0
+    stepCountRef.current = 0
+    setPositions([])
+    setDistance(0)
+    setElapsed(0)
+    setSteps(0)
+    setSplits([])
+    setCalories(0)
     setStatus('running')
   }
 
@@ -162,14 +195,16 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
 
   function finishRun() {
     setStatus('done')
+    const finalDistance = distanceRef.current
+    const finalElapsed = elapsedRef.current
     const summary = {
-      distance,
-      elapsed,
+      distance: finalDistance,
+      elapsed: finalElapsed,
       steps: stepCountRef.current,
-      calories,
-      pace,
+      calories: caloriesRef.current,
+      pace: finalDistance > 0 && finalElapsed > 0 ? (finalElapsed / 60) / (finalDistance / 1000) : 0,
       splits,
-      route: positions.map((p) => p.pos),
+      route: positionsRef.current.map((p) => p.pos),
       startTime: startTimeRef.current,
     }
     if (onComplete) onComplete(summary)

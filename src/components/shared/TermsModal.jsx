@@ -1,22 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Check } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '@/lib/AuthContext';
+import useFocusTrap from '@/hooks/useFocusTrap';
 
 export default function TermsModal({ userId, onDismiss }) {
   const [show, setShow] = useState(false);
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
+  const { userData, updateUserData } = useAuth();
+  const contentRef = useRef(null);
+  useFocusTrap(contentRef, show);
 
   useEffect(() => {
     if (!userId) return;
-    const agreed = localStorage.getItem("xfit_terms_agreed_" + userId);
-    if (!agreed) setShow(true);
-  }, [userId]);
+    const localAgreed = Boolean(localStorage.getItem("xfit_terms_agreed_" + userId));
+    const accountAgreed = Boolean(userData?.terms_agreed_at);
+    if (!localAgreed && !accountAgreed) setShow(true);
+    if (accountAgreed && localAgreed) return;
+    // Keep other devices in sync after acceptance.
+    if (accountAgreed) localStorage.setItem("xfit_terms_agreed_" + userId, String(accountAgreed));
+  }, [userId, userData?.terms_agreed_at]);
 
   const handleAgree = () => {
     if (!checkedTerms || !checkedPrivacy) return;
-    localStorage.setItem("xfit_terms_agreed_" + userId, "true");
+    const agreed = new Date().toISOString();
+    localStorage.setItem("xfit_terms_agreed_" + userId, agreed);
+    updateUserData({ terms_agreed_at: serverTimestamp() }).catch(error => {
+      console.error('Could not sync terms consent:', error);
+    });
     setShow(false);
     window.dispatchEvent(new Event('terms_agreed'));
     onDismiss?.();
@@ -31,13 +45,18 @@ export default function TermsModal({ userId, onDismiss }) {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-background p-0">
           <motion.div
+            ref={contentRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="terms-title"
             initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-            className="bg-card border-0 rounded-none p-7 w-full h-full shadow-none flex flex-col items-center justify-center text-center space-y-5">
+            className="bg-card border-0 rounded-none p-7 w-full h-full shadow-none flex flex-col items-center justify-center text-center space-y-5 focus:outline-none"
+            tabIndex={-1}>
 
             <img src="/icons/icon-192.png" alt="Uttar Fitness" width="64" height="64" className="w-16 h-16 rounded-2xl" />
 
             <div className="space-y-1">
-              <h2 className="text-2xl font-black">Welcome to Uttar Fitness!</h2>
+              <h2 id="terms-title" className="text-2xl font-black">Welcome to Uttar Fitness!</h2>
               <p className="text-muted-foreground text-sm">Please review and agree to our terms before getting started.</p>
             </div>
 

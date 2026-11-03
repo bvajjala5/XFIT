@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
+import NotFound from '@/components/shared/NotFound';
+import useFocusTrap from '@/hooks/useFocusTrap';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import { toast } from 'sonner';
 import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
@@ -99,6 +101,7 @@ function unlockSpeech() {
 const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it up.', 'Well done.'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const amountText = (ex) => amountLabel(ex);
+const exerciseDurationSeconds = (ex) => ex?.duration || (ex?.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
 
 const motivations = ["You're crushing it.","Push through the burn.","Almost there, don't give up.","You're stronger than yesterday.","Feel the power.","Every rep counts.","Let's go."];
 
@@ -185,7 +188,15 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const customDurationsParam = searchParams.get('durations');
-  const customDurations = customDurationsParam ? JSON.parse(decodeURIComponent(customDurationsParam)) : null;
+  const customDurations = useMemo(() => {
+    if (!customDurationsParam) return null;
+    try {
+      const value = JSON.parse(decodeURIComponent(customDurationsParam));
+      return Array.isArray(value) ? value : null;
+    } catch {
+      return null;
+    }
+  }, [customDurationsParam]);
 
   const [currentEx, setCurrentEx] = useState(0);
   const [currentSet, setCurrentSet] = useState(1);
@@ -217,6 +228,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   const timerRef = useRef(null);
   const timeLeftRef = useRef(0);
+  const logModalRef = useRef(null);
+  const prModalRef = useRef(null);
   const [flash, setFlash] = useState(false);
   const triggerFlash = () => {
     setFlash(true);
@@ -248,7 +261,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     localStorage.setItem('xfit_voice_enabled', String(next));
   };
 
-  const { data: workout } = useQuery({
+  const { data: workout, isLoading, error } = useQuery({
     queryKey: ['workout-player', workoutId, isCustom],
     queryFn: async () => {
       if (isCustom && user) {
@@ -282,7 +295,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     const ex = exercises[currentEx];
     if (!ex) return;
 
-    const dur = ex.duration || (ex.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
+    const dur = exerciseDurationSeconds(ex);
     const rest = ex.rest_seconds || 30;
 
     if (isResting) {
@@ -364,6 +377,16 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const completeSet = () => {
     const ex = exercises[currentEx];
     if (!ex) return;
+
+    if (isResting) {
+      // The button reads "Skip Rest" while resting; end the rest and start the next set.
+      playBeep(880, 0.2);
+      setIsResting(false);
+      setCurrentSet(s => s + 1);
+      speakText(`Set ${currentSet + 1}`, voiceEnabled);
+      return;
+    }
+
     const totalSets = ex.sets || 1;
     if (currentSet < totalSets) {
       playBeep(440, 0.2);
@@ -458,11 +481,22 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     }
   };
 
-  if (!workout) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
+  const closeLogModal = () => setShowLogModal(false);
+  const closePRModal = () => setShowPRModal(false);
+  useFocusTrap(logModalRef, isComplete && showLogModal, closeLogModal);
+  useFocusTrap(prModalRef, isComplete && showPRModal, closePRModal);
+
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
+  if (error || !workout) return <NotFound
+    title="Workout not found"
+    message="This workout doesn’t exist, was removed, or you don’t have access to it."
+    actionTo="/workouts"
+    actionLabel="Browse workouts"
+  />;
 
   const currentExercise = exercises[currentEx] || exercises[0] || {};
-  const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0) : 1;
-  const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s+(e.duration||(e.sets?e.sets*(e.reps||10)*3:30)), 0);
+  const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s + exerciseDurationSeconds(e), 0) : 1;
+  const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s + exerciseDurationSeconds(e), 0);
   const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
   const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
@@ -499,12 +533,16 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         <AnimatePresence>
           {showLogModal && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+              onClick={closeLogModal}>
+              <motion.div ref={logModalRef} role="dialog" aria-modal="true" aria-labelledby="log-workout-title"
+                initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
                 transition={{ type: 'spring', damping: 24, stiffness: 280 }}
-                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6">
+                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6 focus:outline-none"
+                tabIndex={-1}
+                onClick={event => event.stopPropagation()}>
                 <div className="text-center">
-                  <h2 className="text-xl font-black">How was it?</h2>
+                  <h2 id="log-workout-title" className="text-xl font-black">How was it?</h2>
                   <p className="text-sm text-muted-foreground mt-1">Rate your workout before logging</p>
                 </div>
 
@@ -571,15 +609,19 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         <AnimatePresence>
           {showPRModal && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+              onClick={closePRModal}>
+              <motion.div ref={prModalRef} role="dialog" aria-modal="true" aria-labelledby="pr-workout-title"
+                initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
                 transition={{ type: 'spring', damping: 24, stiffness: 280 }}
-                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6">
+                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-6 shadow-2xl space-y-6 focus:outline-none"
+                tabIndex={-1}
+                onClick={event => event.stopPropagation()}>
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
                     <Trophy className="w-6 h-6 text-yellow-500" />
                   </div>
-                  <h2 className="text-xl font-black">New Personal Record!</h2>
+                  <h2 id="pr-workout-title" className="text-xl font-black">New Personal Record!</h2>
                   <p className="text-sm text-muted-foreground mt-1">Celebrate your growth</p>
                 </div>
 
@@ -642,7 +684,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         )}
       </AnimatePresence>
       <div className="flex items-center justify-between p-4">
-        <button onClick={() => navigate(-1)} className="glass rounded-full p-2"><X className="w-5 h-5" /></button>
+        <button onClick={() => navigate(-1)} className="glass rounded-full p-2" aria-label="Back"><X className="w-5 h-5" /></button>
         <div className="text-sm font-medium text-muted-foreground">{currentEx+1} / {exercises.length}</div>
         <div className="flex items-center gap-2">
           {voiceEnabled && englishVoices().length > 1 && (
@@ -673,7 +715,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         <div className="relative w-48 h-48">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
-            <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : (currentExercise?.duration || 30)))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
+            <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : exerciseDurationSeconds(exercises[currentEx])))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={`text-5xl font-black tabular-nums ${isResting ? 'text-green-400' : ''}`}>{formatTime(timeLeft)}</span>
@@ -691,7 +733,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         )}
       </div>
       <div className="flex items-center justify-center gap-4 p-8">
-        <Button variant="secondary" size="icon" className="w-14 h-14 rounded-full" onClick={() => setIsPaused(!isPaused)}>
+        <Button variant="secondary" size="icon" className="w-14 h-14 rounded-full" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume workout' : 'Pause workout'}>
           {isPaused?<Play className="w-6 h-6" fill="currentColor"/>:<Pause className="w-6 h-6"/>}
         </Button>
         {!isPaused && !isComplete && (
@@ -699,7 +741,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             {isResting ? 'Skip Rest' : 'Complete Set'}
           </Button>
         )}
-        <Button variant="secondary" size="icon" className="w-12 h-12 rounded-full" onClick={skipExercise}>
+        <Button variant="secondary" size="icon" className="w-12 h-12 rounded-full" onClick={skipExercise} aria-label="Skip exercise">
           <SkipForward className="w-5 h-5" />
         </Button>
       </div>

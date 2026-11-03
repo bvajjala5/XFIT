@@ -77,7 +77,7 @@ export default function WorkoutsAndRun() {
 
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'customWorkouts', workout.id));
-      qc.invalidateQueries(['custom-workouts', user.uid]);
+      qc.invalidateQueries({ queryKey: ['custom-workouts', user.uid] });
       toast.success('Workout deleted');
     } catch (err) {
       console.error(err);

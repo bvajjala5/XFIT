@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -11,11 +11,22 @@ import { useAuth } from '@/lib/AuthContext'
 import { getLocalWeekday } from '@/lib/utils'
 import { DAYS, PRESETS, TEMPLATES, templateById } from '@/data/splits'
 import { applyPreset, ensureTemplate, fetchSchedule, restEntry, saveDay, workoutEntry } from '@/lib/weeklyPlan'
+import useFocusTrap from '@/hooks/useFocusTrap'
 
 const card = 'bg-card/75 backdrop-blur-md border border-border/50 rounded-3xl'
 const presetWeek = (p) => p.week.map((k) => (k ? TEMPLATES[k].label : 'Rest')).join(' · ')
 
 function PickerSheet({ day, custom, library, onPick, onClose }) {
+  const contentRef = useRef(null);
+  useEffect(() => {
+    const onKey = event => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  useFocusTrap(contentRef, true, onClose);
+
   const Item = ({ title, sub, onClick, icon }) => (
     <button onClick={onClick} className="w-full flex items-center gap-3 px-1 py-3 min-h-[56px] text-left border-b border-border/30 last:border-0 active:bg-secondary/40">
       {icon}
@@ -27,11 +38,11 @@ function PickerSheet({ day, custom, library, onPick, onClose }) {
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center" onClick={onClose}>
       <motion.div initial={{ y: 60 }} animate={{ y: 0 }} exit={{ y: 60 }} transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Choose workout for ${day}`}
-        className="w-full sm:max-w-md bg-card border border-border/60 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="picker-title" ref={contentRef} tabIndex={-1}
+        className="w-full sm:max-w-md bg-card border border-border/60 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto focus:outline-none"
         style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-extrabold">{day}</h2>
+          <h2 id="picker-title" className="text-lg font-extrabold">{day}</h2>
           <button onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-2 flex items-center justify-center text-muted-foreground"><X className="w-5 h-5" /></button>
         </div>
         <Item title="Rest day" sub="Recovery counts" icon={<Moon className="w-5 h-5 text-muted-foreground" />} onClick={() => onPick({ type: 'rest' })} />

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { auth, db, googleProvider } from './firebase';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { clearAppCaches } from './cache';
 
 const AuthContext = createContext();
 
@@ -67,7 +68,10 @@ export const AuthProvider = ({ children }) => {
     return u;
   };
 
-  const logout = () => signOut(auth);
+  const logout = async () => {
+    await clearAppCaches();
+    return signOut(auth);
+  };
 
   const updateUserData = async (updates) => {
     if (!user) return;
