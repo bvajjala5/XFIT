@@ -1,10 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Keep keyboard focus inside an arbitrary modal container.
  * Returns focus to the element that had it when the modal closed.
  */
 export default function useFocusTrap(ref, active = true, onEscape) {
+  // Keep the latest callback without re-running the effect (and resetting focus)
+  // every time the parent renders with a new inline function.
+  const escapeRef = useRef(onEscape);
+  useEffect(() => {
+    escapeRef.current = onEscape;
+  }, [onEscape]);
+
   useEffect(() => {
     if (!active) return undefined;
 
@@ -31,9 +38,9 @@ export default function useFocusTrap(ref, active = true, onEscape) {
     (initial[0] ?? root).focus?.();
 
     const onKeyDown = event => {
-      if (event.key === 'Escape' && onEscape) {
+      if (event.key === 'Escape' && escapeRef.current) {
         event.preventDefault();
-        onEscape();
+        escapeRef.current();
         return;
       }
 
@@ -60,5 +67,5 @@ export default function useFocusTrap(ref, active = true, onEscape) {
       document.removeEventListener('keydown', onKeyDown, true);
       previous?.focus?.();
     };
-  }, [ref, active, onEscape]);
+  }, [ref, active]);
 }

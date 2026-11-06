@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Droplets, X, CheckCircle2, Frown, Annoyed, Meh, Smile, Laugh, BatteryWarning, BatteryLow, BatteryMedium, BatteryFull, Zap } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
 import { localDateStr } from '@/lib/utils'
+import useFocusTrap from '@/hooks/useFocusTrap'
 
 const SLEEP_FEEL = [[Frown, 'Awful'], [Annoyed, 'Poor'], [Meh, 'Okay'], [Smile, 'Good'], [Laugh, 'Great']]
 const ENERGY = [[BatteryWarning, 'Drained'], [BatteryLow, 'Low'], [BatteryMedium, 'Okay'], [BatteryFull, 'Good'], [Zap, 'Charged']]
@@ -68,15 +69,11 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
   const [water, setWater] = useState(readWater)
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState(null)
+  const contentRef = useRef(null)
   const goal = waterGoal()
 
   useEffect(() => { if (open) { setWater(readWater()); setResult(null) } }, [open])
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e) => e.key === 'Escape' && onDismiss?.()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onDismiss])
+  useFocusTrap(contentRef, open, onDismiss)
 
   const setGlasses = (n) => {
     const next = Math.max(0, Math.min(12, n))
@@ -113,16 +110,18 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => onDismiss?.()}>
           <motion.div
+            ref={contentRef}
             initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-            role="dialog" aria-label="Daily check-in"
-            className="w-full sm:max-w-md bg-card border border-border/60 rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto"
+            role="dialog" aria-modal="true" aria-labelledby="daily-checkin-title"
+            tabIndex={-1}
+            className="w-full sm:max-w-md bg-card border border-border/60 rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto focus:outline-none"
             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
 
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-extrabold tracking-tight">Check-in</h2>
+                <h2 id="daily-checkin-title" className="text-xl font-extrabold tracking-tight">Check-in</h2>
                 <p className="text-xs text-muted-foreground">Takes 20 seconds. Skip anything you like.</p>
               </div>
               <button onClick={() => onDismiss?.()} aria-label="Close" className="w-11 h-11 -mr-2 flex items-center justify-center text-muted-foreground">

@@ -4,6 +4,29 @@ import { app, db } from './firebase';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
+// Keep the FCM worker on its own scope. Registering it at `/` would replace the
+// Vite PWA worker (same scope) and break offline support / precaching.
+const FCM_SCOPE = '/firebase-push/';
+
+function waitForActivation(registration) {
+  const worker = registration.active || registration.waiting || registration.installing;
+  if (!worker || worker.state === 'activated') return Promise.resolve(registration);
+
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      worker.removeEventListener('statechange', onState);
+      reject(new Error('Service worker activation timed out'));
+    }, 10_000);
+    const onState = () => {
+      if (worker.state !== 'activated') return;
+      clearTimeout(timer);
+      worker.removeEventListener('statechange', onState);
+      resolve(registration);
+    };
+    worker.addEventListener('statechange', onState);
+  });
+}
+
 /**
  * Request notification permission, register the FCM service worker,
  * obtain a token, and persist it to Firestore under users/{uid}/fcmTokens/{token}.
@@ -24,11 +47,18 @@ export async function registerPushNotifications(userId) {
     if (!supported) return null;
     const messaging = getMessaging(app);
 
-    // Register (or reuse) our dedicated SW and wait until it can receive config.
-    await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    const ready = await navigator.serviceWorker.ready;
+    // Older builds registered this worker at `/`, where it competed with the PWA
+    // worker. Remove that registration before installing the scoped one.
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(async (registration) => {
+      const script = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
+      if (script.endsWith('/firebase-messaging-sw.js') && new URL(registration.scope).pathname === '/') {
+        await registration.unregister();
+      }
+    }));
 
-    // Send the Firebase config to the SW so it can initialise
+    // The Firebase web config is public. Passing it in the worker URL keeps the
+    // worker initialised after a browser restart, before a page can postMessage.
     const config = {
       apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
       authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -37,9 +67,16 @@ export async function registerPushNotifications(userId) {
       messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
       appId: import.meta.env.VITE_FIREBASE_APP_ID,
     };
-    ready.active?.postMessage({ type: 'FIREBASE_CONFIG', config });
+    const swUrl = `/firebase-messaging-sw.js?config=${encodeURIComponent(JSON.stringify(config))}`;
 
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: ready });
+    const registration = await waitForActivation(
+      await navigator.serviceWorker.register(swUrl, { scope: FCM_SCOPE })
+    );
+
+    if (!registration.active) throw new Error('Push service worker is not active');
+    registration.active.postMessage({ type: 'FIREBASE_CONFIG', config });
+
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
     if (!token) return null;
 
     // Persist token so Cloud Functions can target this device

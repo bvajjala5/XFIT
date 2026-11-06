@@ -4,8 +4,10 @@ compatibility_date = "2025-01-01"
 
 [vars]
 FIREBASE_PROJECT_ID = "xfit-723dd"
-# Comma-separated site origins allowed to call this Worker. Edit to your real domain(s).
-ALLOWED_ORIGINS = "https://YOUR-REAL-SITE.pages.dev,http://localhost:5173"
+# Comma-separated site origins allowed to call this Worker.
+# For local development, temporarily add http://localhost:5173 in the Cloudflare
+# dashboard (or a local `wrangler dev --var` override) — never commit it here.
+ALLOWED_ORIGINS = "https://xfit-bpe.pages.dev,https://xfit-723dd.web.app"
 # GEMINI_MODEL = "gemini-2.0-flash"
 
 # Secret (NOT stored in this file) — set with:  npx wrangler secret put GEMINI_API_KEY

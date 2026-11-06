@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import AppLayout from '@/components/layout/AppLayout'
+import NotFound from '@/components/shared/NotFound'
 import Login from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
@@ -86,7 +87,7 @@ export default function App() {
         <Route path="records" element={<Suspense fallback={<PageLoader />}><PersonalRecords /></Suspense>} />
         <Route path="history" element={<Suspense fallback={<PageLoader />}><WorkoutHistory /></Suspense>} />
         <Route path="community" element={<Suspense fallback={<PageLoader />}><Community /></Suspense>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound title="Page not found" message="That page doesn’t exist. It may have moved or been removed." />} />
       </Route>
     </Routes>
   )

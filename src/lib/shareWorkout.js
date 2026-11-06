@@ -1,16 +1,47 @@
 import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
+// Only these fields are ever published. Custom workouts also contain private
+// fields (for example the AI `prompt`), so spreading the whole document would
+// leak user data to the public community collection.
+const PUBLIC_WORKOUT_FIELDS = [
+  'name', 'description', 'type', 'difficulty',
+  'estimated_duration', 'estimated_calories', 'is_split_template',
+];
+
+const PUBLIC_EXERCISE_FIELDS = [
+  'id', 'name', 'sets', 'reps', 'duration', 'duration_seconds',
+  'rest_seconds', 'animation', 'notes', 'muscles', 'muscle', 'equipment',
+  'image', 'type',
+];
+
+function publicExercise(exercise) {
+  if (!exercise || typeof exercise !== 'object') return exercise;
+  const clean = {};
+  for (const key of PUBLIC_EXERCISE_FIELDS) {
+    if (exercise[key] !== undefined) clean[key] = exercise[key];
+  }
+  return clean;
+}
+
 /**
  * Share a custom workout to the global sharedWorkouts collection.
  * The document ID is the original workout ID so it's idempotent.
  */
 export async function shareWorkout(userId, displayName, workout) {
   const ref = doc(db, 'sharedWorkouts', workout.id);
+  const publicWorkout = {};
+  for (const key of PUBLIC_WORKOUT_FIELDS) {
+    if (workout[key] !== undefined) publicWorkout[key] = workout[key];
+  }
+  if (Array.isArray(workout.exercises)) {
+    publicWorkout.exercises = workout.exercises.map(publicExercise);
+  }
+
   await setDoc(ref, {
-    ...workout,
+    ...publicWorkout,
     sharedBy: userId,
-    sharedByName: displayName || 'Anonymous',
+    sharedByName: String(displayName || 'Anonymous').slice(0, 100),
     sharedAt: serverTimestamp(),
     importCount: 0,
   });
