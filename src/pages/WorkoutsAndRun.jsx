@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, Dumbbell, Footprints, Clock, Flame, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutCard from '@/components/shared/WorkoutCard';
+import { withBuiltinWorkouts } from '@/lib/workoutLibrary';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -29,7 +30,8 @@ export default function WorkoutsAndRun() {
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(collection(db, 'workouts'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: false })).filter(w => w.id !== 'locked-in');
+      const remote = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: false })).filter(w => w.id !== 'locked-in');
+      return withBuiltinWorkouts(remote);
     },
   });
 
@@ -94,7 +96,9 @@ export default function WorkoutsAndRun() {
           <h1 className="text-2xl font-black flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-primary"/> Workouts
           </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{allWorkouts.length} workouts available</p>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {isLoading ? 'Loading workouts…' : `${allWorkouts.length} workouts available`}
+          </p>
         </div>
         <div className="flex items-center">
         <Link to="/plan">

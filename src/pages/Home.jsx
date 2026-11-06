@@ -14,6 +14,7 @@ import WeeklyRecap from '@/components/shared/WeeklyRecap'
 import NotificationSetup from '@/components/shared/NotificationSetup'
 import { shareWorkout, unshareWorkout, isShared } from '@/lib/shareWorkout'
 import { seedWorkouts } from '@/lib/seedWorkouts'
+import { withBuiltinWorkouts } from '@/lib/workoutLibrary'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import { getDailyQuote } from '@/components/home/DailyQuote'
 import { toast } from 'sonner'
@@ -114,7 +115,8 @@ export default function Home() {
     queryKey: ['workouts'],
     queryFn: async () => {
       const snap = await getDocs(collection(db, 'workouts'))
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(w => w.id !== 'locked-in')
+      const remote = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(w => w.id !== 'locked-in')
+      return withBuiltinWorkouts(remote)
     },
   })
 

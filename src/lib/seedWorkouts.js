@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import { collection, getDocs, getDoc, setDoc, deleteDoc, doc, query, limit } from 'firebase/firestore';
 
-const WORKOUTS = [
+export const BUILTIN_WORKOUTS = [
   { id:'hiit-cardio', title:'Athletic HIIT Cardio', trainer:'Jess Rivera', category:'full_body', type:'hiit', duration:30, difficulty:'advanced', calories_estimate:420, equipment:'None', description:'High-intensity interval training to torch calories and boost endurance.', image_url:'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80', exercises:[{name:'Burpees',reps:15,duration:45},{name:'Jump Squats',reps:20,duration:45},{name:'Mountain Climbers',duration:60},{name:'High Knees',duration:60},{name:'Box Jumps',reps:12,duration:45}] },
   { id:'full-body-strength', title:'Full Body Strength', trainer:'Marcus Cole', category:'full_body', type:'strength', duration:45, difficulty:'intermediate', calories_estimate:350, equipment:'Dumbbells', description:'Compound movements for total body strength and muscle building.', image_url:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80', exercises:[{name:'Deadlift',sets:4,reps:8,weight:'moderate'},{name:'Bench Press',sets:4,reps:10,weight:'moderate'},{name:'Pull-ups',sets:3,reps:8},{name:'Overhead Press',sets:3,reps:10,weight:'moderate'}] },
   { id:'mobility-reset', title:'Mobility Reset', trainer:'Priya Sharma', category:'recovery', type:'mobility', duration:20, difficulty:'beginner', calories_estimate:100, equipment:'Yoga mat', description:'Restore movement quality and reduce tension throughout your body.', image_url:'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80', exercises:[{name:'Hip Flexor Stretch',duration:60},{name:'Thoracic Rotation',duration:60},{name:'Pigeon Pose',duration:90},{name:'Cat-Cow',reps:20,duration:60}] },
@@ -26,7 +26,7 @@ export async function seedWorkouts(uid) {
   if (sessionStorage.getItem(SEEDED_KEY)) return;
   sessionStorage.setItem(SEEDED_KEY, '1');
   try {
-    const allWorkouts = [...WORKOUTS];
+    const allWorkouts = [...BUILTIN_WORKOUTS];
     for (const w of allWorkouts) {
       const ref = doc(db, 'workouts', w.id);
       const snap = await getDoc(ref);

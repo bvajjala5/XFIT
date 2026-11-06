@@ -9,6 +9,7 @@ import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, Rot
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
+import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 
 const typeColors = {
   hiit:'bg-red-500/20 text-red-400', yoga:'bg-purple-500/20 text-purple-400',
@@ -62,7 +63,8 @@ export default function WorkoutDetail() {
     queryKey: ['workout', id],
     queryFn: async () => {
       const snap = await getDoc(doc(db, 'workouts', id));
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      if (snap.exists()) return { id: snap.id, ...snap.data() };
+      return findBuiltinWorkout(id);
     }
   });
 

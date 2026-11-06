@@ -16,6 +16,7 @@ import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import { toast } from 'sonner';
 import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
 import { savePR } from '@/lib/personalRecords';
+import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
 const GOOD_VOICES = [
@@ -274,7 +275,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         if (customSnap.exists()) return { id: customSnap.id, ...customSnap.data(), isCustom: true };
       }
       const snap = await getDoc(doc(db, 'workouts', workoutId));
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      if (snap.exists()) return { id: snap.id, ...snap.data() };
+      return findBuiltinWorkout(workoutId);
     },
     enabled: !!workoutId
   });

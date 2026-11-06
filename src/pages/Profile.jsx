@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import GlassCard from '@/components/shared/GlassCard';
 import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
@@ -57,7 +58,13 @@ export default function Profile() {
       await deleteDoc(doc(db,'users',user.uid));
       await clearAppCaches();
       await deleteUser(auth.currentUser);
-    } catch(e) { await logout(); }
+    } catch(e) {
+      console.error('Account deletion failed:', e);
+      toast.error(e?.code === 'auth/requires-recent-login'
+        ? 'Your data was deleted, but signing out failed for security reasons. Sign in again to finish removing the account.'
+        : 'Could not finish deleting your account. Please sign in again and retry.');
+      await logout();
+    }
   };
 
   const totalMins = Math.round(logs.reduce((s,l)=>s+(l.duration_seconds||0),0)/60);
