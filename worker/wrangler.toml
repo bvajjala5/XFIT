@@ -4,6 +4,8 @@ compatibility_date = "2025-01-01"
 
 [vars]
 FIREBASE_PROJECT_ID = "xfit-723dd"
+# Gemini API model used by the proxy. Must exist for the project's API key.
+GEMINI_MODEL = "gemini-3.5-flash"
 # Comma-separated site origins allowed to call this Worker.
 # For local development, temporarily add http://localhost:5173 in the Cloudflare
 # dashboard (or a local `wrangler dev --var` override) — never commit it here.

@@ -3,7 +3,7 @@
 //   GEMINI_API_KEY      (secret)  your Google AI Studio key
 //   FIREBASE_PROJECT_ID (var)     your Firebase project id
 //   ALLOWED_ORIGINS     (var)     comma-separated list of allowed site origins
-//   GEMINI_MODEL        (var, optional) defaults to gemini-2.0-flash
+//   GEMINI_MODEL        (var, optional) defaults to gemini-3.5-flash
 
 import { verifyFirebaseToken } from './auth.js';
 
@@ -112,27 +112,51 @@ export default {
 
     if (!env.GEMINI_API_KEY) return json({ error: 'AI is not configured on the server.' }, 500, cors);
 
-    // 3. Call Gemini (key goes in a header, never in the URL)
-    const model = env.GEMINI_MODEL || 'gemini-2.0-flash';
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-        body: JSON.stringify({
-          contents: toGeminiContents(messages),
-          ...(system && { system_instruction: { parts: [{ text: system }] } }),
-          generationConfig: { maxOutputTokens: outTokens, temperature: 0.7 },
-        }),
-      }
-    );
+    // 3. Call Gemini (key goes in a header, never in the URL). Thinking is disabled so the
+    // output-token budget is spent on the answer itself. If the primary model is overloaded
+    // (503) or rate limited (429), retry with a lighter model.
+    const models = [...new Set([env.GEMINI_MODEL, 'gemini-3.5-flash', 'gemini-3.1-flash-lite'].filter(Boolean))];
+    const callGemini = async (model, generationConfig) => {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+          body: JSON.stringify({
+            contents: toGeminiContents(messages),
+            ...(system && { system_instruction: { parts: [{ text: system }] } }),
+            generationConfig,
+          }),
+        }
+      );
+      return { res, data: await res.json().catch(() => ({})) };
+    };
 
-    const data = await geminiRes.json().catch(() => ({}));
+    let geminiRes;
+    let data = {};
+    for (const model of models) {
+      let attempt = await callGemini(model, {
+        maxOutputTokens: outTokens,
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 0 },
+      });
+      // Some models reject disabling thinking; retry once without the hint.
+      if (attempt.res.status === 400) {
+        attempt = await callGemini(model, { maxOutputTokens: outTokens, temperature: 0.7 });
+      }
+      ({ res: geminiRes, data } = attempt);
+      if (geminiRes.ok) break;
+      console.error('Gemini error', model, geminiRes.status, JSON.stringify(data?.error || {}));
+      if (geminiRes.status !== 429 && geminiRes.status < 500) break;
+    }
+
     if (!geminiRes.ok) {
-      console.error('Gemini error', geminiRes.status, JSON.stringify(data?.error || {}));
       return json({ error: 'The AI service had a problem. Try again shortly.' }, 502, cors);
     }
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = (data.candidates?.[0]?.content?.parts || [])
+      .map((p) => p?.text || '')
+      .join('')
+      .trim();
     if (!text) return json({ error: 'No response from AI' }, 502, cors);
     return json({ text }, 200, cors);
   },
