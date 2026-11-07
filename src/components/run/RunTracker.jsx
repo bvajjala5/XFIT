@@ -45,6 +45,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   const [splits, setSplits] = useState([]) // [{km, time}]
   const [calories, setCalories] = useState(0)
   const [showStats, setShowStats] = useState(false)
+  const [gpsError, setGpsError] = useState(null)
 
   const watchIdRef = useRef(null)
   const timerRef = useRef(null)
@@ -110,6 +111,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           const newPt = [pos.coords.latitude, pos.coords.longitude]
+          setGpsError(null)
           const previous = positionsRef.current[positionsRef.current.length - 1]
 
           if (!previous) {
@@ -145,7 +147,12 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
           setPositions(positionsRef.current)
           setCurrentPos(newPt)
         },
-        (err) => console.warn('GPS error', err),
+        (err) => {
+          console.warn('GPS error', err)
+          setGpsError(err?.code === 1
+            ? 'Location permission denied — enable location access to track distance.'
+            : 'Waiting for a GPS signal — distance may be inaccurate.')
+        },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
       )
     } else {
@@ -182,6 +189,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
     setSteps(0)
     setSplits([])
     setCalories(0)
+    setGpsError(null)
     setStatus('running')
   }
 
@@ -242,6 +250,11 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
 
   return (
     <div className={`relative flex flex-col ${fullScreen ? 'h-full w-full' : 'h-auto'}`}>
+      {gpsError && (
+        <div className="absolute top-3 left-3 right-3 z-20 rounded-xl bg-red-500/15 border border-red-400/30 px-3 py-2 text-xs text-red-200">
+          {gpsError}
+        </div>
+      )}
       {/* Map */}
       <div className={`${fullScreen ? 'absolute inset-0 z-0' : 'h-[400px] rounded-2xl overflow-hidden relative z-0'}`}>
         {currentPos ? (
