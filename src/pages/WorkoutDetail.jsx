@@ -3,6 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, RotateCcw } from 'lucide-react';
@@ -10,6 +11,7 @@ import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
+import { normalizeExercise } from '@/lib/exerciseTiming';
 
 const typeColors = {
   hiit:'bg-red-500/20 text-red-400', yoga:'bg-purple-500/20 text-purple-400',
@@ -46,12 +48,14 @@ function getLockedInDefault(index) {
 }
 
 function getStandardDefault(ex) {
-  return ex?.duration || (ex?.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
+  // Honors builder/AI fields such as duration_seconds so the detail page matches the player.
+  return normalizeExercise(ex).duration;
 }
 
 export default function WorkoutDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const storageKey = `xfit_durations_${id}`;
   const isLockedIn = id === 'locked-in';
 
@@ -60,13 +64,21 @@ export default function WorkoutDetail() {
   const [justSaved, setJustSaved] = useState(false);
 
   const { data: workout, isLoading } = useQuery({
-    queryKey: ['workout', id],
+    queryKey: ['workout', id, user?.uid],
     queryFn: async () => {
       const snap = await getDoc(doc(db, 'workouts', id));
       if (snap.exists()) return { id: snap.id, ...snap.data() };
+      // AI-saved and builder workouts live under the user, but are linked from the same
+      // library grid as global workouts. Resolve them here so the detail page doesn't 404.
+      if (user) {
+        const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', id));
+        if (customSnap.exists()) return { id: customSnap.id, ...customSnap.data(), isCustom: true };
+      }
       return findBuiltinWorkout(id);
-    }
+    },
+    enabled: !!id,
   });
+  const isCustom = !!workout?.isCustom;
 
   useEffect(() => {
     if (!workout) return;
@@ -129,7 +141,8 @@ export default function WorkoutDetail() {
   const buildPlayerUrl = () => {
     if (!workout) return '#';
     const durations = workout.exercises?.map((ex, i) => getDuration(ex, i));
-    return `/player/${workout.id}?durations=${encodeURIComponent(JSON.stringify(durations))}`;
+    const base = isCustom ? `/player/custom/${workout.id}` : `/player/${workout.id}`;
+    return `${base}?durations=${encodeURIComponent(JSON.stringify(durations))}`;
   };
 
   if (isLoading) return (
@@ -158,7 +171,7 @@ export default function WorkoutDetail() {
           <Badge className={`${typeColors[workout.type] || ''} border-0 mb-2 text-[10px] uppercase tracking-wider`}>
             {workout.type}
           </Badge>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{workout.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{workout.title || workout.name}</h1>
           <p className="text-muted-foreground mt-1 capitalize">{workout.category?.replace(/_/g, ' ')}</p>
         </div>
       </div>
@@ -194,7 +207,7 @@ export default function WorkoutDetail() {
             <User className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <div className="font-semibold">{workout.trainer}</div>
+            <div className="font-semibold">{workout.trainer || (isCustom ? 'Custom workout' : '')}</div>
           </div>
         </GlassCard>
 
