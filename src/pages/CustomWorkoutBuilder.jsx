@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
-import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore'
 import { useQueryClient } from '@tanstack/react-query'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
@@ -10,11 +8,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Sparkles, Play, Pencil, ChevronRight, ChevronLeft, Trash2, Plus, Clock, Flame, Dumbbell, Calendar } from 'lucide-react'
+import { Loader2, Sparkles, Play, Pencil, ChevronLeft, Trash2, Plus, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { callAI } from '@/lib/ai'
-
-const EXERCISE_TYPES = ['curl', 'push_up', 'squat', 'lateral_raise', 'plank', 'lunge', 'russian_twist', 'hip_raise', 'overhead_press', 'jump']
+import { parseAIResponse } from '@/lib/aiPlanParse'
+import { saveAIWeeklyPlan, saveAIWorkout } from '@/lib/aiPlans'
 
 const EXAMPLE_PROMPTS = [
   '20 minute full body HIIT — no equipment, beginner friendly',
@@ -53,7 +51,7 @@ export default function CustomWorkoutBuilder() {
   const [exercises, setExercises] = useState([])
   const [saving, setSaving] = useState(false)
   const [isPlan, setIsPlan] = useState(false)
-  const [plan, setPlan] = useState(null)
+  const [planDays, setPlanDays] = useState([])
 
   async function generateWorkout() {
     if (!prompt.trim()) { toast.error('Describe your workout first'); return }
@@ -92,28 +90,22 @@ Rules:
 - Include 5-15 exercises appropriate to the description
 - Be realistic with timing and difficulty`
       const text = await callAI({ system: systemPrompt, messages: [{ role: 'user', content: prompt }], maxTokens: 1500 })
-      const clean = text.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
+      const result = parseAIResponse(text)
+      if (!result) throw new Error('The AI did not return a usable workout.')
 
-      if (parsed.type === 'plan') {
+      if (result.kind === 'plan') {
         setIsPlan(true)
-        setPlan(parsed.plan)
+        setPlanDays(result.days)
         setStep(2)
       } else {
         setIsPlan(false)
-        setWorkoutName(parsed.name || 'My Workout')
-        setExercises(
-          (parsed.exercises || []).map((ex, i) => ({
-            ...ex,
-            id: `ex-${i}-${Date.now()}`,
-            animation: guessAnimation(ex.name),
-          }))
-        )
+        setWorkoutName(result.workout.name || 'My Workout')
+        setExercises(result.workout.exercises)
         setStep(2)
       }
     } catch (err) {
       console.error(err)
-      toast.error('Failed to generate workout. Check your API key.')
+      toast.error(err.message || 'Failed to generate workout. Try again.')
     } finally {
       setLoading(false)
     }
@@ -138,18 +130,17 @@ Rules:
     if (!workoutName.trim() || exercises.length === 0) { toast.error('Add at least one exercise'); return }
     setSaving(true)
     try {
-      const docRef = await addDoc(collection(db, 'users', user.uid, 'customWorkouts'), {
+      const minutes = Math.round(
+        exercises.reduce((s, ex) => s + (ex.duration_seconds || 40) * (ex.sets || 1) + (ex.rest_seconds || 30) * (ex.sets || 1), 0) / 60
+      )
+      const id = await saveAIWorkout(user.uid, {
         name: workoutName,
         exercises,
-        prompt,
-        created_at: serverTimestamp(),
-        estimated_duration: Math.round(
-          exercises.reduce((s, ex) => s + (ex.duration_seconds || 40) * (ex.sets || 1) + (ex.rest_seconds || 30) * (ex.sets || 1), 0) / 60
-        ),
-      })
+        estimated_duration: minutes,
+      }, prompt)
       queryClient.invalidateQueries({ queryKey: ['custom-workouts', user.uid] })
       toast.success('Workout saved!')
-      if (startNow) navigate(`/player/custom/${docRef.id}`)
+      if (startNow) navigate(`/player/custom/${id}`)
       else navigate('/')
     } catch (err) {
       console.error(err)
@@ -160,39 +151,17 @@ Rules:
   }
 
   async function savePlan() {
+    if (!planDays.length) { toast.error('Generate a plan first'); return }
     setSaving(true)
     try {
-      const days = Object.entries(plan);
-      for (const [day, data] of days) {
-        const dayKey = day.toLowerCase();
-        if (data.type === 'rest') {
-          await setDoc(doc(db, 'users', user.uid, 'schedule', dayKey), {
-            is_rest_day: true,
-            label: 'Rest Day'
-          });
-        } else {
-          const workoutDoc = await addDoc(collection(db, 'users', user.uid, 'customWorkouts'), {
-            name: data.workout_title,
-            exercises: data.exercises.map((ex, i) => ({ ...ex, id: `ex-${dayKey}-${i}-${Date.now()}` })),
-            prompt: prompt,
-            created_at: serverTimestamp(),
-            estimated_duration: data.workout_duration,
-          });
-
-          await setDoc(doc(db, 'users', user.uid, 'schedule', dayKey), {
-            workout_id: workoutDoc.id,
-            workout_title: data.workout_title,
-            workout_duration: data.workout_duration,
-            custom: true
-          });
-        }
-      }
-      queryClient.invalidateQueries({ queryKey: ['schedule', user?.uid] });
-      toast.success('Weekly plan saved to plan!');
-      navigate('/weekly-plan');
+      await saveAIWeeklyPlan(user.uid, planDays, prompt)
+      queryClient.invalidateQueries({ queryKey: ['schedule', user?.uid] })
+      queryClient.invalidateQueries({ queryKey: ['custom-workouts', user?.uid] })
+      toast.success('Weekly plan applied to your Plan page')
+      navigate('/plan')
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to save plan');
+      console.error(err)
+      toast.error('Failed to save plan')
     } finally {
       setSaving(false)
     }
@@ -255,16 +224,16 @@ Rules:
         ) : isPlan ? (
           <motion.div key="step2plan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
             <div className="space-y-3">
-              {Object.entries(plan).map(([day, data]) => (
-                <GlassCard key={day} className="p-4 flex items-center justify-between">
+              {planDays.map((day) => (
+                <GlassCard key={day.dayKey} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-24 font-bold text-sm text-primary">{day}</div>
+                    <div className="w-24 font-bold text-sm text-primary">{day.dayLabel}</div>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm">{data.label || data.workout_title}</span>
-                      {data.type === 'workout' && <span className="text-[10px] text-muted-foreground">{data.workout_duration} min · {data.exercises?.length} exercises</span>}
+                      <span className="font-semibold text-sm">{day.title}</span>
+                      {!day.isRest && <span className="text-[10px] text-muted-foreground">{day.minutes} min · {day.exercises.length} exercises</span>}
                     </div>
                   </div>
-                  {data.type === 'rest' ? <Badge variant="secondary" className="text-[10px]">Rest</Badge> : <Badge className="text-[10px]">Workout</Badge>}
+                  {day.isRest ? <Badge variant="secondary" className="text-[10px]">Rest</Badge> : <Badge className="text-[10px]">Workout</Badge>}
                 </GlassCard>
               ))}
             </div>

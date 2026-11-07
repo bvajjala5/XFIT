@@ -15,6 +15,7 @@ const Profile = lazy(() => import('@/pages/Profile'))
 const Stats = lazy(() => import('@/pages/Stats'))
 const HealthHub = lazy(() => import('@/pages/HealthHub'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
+const UttarAI = lazy(() => import('@/pages/UttarAI'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const PersonalRecords = lazy(() => import('@/pages/PersonalRecords'))
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
         <Route path="health" element={<Suspense fallback={<PageLoader />}><HealthHub /></Suspense>} />
         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />
+        <Route path="ai" element={<Suspense fallback={<PageLoader />}><UttarAI /></Suspense>} />
         {/* Redirects for old routes */}
         <Route path="ranks" element={<Navigate to="/" replace />} />
         <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />

@@ -162,11 +162,14 @@ async function getMockResponse(prompt = '') {
   return JSON.stringify(workout);
 }
 
-export async function callAI({ system, messages, maxTokens = 1000 }) {
+// allowMock: workout building can fall back to the local generator, but the conversational
+// coach must never pretend a failed request was answered, so chat passes false.
+export async function callAI({ system, messages, maxTokens = 1000, allowMock = true }) {
   const userPrompt = messages?.find(m => m.role === 'user')?.content || '';
 
   if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
-    return getMockResponse(userPrompt);
+    if (allowMock) return getMockResponse(userPrompt);
+    throw new Error('The AI coach is not configured. Add VITE_AI_PROXY_URL.');
   }
 
   try {
@@ -190,8 +193,9 @@ export async function callAI({ system, messages, maxTokens = 1000 }) {
 
     return data.text;
   } catch (err) {
+    if (err.message?.includes('sign in')) throw err;
+    if (!allowMock) throw err;
     console.warn('AI request failed, falling back to mock:', err);
-    if (err.message.includes('sign in')) throw err;
     return getMockResponse(userPrompt);
   }
 }
