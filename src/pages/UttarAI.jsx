@@ -260,7 +260,19 @@ export default function UttarAI() {
     return list
       .filter((m) => !m.error && m.content)
       .slice(-12)
-      .map((m) => ({ role: m.role, content: String(m.content).slice(0, 2000) }))
+      .map((m) => {
+        let extra = ''
+        if (m.kind === 'workout' && m.payload) {
+          const w = m.payload
+          extra = `Workout: ${w.name} (${w.estimated_duration} min, ${w.difficulty}). Exercises: ` +
+            w.exercises.map((e) => `${e.name} ${e.sets}x${e.reps}`).join('; ')
+        } else if (m.kind === 'plan' && m.payload) {
+          extra = 'Weekly plan: ' + m.payload.map((d) => (
+            `${d.dayLabel}: ${d.isRest ? 'Rest' : `${d.title} (${d.minutes} min; ${d.exercises.map((e) => e.name).join(', ')})`}`
+          )).join('; ')
+        }
+        return { role: m.role, content: `${m.content}${extra ? `\n${extra}` : ''}`.slice(0, 4000) }
+      })
   }
 
   async function send(text, forcedMode) {
