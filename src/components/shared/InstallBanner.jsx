@@ -17,6 +17,13 @@ export default function InstallBanner() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [dismissed]);
 
+  // Keep the floating AI button clear of the install prompt on small screens.
+  useEffect(() => {
+    if (show) document.body.dataset.installBanner = 'true';
+    else delete document.body.dataset.installBanner;
+    return () => { delete document.body.dataset.installBanner; };
+  }, [show]);
+
   const handleInstall = async () => {
     if (!prompt) return;
     prompt.prompt();

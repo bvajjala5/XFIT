@@ -109,6 +109,19 @@
   }
 }
 
+/* Uttar AI launcher: float above the mobile tab bar, and settle into the corner
+   on desktop where there is no bottom navigation. */
+.ai-fab {
+  bottom: calc(5.25rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .ai-fab { bottom: 2rem; }
+}
+/* Onboarding is a full-screen takeover, so keep the launcher out of it. */
+body[data-onboarding="true"] .ai-fab { display: none; }
+/* The PWA install prompt occupies the same corner on phones. */
+body[data-install-banner="true"] .ai-fab { display: none; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

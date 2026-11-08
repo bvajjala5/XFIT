@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -30,6 +30,12 @@ export default function Onboarding({ onComplete }) {
   const [types, setTypes] = useState([]);
   const [saving, setSaving] = useState(false);
   const { updateUserData } = useAuth();
+
+  // Suppress floating actions while onboarding owns the screen.
+  useEffect(() => {
+    document.body.dataset.onboarding = 'true';
+    return () => { delete document.body.dataset.onboarding; };
+  }, []);
 
   const toggleType = id => setTypes(prev => prev.includes(id) ? prev.filter(t=>t!==id) : [...prev,id]);
 

@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw,
+  Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw, X,
   Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -202,10 +202,11 @@ function PlanCard({ message, saving, onApply, onOpen }) {
   )
 }
 
-export default function UttarAI() {
+export default function UttarAI({ onClose }) {
   const { user, userData } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const isSheet = typeof onClose === 'function'
 
   const storageKey = user ? `xfit_uttar_ai_v1_${user.uid}` : null
   const [messages, setMessages] = useState([])
@@ -403,22 +404,31 @@ export default function UttarAI() {
   const sendLabel = mode === 'chat' ? 'Send' : mode === 'plan' ? 'Build plan' : 'Build workout'
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-6rem)] max-w-2xl flex-col md:h-dvh">
-      <header className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-6">
-        <div className="flex items-center gap-3">
+    <div className={isSheet
+      ? 'flex min-h-0 flex-1 flex-col'
+      : 'mx-auto flex h-[calc(100dvh-6rem)] max-w-2xl flex-col md:h-dvh'}>
+      <header className={`flex shrink-0 items-start justify-between gap-3 px-4 pb-3 ${isSheet ? 'pt-4' : 'pt-6'}`}>
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
             <Sparkles className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-xl font-black">Uttar AI</h1>
-            <p className="text-xs text-muted-foreground">Your coach for training, nutrition, and recovery</p>
+          <div className="min-w-0">
+            <h1 id="uttar-ai-title" className="text-xl font-black">Uttar AI</h1>
+            <p className="truncate text-xs text-muted-foreground">Your coach for training, nutrition, and recovery</p>
           </div>
         </div>
-        {messages.length > 0 && (
-          <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={clearChat} aria-label="New chat">
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {messages.length > 0 && (
+            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={clearChat} aria-label="New chat">
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          {isSheet && (
+            <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={onClose} aria-label="Close Uttar AI">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </header>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
@@ -440,10 +450,10 @@ export default function UttarAI() {
                     disabled={busy}
                     className="group rounded-2xl border border-border/50 bg-card/50 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:opacity-60"
                   >
-                    <span className="flex items-center gap-2 text-xs font-semibold text-primary">
-                      <Icon className="h-3.5 w-3.5" /> {suggestion.title}
+                    <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                      <Icon className="h-3.5 w-3.5 text-primary" /> {suggestion.title}
                     </span>
-                    <span className="mt-1 block text-[11px] leading-relaxed text-muted-foreground">{suggestion.text}</span>
+                    <span className="mt-1 block text-[11px] leading-relaxed text-foreground/70">{suggestion.text}</span>
                   </button>
                 )
               })}
@@ -465,7 +475,7 @@ export default function UttarAI() {
                 </div>
               ) : (
                 <div className="w-full max-w-[92%] space-y-2">
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">
                     <Sparkles className="h-3 w-3 text-primary" /> Uttar AI
                   </div>
                   {message.kind === 'workout' ? (
@@ -503,17 +513,18 @@ export default function UttarAI() {
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border/40 bg-background/85 px-4 pb-3 pt-3 backdrop-blur-md">
+      <div className="shrink-0 border-t border-border/40 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-md"
+        style={isSheet ? { paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' } : undefined}>
         <div className="flex gap-1 rounded-xl bg-secondary/50 p-1">
           {MODES.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { setMode(id); inputRef.current?.focus() }}
               className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
-                mode === id ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                mode === id ? 'bg-background text-foreground shadow-sm' : 'text-foreground/70 hover:text-foreground'
               }`}
             >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <Icon className={`h-3.5 w-3.5 shrink-0 ${mode === id ? 'text-primary' : 'text-foreground/60'}`} />
               <span className="truncate">{label}</span>
             </button>
           ))}
@@ -544,7 +555,7 @@ export default function UttarAI() {
             <span className="text-xs">{sendLabel}</span>
           </Button>
         </div>
-        <p className="mt-1.5 text-[10px] text-muted-foreground">
+        <p className="mt-1.5 text-[10px] text-foreground/70">
           AI can make mistakes — check form and safety, and talk to a clinician about injuries or medical conditions.
         </p>
       </div>
