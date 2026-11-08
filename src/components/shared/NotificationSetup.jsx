@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
 import { registerPushNotifications } from '@/lib/notifications';
@@ -43,14 +44,15 @@ export default function NotificationSetup({ userId, open, onDismiss }) {
     onDismiss?.();
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 40 }}
-          className="fixed bottom-24 left-4 right-4 z-40 max-w-sm mx-auto"
+          className="fixed bottom-24 left-4 right-4 z-[70] max-w-sm mx-auto"
+          style={{ bottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
         >
           <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-2xl flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
@@ -83,6 +85,7 @@ export default function NotificationSetup({ userId, open, onDismiss }) {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

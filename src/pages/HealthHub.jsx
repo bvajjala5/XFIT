@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -203,11 +204,12 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
   useFocusTrap(contentRef, open, onClose);
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+  // Portal to <body> so this sheet sits above the app nav instead of inside the page's stacking context.
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div ref={contentRef} role="dialog" aria-modal="true" aria-labelledby="health-log-title"
-        className="w-full max-w-md bg-card rounded-t-3xl md:rounded-2xl border border-border focus:outline-none"
-        style={{ maxHeight: '85vh', overflowY: 'auto' }}
+        className="w-full bg-card rounded-t-3xl border border-border focus:outline-none sm:max-w-md sm:rounded-2xl"
+        style={{ maxHeight: '90dvh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
         tabIndex={-1}
         onClick={event => event.stopPropagation()}>
         
@@ -293,7 +295,8 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

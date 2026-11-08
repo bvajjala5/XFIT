@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trophy, Flame, Clock, Dumbbell } from "lucide-react";
 import useFocusTrap from '@/hooks/useFocusTrap';
@@ -51,14 +52,14 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
 
   if (!show || weekLogs.length === 0) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onClick={dismiss}>
           <motion.div ref={contentRef} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm shadow-2xl text-center space-y-5 focus:outline-none"
+            className="relative bg-card border border-border/50 rounded-3xl p-7 w-full max-w-sm max-h-[90dvh] overflow-y-auto shadow-2xl text-center space-y-5 focus:outline-none"
             role="dialog" aria-modal="true" aria-labelledby="weekly-recap-title"
             tabIndex={-1}
             onClick={event => event.stopPropagation()}>
@@ -88,6 +89,7 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

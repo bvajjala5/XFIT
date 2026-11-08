@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -335,16 +336,18 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     )
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 p-0 md:p-4" onClick={onClose}>
+  // Portal to <body> so the picker clears the app nav and page stacking contexts.
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 md:items-center md:p-4" onClick={onClose}>
       <motion.div ref={contentRef} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}
         initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl focus:outline-none"
-        style={{ maxHeight: '88vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ maxHeight: '90dvh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
         onClick={event => event.stopPropagation()}>
         {header}
         <div className="p-5 space-y-4">{body}</div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }
