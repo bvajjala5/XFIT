@@ -1,5 +1,5 @@
-import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore/lite';
+import { db } from './firestore';
 
 // Only these fields are ever published. Custom workouts also contain private
 // fields (for example the AI `prompt`), so spreading the whole document would
@@ -76,7 +76,7 @@ export async function importWorkout(userId, sharedWorkout) {
   });
   // Increment import counter (best-effort)
   try {
-    const { updateDoc, increment } = await import('firebase/firestore');
+    const { updateDoc, increment } = await import('firebase/firestore/lite');
     await updateDoc(doc(db, 'sharedWorkouts', id), { importCount: increment(1) });
   } catch (_) {}
 }

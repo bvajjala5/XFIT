@@ -4,8 +4,8 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
 import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, Share2, RotateCcw } from 'lucide-react'
-import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firestore'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore/lite'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 

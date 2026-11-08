@@ -1,6 +1,7 @@
 import { getToken, onMessage, getMessaging, isSupported } from 'firebase/messaging';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { app, db } from './firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore/lite';
+import { app } from './firebase';
+import { db } from './firestore';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 

@@ -1,7 +1,7 @@
 // Saving AI-built workouts and weekly plans. Kept in one place so the Uttar AI tab and the
 // Build Workout page write the same document shape the player and the Plan page already read.
-import { db } from '@/lib/firebase'
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { db } from '@/lib/firestore'
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore/lite'
 import { restEntry, workoutEntry } from '@/lib/weeklyPlan'
 import { totalMinutes } from '@/lib/exerciseTiming'
 

@@ -9,7 +9,12 @@ import { AuthProvider } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const container = document.getElementById('root')
+// The HTML ships a lightweight boot shell so the first paint is not blank.
+// Clear it before mounting so React owns the container.
+container.replaceChildren()
+
+ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>

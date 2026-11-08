@@ -45,7 +45,7 @@ export default function Login() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}
+    <main className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}
       style={{ background: isDark ? 'linear-gradient(160deg,#080818 0%,#0f0f28 50%,#080818 100%)' : 'linear-gradient(160deg,#fff7ed 0%,#fed7aa 40%,#fde68a 100%)' }}>
 
       {/* Full screen animated background */}
@@ -111,6 +111,6 @@ export default function Login() {
           By continuing you agree to our Terms & Privacy Policy
         </p>
       </motion.div>
-    </div>
+    </main>
   );
 }

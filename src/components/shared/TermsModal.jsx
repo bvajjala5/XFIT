@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Check, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore/lite';
 import { useAuth } from '@/lib/AuthContext';
 import useFocusTrap from '@/hooks/useFocusTrap';
 

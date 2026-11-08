@@ -1,5 +1,5 @@
-import { db } from '@/lib/firebase'
-import { collection, doc, getDoc, getDocs, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore/lite'
 import { TEMPLATES, PRESETS, DAYS } from '@/data/splits'
 import { totalMinutes } from '@/lib/exerciseTiming'
 

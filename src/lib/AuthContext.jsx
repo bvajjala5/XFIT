@@ -1,8 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth, db, googleProvider } from './firebase';
+import { auth, googleProvider } from './firebase';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { clearAppCaches } from './cache';
+
+// Load Firestore on demand. Anonymous visitors only need Auth to reach the login
+// screen, so the Firestore SDK stays out of the first-paint bundle.
+async function getFirestoreApi() {
+  const [firestore, sdk] = await Promise.all([
+    import('./firestore'),
+    import('firebase/firestore/lite'),
+  ]);
+  return { db: firestore.db, ...sdk };
+}
 
 const AuthContext = createContext();
 
@@ -13,6 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (uid, firebaseUser = null) => {
     try {
+      const { db, doc, getDoc, setDoc } = await getFirestoreApi();
       const ref = doc(db, 'users', uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
@@ -47,6 +57,7 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const { user: u } = result;
+    const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
     const ref = doc(db, 'users', u.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
@@ -75,6 +86,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserData = async (updates) => {
     if (!user) return;
+    const { db, doc, setDoc } = await getFirestoreApi();
     const ref = doc(db, 'users', user.uid);
     await setDoc(ref, updates, { merge: true });
     setUserData(prev => ({ ...prev, ...updates }));

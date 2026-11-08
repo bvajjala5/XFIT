@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firestore";
+import { collection, getDocs, query, orderBy, doc, setDoc, getDoc } from "firebase/firestore/lite";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Trophy, Plus, ChevronDown, ChevronUp } from "lucide-react";

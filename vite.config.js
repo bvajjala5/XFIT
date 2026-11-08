@@ -11,9 +11,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'Uttar Fitness: Direct Your Greatness, Live Uttar',
-        short_name: 'Uttar Fitness',
-        description: 'Your AI-powered fitness companion.',
+        name: 'XFit | AI Workout & Fitness Tracker',
+        short_name: 'XFit',
+        description: 'AI-powered fitness tracker for workouts, weekly plans, nutrition, health metrics, and progress.',
         theme_color: '#20212d',
         background_color: '#20212d',
         display: 'standalone',
@@ -36,11 +36,12 @@ export default defineConfig({
           // Large lazy chunks are cached on demand instead of downloaded at install time.
           '**/foods-*.js',
           '**/vendor-charts-*.js',
+          '**/vendor-firestore-*.js',
         ],
         maximumFileSizeToCacheInBytes: 800 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(foods|vendor-charts)-.*\.js$/,
+            urlPattern: /\/assets\/(foods|vendor-charts|vendor-firestore)-.*\.js$/,
             handler: 'CacheFirst',
             options: { cacheName: 'lazy-code', expiration: { maxEntries: 4, maxAgeSeconds: 86400 * 30 } }
           },
@@ -59,11 +60,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'vendor-ui': ['framer-motion', '@tanstack/react-query'],
-          'vendor-charts': ['recharts'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('/node_modules/@firebase/') || id.includes('/node_modules/firebase/')) {
+            // Firestore is imported dynamically, so Rollup keeps this chunk async.
+            if (id.includes('firestore')) return 'vendor-firestore';
+            return 'vendor-firebase';
+          }
+          if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) {
+            return 'vendor-react';
+          }
+          if (id.includes('/node_modules/recharts/') || id.includes('/node_modules/d3-') || id.includes('/node_modules/victory-vendor/')) {
+            return 'vendor-charts';
+          }
+          if (id.includes('/node_modules/framer-motion/') || id.includes('/node_modules/@tanstack/')) {
+            return 'vendor-ui';
+          }
         }
       }
     }

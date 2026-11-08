@@ -1,5 +1,5 @@
-import { db } from '@/lib/firebase';
-import { doc, getDoc, runTransaction } from 'firebase/firestore';
+import { db } from '@/lib/firestore';
+import { doc, getDoc, runTransaction } from 'firebase/firestore/lite';
 
 export async function savePR(uid, exercise, value, unit, notes = '') {
   const ref = doc(db, 'users', uid, 'personalRecords', 'records');

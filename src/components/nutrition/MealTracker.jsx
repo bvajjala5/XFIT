@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { db } from '@/lib/firebase'
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firestore'
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore/lite'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/AuthContext'
 import GlassCard from '@/components/shared/GlassCard'

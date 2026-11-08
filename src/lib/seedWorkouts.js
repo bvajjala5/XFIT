@@ -1,5 +1,5 @@
-import { db } from './firebase';
-import { collection, getDocs, getDoc, setDoc, deleteDoc, doc, query, limit } from 'firebase/firestore';
+import { db } from './firestore';
+import { collection, getDocs, getDoc, setDoc, deleteDoc, doc, query, limit } from 'firebase/firestore/lite';
 
 export const BUILTIN_WORKOUTS = [
   { id:'hiit-cardio', title:'Athletic HIIT Cardio', trainer:'Jess Rivera', category:'full_body', type:'hiit', duration:30, difficulty:'advanced', calories_estimate:420, equipment:'None', description:'High-intensity interval training to torch calories and boost endurance.', image_url:'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80', exercises:[{name:'Burpees',reps:15,duration:45},{name:'Jump Squats',reps:20,duration:45},{name:'Mountain Climbers',duration:60},{name:'High Knees',duration:60},{name:'Box Jumps',reps:12,duration:45}] },
