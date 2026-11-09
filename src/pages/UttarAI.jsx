@@ -409,8 +409,8 @@ export default function UttarAI({ onClose }) {
       : 'mx-auto flex h-[calc(100dvh-6rem)] max-w-2xl flex-col md:h-dvh'}>
       <header className={`flex shrink-0 items-start justify-between gap-3 px-4 pb-3 ${isSheet ? 'pt-4' : 'pt-6'}`}>
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <Sparkles className="h-5 w-5" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-fuchsia-500 shadow-lg shadow-primary/20">
+            <img src="/icons/emblem-white.png" alt="" aria-hidden="true" className="w-7 select-none object-contain" />
           </div>
           <div className="min-w-0">
             <h1 id="uttar-ai-title" className="text-xl font-black">Uttar AI</h1>

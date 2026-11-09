@@ -5,38 +5,29 @@ import { Loader2 } from 'lucide-react'
 import useFocusTrap from '@/hooks/useFocusTrap'
 
 // The coach is loaded on first intent (hover/focus/tap) so the AI bundle never
-// competes with the first paint of the Home or Workouts screen.
+// competes with the first paint of the screen behind it.
 const UttarAI = lazy(() => import('@/pages/UttarAI'))
 const preloadAI = () => import('@/pages/UttarAI').catch(() => {})
 
-/** A layered sparkle cluster so the launcher reads as "AI coach", not support chat. */
-function SparkleMark({ className = '' }) {
+/** The Uttar barbell emblem, shared with the app logo, marks the AI coach. */
+function EmblemMark({ className = '' }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
-      <path
-        d="M12 2.4c.36 3.33 1.87 4.84 5.2 5.2-3.33.36-4.84 1.87-5.2 5.2-.36-3.33-1.87-4.84-5.2-5.2 3.33-.36 4.84-1.87 5.2-5.2Z"
-        fill="currentColor"
-      />
-      <path
-        d="M18.6 13.2c.2 1.84.97 2.61 2.81 2.81-1.84.2-2.61.97-2.81 2.81-.2-1.84-.97-2.61-2.81-2.81 1.84-.2 2.61-.97 2.81-2.81Z"
-        fill="currentColor"
-        opacity=".85"
-      />
-      <path
-        d="M5.9 13.8c.17 1.6.87 2.3 2.47 2.47-1.6.17-2.3.87-2.47 2.47-.17-1.6-.87-2.3-2.47-2.47 1.6-.17 2.3-.87 2.47-2.47Z"
-        fill="currentColor"
-        opacity=".65"
-      />
-    </svg>
+    <img
+      src="/icons/emblem-white.png"
+      alt=""
+      aria-hidden="true"
+      draggable="false"
+      className={`select-none object-contain ${className}`}
+    />
   )
 }
 
 function AILoading() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4">
-      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-        <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
-        <SparkleMark className="relative h-6 w-6 text-primary" />
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-fuchsia-500 shadow-lg shadow-primary/25">
+        <div className="absolute inset-0 rounded-2xl bg-primary/30 blur-xl" />
+        <EmblemMark className="relative w-9" />
       </div>
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin text-primary" /> Waking up your coach…
@@ -89,7 +80,7 @@ export default function UttarAILauncher({ open, onOpenChange }) {
       <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-white/25 via-transparent to-transparent" />
       <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
 
-      <SparkleMark className="relative h-[26px] w-[26px] text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
+      <EmblemMark className="relative w-[30px] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110 md:w-8" />
 
       {/* Desktop label */}
       <span className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-full border border-border/60 bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 md:block">

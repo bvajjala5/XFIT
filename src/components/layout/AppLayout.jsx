@@ -14,11 +14,6 @@ const navItems = [
   { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
 
-// The AI coach is a contextual action, not a destination: only surface it where
-// it helps (the dashboard and the workout library). Full-screen sessions such as
-// /player/* and /run render outside this layout, so the FAB is never in the way.
-const AI_SCREENS = new Set(['/', '/workouts']);
-
 function applyTheme(theme) {
   document.documentElement.className = '';
   document.documentElement.classList.add(`theme-${theme}`);
@@ -31,7 +26,6 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
-  const aiScreen = AI_SCREENS.has(location.pathname);
 
   useEffect(() => {
     const saved = localStorage.getItem('xfit-theme');
@@ -52,16 +46,13 @@ export default function AppLayout() {
     navigate(location.pathname + location.search, { replace: true, state: null });
   }, [location.state, location.pathname, location.search, navigate]);
 
-  // Never leave the sheet open after leaving a screen where it belongs.
-  useEffect(() => {
-    if (!aiScreen) setAiOpen(false);
-  }, [aiScreen]);
-
+  // The coach floats over every tab. Full-screen sessions such as /player/* and
+  // /run render outside this layout, so the FAB can never sit over their controls.
   return (
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
       <InstallBanner />
-      {aiScreen && <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />}
+      <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
         <img src="/icons/icon-96.png" alt="Uttar Fitness" width="40" height="40" className="w-10 h-10 rounded-2xl mb-6 shadow-lg" />
