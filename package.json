@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/foodSearch.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs worker/auth.test.mjs"
+    "test": "node --test src/lib/appNavigation.test.mjs src/lib/foodSearch.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs worker/auth.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.6",

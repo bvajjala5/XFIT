@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firestore';
 import { deleteUser } from 'firebase/auth';
@@ -19,10 +19,23 @@ const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improv
 
 export default function Profile() {
   const { user, userData, updateUserData, logout } = useAuth();
+  const location = useLocation();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
+
+  // Uttar AI can deep-link to a Profile card, e.g. /profile#profile-settings.
+  useEffect(() => {
+    if (!location.hash) return undefined;
+    const id = location.hash.slice(1);
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.hash]);
 
   useEffect(() => {
     if (userData) {
@@ -91,7 +104,7 @@ export default function Profile() {
         <GlassCard className="text-center"><Clock className="w-4 h-4 text-green-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
         <GlassCard className="text-center"><Flame className="w-4 h-4 text-orange-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
       </div>
-      <GlassCard>
+      <GlassCard id="profile-settings" className={`scroll-mt-24 transition-shadow ${location.hash === '#profile-settings' ? 'ring-2 ring-primary/60' : ''}`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold flex items-center gap-2"><Settings className="w-4 h-4"/> Profile Settings</h2>
           {!editing && <Button variant="secondary" size="sm" className="rounded-full text-xs" onClick={()=>setEditing(true)}>Edit</Button>}
@@ -112,7 +125,7 @@ export default function Profile() {
           </div>
         )}
       </GlassCard>
-      <GlassCard className="space-y-3">
+      <GlassCard id="app-theme" className={`space-y-3 scroll-mt-24 transition-shadow ${location.hash === '#app-theme' ? 'ring-2 ring-primary/60' : ''}`}>
         <div className="flex items-center gap-2 mb-1">
           <Palette className="w-4 h-4 text-primary" />
           <div className="text-sm font-semibold">App Theme</div>

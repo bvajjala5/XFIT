@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { db } from '@/lib/firestore';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore/lite';
@@ -301,11 +302,29 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
 }
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────
+const HEALTH_TABS = ['overview', 'weight', 'nutrition'];
+
 export default function HealthHub() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [logModalOpen, setLogModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    HEALTH_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview'
+  );
   const queryClient = useQueryClient();
+
+  // Deep links such as /health?tab=weight from Uttar AI (or a shared URL).
+  useEffect(() => {
+    const next = searchParams.get('tab');
+    setActiveTab(HEALTH_TABS.includes(next) ? next : 'overview');
+  }, [searchParams]);
+
+  const selectTab = (key) => {
+    setActiveTab(key);
+    // Keep the URL reload-safe without adding history entries for every tap.
+    setSearchParams(key === 'overview' ? {} : { tab: key }, { replace: true });
+  };
 
   const { data: todayLog = {}, isLoading } = useQuery({
     queryKey: ['health-log-today', user?.uid],
@@ -354,7 +373,7 @@ export default function HealthHub() {
       {/* Tab switcher */}
       <div className="flex gap-2">
         {[{ key:'overview', label:'Overview', Icon:BarChart3 },{ key:'weight', label:'Weight', Icon:Scale },{ key:'nutrition', label:'Nutrition', Icon:Utensils }].map(t => (
-          <button key={t.key} onClick={() => setActiveTab(t.key)}
+          <button key={t.key} onClick={() => selectTab(t.key)}
             className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab===t.key?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
             <span className="inline-flex items-center justify-center gap-1.5"><t.Icon className="w-4 h-4" />{t.label}</span>
           </button>

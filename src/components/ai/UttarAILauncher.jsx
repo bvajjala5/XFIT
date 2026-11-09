@@ -25,8 +25,8 @@ function EmblemMark({ className = '' }) {
 function AILoading() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4">
-      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-fuchsia-500 shadow-lg shadow-primary/25">
-        <div className="absolute inset-0 rounded-2xl bg-primary/30 blur-xl" />
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-black ring-1 ring-white/25">
+        <div className="absolute inset-0 rounded-2xl bg-white/10 blur-xl" />
         <EmblemMark className="relative w-9" />
       </div>
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -67,18 +67,18 @@ export default function UttarAILauncher({ open, onOpenChange }) {
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       className="ai-fab group fixed right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-4 focus-visible:ring-primary/40 md:right-8"
     >
-      {/* Breathing aura */}
+      {/* Breathing aura — neutral so the black orb reads on any theme */}
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2.5 rounded-full bg-gradient-to-tr from-primary/60 via-fuchsia-500/45 to-sky-400/55 blur-xl"
-        animate={reduceMotion ? undefined : { opacity: [0.45, 0.9, 0.45], scale: [1, 1.12, 1] }}
+        className="pointer-events-none absolute -inset-2.5 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.30),rgba(255,255,255,0)_70%)] blur-xl"
+        animate={reduceMotion ? undefined : { opacity: [0.35, 0.8, 0.35], scale: [1, 1.12, 1] }}
         transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* Orb */}
-      <span className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-indigo-500 to-fuchsia-500 shadow-[0_10px_30px_-6px_rgba(59,130,246,0.75)]" />
-      <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-white/25 via-transparent to-transparent" />
-      <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+      <span className="absolute inset-0 rounded-full bg-black shadow-[0_10px_30px_-6px_rgba(0,0,0,0.85)]" />
+      <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-white/20 via-transparent to-transparent" />
+      <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/30" />
 
       <EmblemMark className="relative w-[30px] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110 md:w-8" />
 
@@ -122,7 +122,7 @@ export default function UttarAILauncher({ open, onOpenChange }) {
                 transition={{ type: 'spring', bounce: 0, duration: 0.34 }}
                 className="relative flex h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.75rem] border border-border/60 bg-background shadow-[0_-20px_80px_-20px_rgba(0,0,0,0.8)] outline-none md:h-[min(86dvh,54rem)] md:rounded-[1.75rem]"
               >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/15 via-primary/5 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent" />
                 <div className="relative mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-border md:hidden" aria-hidden="true" />
 
                 <Suspense fallback={<AILoading />}>

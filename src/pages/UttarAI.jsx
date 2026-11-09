@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw, X,
-  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity,
+  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import GlassCard from '@/components/shared/GlassCard'
@@ -16,6 +16,9 @@ import { useAuth } from '@/lib/AuthContext'
 import { callAI } from '@/lib/ai'
 import { parseAIResponse } from '@/lib/aiPlanParse'
 import { saveAIWeeklyPlan, saveAIWorkout } from '@/lib/aiPlans'
+import {
+  APP_GUIDE, NAV_OUTPUT_RULES, describeLocation, extractNavActions, findNavSuggestions,
+} from '@/lib/appNavigation'
 
 const MODES = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
@@ -28,14 +31,21 @@ const SUGGESTIONS = [
   { mode: 'plan', icon: CalendarDays, title: 'Make a weekly plan', text: '4-day upper/lower plan for fat loss, 45 minutes per session' },
   { mode: 'chat', icon: Utensils, title: 'Nutrition help', text: 'High-protein breakfast ideas under 400 calories' },
   { mode: 'chat', icon: Activity, title: 'Ask about recovery', text: 'How should I train when my legs are still sore?' },
+  { mode: 'chat', icon: Compass, title: 'Find a feature', text: 'How do I change my app theme?' },
+  { mode: 'chat', icon: Activity, title: 'Where is my history?', text: 'Where can I see my workout history?' },
 ]
 
 const CHAT_SYSTEM = `You are Uttar AI, the health and fitness coach inside the Uttar Fitness app.
 You help with training, exercise technique, weekly programming, nutrition, hydration, sleep, recovery, and healthy habits.
 Style: warm, direct, and practical. Prefer short paragraphs and compact bullet lists. Give specific numbers (sets, reps, minutes, grams, calories) when useful. Ask one clarifying question if the person's goal, experience, equipment, or available time is unclear.
 Safety: you are not a doctor. Do not diagnose. For chest pain, fainting, severe shortness of breath, head injury, or suspected fracture, tell them to stop and seek medical care. Pregnancy, eating disorders, and medical conditions need a clinician.
-Scope: stay on health and fitness; if asked something unrelated, answer briefly and steer back.
-The app can save workouts and weekly plans. When the person wants one, explain that you can build it and ask them to tap Workout or Weekly plan below. Never output JSON in chat mode.`
+Scope: stay on health and fitness; if asked something unrelated, answer briefly and steer back. Questions about where something is in this app are always in scope.
+The app can save workouts and weekly plans. When the person wants one, explain that you can build it and ask them to tap Workout or Weekly plan below. Never output workout JSON in chat mode; the only structured block you may output is the navigation block described below.
+
+You know exactly where everything lives in this app:
+${APP_GUIDE}
+
+${NAV_OUTPUT_RULES}`
 
 const WORKOUT_SYSTEM = `You are Uttar AI, a strength and conditioning coach inside the Uttar Fitness app.
 Turn the request into ONE workout. Return ONLY a JSON object, with no markdown fences and no prose, in this shape:
@@ -108,6 +118,26 @@ function MessageText({ message }) {
           <span>{message.warning}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Destination buttons for "where is…" replies. Paths are already allowlisted. */
+function NavActions({ actions, onGo }) {
+  if (!actions?.length) return null
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-2">
+      {actions.map((action) => (
+        <button
+          key={action.path}
+          type="button"
+          onClick={() => onGo(action.path)}
+          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-primary/35 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <ArrowUpRight className="h-3.5 w-3.5" />
+          {action.label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -205,6 +235,7 @@ function PlanCard({ message, saving, onApply, onOpen }) {
 export default function UttarAI({ onClose }) {
   const { user, userData } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const isSheet = typeof onClose === 'function'
 
@@ -219,6 +250,10 @@ export default function UttarAI({ onClose }) {
   const inputRef = useRef(null)
 
   const context = useMemo(() => buildContext(userData), [userData])
+  const currentScreen = useMemo(
+    () => describeLocation(location.pathname, location.search),
+    [location.pathname, location.search]
+  )
 
   // Load the conversation once per signed-in user, then persist changes. `hydrated` prevents the
   // first (empty) render from overwriting stored history before it has been read back.
@@ -254,7 +289,11 @@ export default function UttarAI({ onClose }) {
 
   function systemFor(selectedMode) {
     const base = selectedMode === 'chat' ? CHAT_SYSTEM : selectedMode === 'plan' ? PLAN_SYSTEM : WORKOUT_SYSTEM
-    return context ? `${base}\n\nAbout this person:\n${context}` : base
+    const parts = []
+    // Only chat needs to know where the person is; builders should just build.
+    if (selectedMode === 'chat') parts.push(`The person is currently on: ${currentScreen}.`)
+    if (context) parts.push(`About this person:\n${context}`)
+    return parts.length ? `${base}\n\n${parts.join('\n\n')}` : base
   }
 
   function historyFrom(list) {
@@ -271,6 +310,9 @@ export default function UttarAI({ onClose }) {
           extra = 'Weekly plan: ' + m.payload.map((d) => (
             `${d.dayLabel}: ${d.isRest ? 'Rest' : `${d.title} (${d.minutes} min; ${d.exercises.map((e) => e.name).join(', ')})`}`
           )).join('; ')
+        }
+        if (m.navActions?.length) {
+          extra += `${extra ? ' ' : ''}Suggested destinations: ${m.navActions.map((a) => a.path).join(', ')}`
         }
         return { role: m.role, content: `${m.content}${extra ? `\n${extra}` : ''}`.slice(0, 4000) }
       })
@@ -296,7 +338,19 @@ export default function UttarAI({ onClose }) {
           maxTokens: 1200,
           allowMock: false,
         })
-        setMessages((prev) => [...prev, { id: newId(), role: 'assistant', kind: 'text', content: reply }])
+        // The model can end its reply with a <nav> block. Strip it before it is
+        // rendered and turn it into validated destination buttons. If the model
+        // forgets the block, the local keyword matcher still offers a way there.
+        const { text: prose, actions } = extractNavActions(reply)
+        const navActions = actions.length ? actions : findNavSuggestions(content)
+        const fallback = navActions.length ? 'Here is where to find that.' : reply
+        setMessages((prev) => [...prev, {
+          id: newId(),
+          role: 'assistant',
+          kind: 'text',
+          content: prose || fallback,
+          navActions,
+        }])
       } else {
         const reply = await callAI({
           system: systemFor(selectedMode),
@@ -395,6 +449,12 @@ export default function UttarAI({ onClose }) {
     send(suggestion.text, suggestion.mode)
   }
 
+  // Close the sheet first so the destination is visible immediately.
+  function goTo(path) {
+    if (typeof onClose === 'function') onClose()
+    navigate(path)
+  }
+
   const placeholder = mode === 'chat'
     ? 'Ask about training, nutrition, recovery, or form…'
     : mode === 'plan'
@@ -409,7 +469,7 @@ export default function UttarAI({ onClose }) {
       : 'mx-auto flex h-[calc(100dvh-6rem)] max-w-2xl flex-col md:h-dvh'}>
       <header className={`flex shrink-0 items-start justify-between gap-3 px-4 pb-3 ${isSheet ? 'pt-4' : 'pt-6'}`}>
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-fuchsia-500 shadow-lg shadow-primary/20">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-black ring-1 ring-white/25 shadow-lg shadow-black/30">
             <img src="/icons/emblem-white.png" alt="" aria-hidden="true" className="w-7 select-none object-contain" />
           </div>
           <div className="min-w-0">
@@ -495,6 +555,7 @@ export default function UttarAI({ onClose }) {
                   ) : (
                     <div className={`rounded-2xl rounded-bl-md border px-3.5 py-2.5 ${message.error ? 'border-red-400/30 bg-red-500/10 text-red-200' : 'border-border/50 bg-card/75'}`}>
                       <MessageText message={message} />
+                      <NavActions actions={message.navActions} onGo={goTo} />
                     </div>
                   )}
                 </div>
