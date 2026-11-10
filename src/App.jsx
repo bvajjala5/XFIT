@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext'
 import AppLayout from '@/components/layout/AppLayout'
 import NotFound from '@/components/shared/NotFound'
 import Login from '@/pages/Login'
-import { Loader2 } from 'lucide-react'
+import BrandLoader from '@/components/brand/BrandLoader'
 
 const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
@@ -25,9 +25,9 @@ const Run = lazy(() => import('@/pages/Run'))
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <img src="/icons/icon-192.png" alt="Uttar Fitness" width="64" height="64" className="w-16 h-16 rounded-2xl" />
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="flex flex-col items-center gap-5">
+        <BrandLoader size="lg" />
+        <p className="text-sm font-semibold tracking-wide text-muted-foreground">Uttar Fitness</p>
       </div>
     </div>
   )
@@ -43,7 +43,7 @@ function AuthGuard({ children }) {
 function PageLoader() {
   return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <BrandLoader size="md" label="Loading…" />
     </div>
   )
 }

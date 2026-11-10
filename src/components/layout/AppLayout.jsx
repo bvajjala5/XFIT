@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
 import UttarAILauncher from '@/components/ai/UttarAILauncher';
+import BrandMark from '@/components/brand/BrandMark';
+import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
 const navItems = [
   { path: '/',          icon: Home,           label: 'Home'     },
@@ -14,28 +16,27 @@ const navItems = [
   { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
 
-function applyTheme(theme) {
-  document.documentElement.className = '';
-  document.documentElement.classList.add(`theme-${theme}`);
-  localStorage.setItem('xfit-theme', theme);
-}
-
-export { applyTheme };
-
 export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('xfit-theme');
-    if (!saved) {
-      const hour = new Date().getHours();
-      const autoTheme = (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
-      applyTheme(autoTheme);
-    } else {
-      applyTheme(saved);
-    }
+    const sync = () => applyResolvedTheme(resolveTheme(getThemeMode()));
+    sync();
+    // Auto mode follows the clock, so keep it in sync if the app stays open
+    // across the 6am or 7pm boundary (and whenever it returns to the foreground).
+    const timer = window.setInterval(() => {
+      if (getThemeMode() === 'auto') sync();
+    }, 60_000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   // Support the old /ai deep link by opening the pop-up on Home instead of
@@ -55,7 +56,7 @@ export default function AppLayout() {
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
-        <img src="/icons/icon-96.png" alt="Uttar Fitness" width="40" height="40" className="w-10 h-10 rounded-2xl mb-6 shadow-lg" />
+        <BrandMark className="mb-6 h-10 w-10 rounded-2xl shadow-lg" emblemClassName="w-7" />
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
           return (

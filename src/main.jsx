@@ -8,6 +8,11 @@ import { queryClientInstance as queryClient } from '@/lib/query-client'
 import { AuthProvider } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
+
+// Apply the saved theme before the first React paint so the boot shell, the
+// logo, and the app background never flash the wrong mode.
+applyResolvedTheme(resolveTheme(getThemeMode()))
 
 const container = document.getElementById('root')
 // The HTML ships a lightweight boot shell so the first paint is not blank.

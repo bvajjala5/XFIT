@@ -1,8 +1,9 @@
 import React, { Suspense, lazy, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Loader2 } from 'lucide-react'
 import useFocusTrap from '@/hooks/useFocusTrap'
+import BrandLoader from '@/components/brand/BrandLoader'
+import { BrandEmblem } from '@/components/brand/BrandMark'
 
 // The coach is loaded on first intent (hover/focus/tap) so the AI bundle never
 // competes with the first paint of the screen behind it.
@@ -11,27 +12,13 @@ const preloadAI = () => import('@/pages/UttarAI').catch(() => {})
 
 /** The Uttar barbell emblem, shared with the app logo, marks the AI coach. */
 function EmblemMark({ className = '' }) {
-  return (
-    <img
-      src="/icons/emblem-white.png"
-      alt=""
-      aria-hidden="true"
-      draggable="false"
-      className={`select-none object-contain ${className}`}
-    />
-  )
+  return <BrandEmblem className={className} />
 }
 
 function AILoading() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
-      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-black ring-1 ring-white/25">
-        <div className="absolute inset-0 rounded-2xl bg-white/10 blur-xl" />
-        <EmblemMark className="relative w-9" />
-      </div>
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin text-primary" /> Waking up your coach…
-      </p>
+    <div className="flex h-full flex-col items-center justify-center">
+      <BrandLoader size="md" label="Waking up your coach…" />
     </div>
   )
 }
@@ -67,18 +54,18 @@ export default function UttarAILauncher({ open, onOpenChange }) {
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       className="ai-fab group fixed right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-4 focus-visible:ring-primary/40 md:right-8"
     >
-      {/* Breathing aura — neutral so the black orb reads on any theme */}
+      {/* Breathing aura — follows the brand glow so the orb reads on any theme */}
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-2.5 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.30),rgba(255,255,255,0)_70%)] blur-xl"
+        className="pointer-events-none absolute -inset-2.5 rounded-full bg-[radial-gradient(circle,hsl(var(--brand-glow)/0.32),transparent_70%)] blur-xl"
         animate={reduceMotion ? undefined : { opacity: [0.35, 0.8, 0.35], scale: [1, 1.12, 1] }}
         transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* Orb */}
-      <span className="absolute inset-0 rounded-full bg-black shadow-[0_10px_30px_-6px_rgba(0,0,0,0.85)]" />
-      <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-white/20 via-transparent to-transparent" />
-      <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/30" />
+      <span className="absolute inset-0 rounded-full bg-[hsl(var(--brand-tile))] shadow-[0_10px_30px_-6px_rgba(0,0,0,0.45)]" />
+      <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-[hsl(var(--brand-mark)/0.16)] via-transparent to-transparent" />
+      <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-[hsl(var(--brand-mark)/0.30)]" />
 
       <EmblemMark className="relative w-[30px] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110 md:w-8" />
 

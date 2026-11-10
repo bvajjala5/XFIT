@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { serverTimestamp } from 'firebase/firestore/lite';
 import { useAuth } from '@/lib/AuthContext';
 import useFocusTrap from '@/hooks/useFocusTrap';
+import BrandMark from '@/components/brand/BrandMark';
 
 export default function TermsModal({ userId, onDismiss }) {
   const [show, setShow] = useState(false);
@@ -69,7 +70,7 @@ export default function TermsModal({ userId, onDismiss }) {
             <div className="mb-6 flex justify-center">
               <div className="relative">
                 <div className="absolute inset-0 rounded-3xl bg-primary/25 blur-xl" />
-                <img src="/icons/icon-192.png" alt="Uttar Fitness" width="80" height="80" className="relative h-20 w-20 rounded-3xl shadow-2xl" />
+                <BrandMark className="relative h-20 w-20 rounded-3xl shadow-2xl" emblemClassName="w-14" />
               </div>
             </div>
 

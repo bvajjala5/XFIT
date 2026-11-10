@@ -46,6 +46,10 @@
     --gradient-start: 222 25% 7%;
     --gradient-end: 230 30% 10%;
     --card-glow: 217 91% 60%;
+    /* Brand mark: white barbell on a pitch-black tile. */
+    --brand-tile: 0 0% 0%;
+    --brand-mark: 0 0% 100%;
+    --brand-glow: 255 255 255;
     --radius: 0.875rem;
   }
 
@@ -73,6 +77,10 @@
     --gradient-start: 30 25% 97%;
     --gradient-end: 35 30% 94%;
     --card-glow: 22 95% 52%;
+    /* Invert the brand mark on light backgrounds: black barbell on white. */
+    --brand-tile: 0 0% 100%;
+    --brand-mark: 0 0% 0%;
+    --brand-glow: 22 95% 52%;
     --radius: 0.875rem;
   }
 
@@ -107,6 +115,61 @@
   .primary-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
   }
+}
+
+/* ── Brand mark ───────────────────────────────────────────────────────────
+   The emblem is a white-on-transparent PNG used as a mask, so its colour can
+   follow the active theme. Midnight renders white-on-black, Sunrise inverts it
+   to black-on-white. */
+.brand-emblem {
+  display: block;
+  aspect-ratio: 384 / 136;
+  background-color: hsl(var(--brand-mark));
+  -webkit-mask-image: url('/icons/emblem-white.png');
+  mask-image: url('/icons/emblem-white.png');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Loading mark: the barbell stays put while the U in the middle spins. */
+.brand-loader {
+  position: relative;
+  display: block;
+  aspect-ratio: 384 / 136;
+}
+.brand-loader-frame,
+.brand-loader-u {
+  position: absolute;
+  background-color: hsl(var(--brand-mark));
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.brand-loader-frame {
+  inset: 0;
+  -webkit-mask-image: url('/icons/emblem-frame.png');
+  mask-image: url('/icons/emblem-frame.png');
+}
+.brand-loader-u {
+  left: 28.646%;
+  top: 16.176%;
+  width: 42.708%;
+  height: 71.324%;
+  -webkit-mask-image: url('/icons/emblem-u.png');
+  mask-image: url('/icons/emblem-u.png');
+  transform-origin: 50% 50%;
+  animation: brand-u-spin 1.5s linear infinite;
+}
+@keyframes brand-u-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader-u { animation-duration: 3.2s; }
 }
 
 /* Uttar AI launcher: float above the mobile tab bar, and settle into the corner

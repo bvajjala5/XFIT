@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getThemeMode, resolveTheme } from '@/lib/theme';
 
 // ── STAR FIELD + MOON (midnight theme) ───────────────────────────────────
 function StarField() {
@@ -166,10 +167,7 @@ function SunBackground() {
 
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────
 export default function AnimatedBackground() {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('xfit-theme') || 'midnight';
-    return saved;
-  });
+  const [theme, setTheme] = useState(() => resolveTheme(getThemeMode()));
 
   useEffect(() => {
     const getTheme = () => {

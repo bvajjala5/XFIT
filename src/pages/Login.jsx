@@ -3,39 +3,23 @@ import { Dumbbell, Footprints, Utensils } from 'lucide-react'
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '@/components/layout/AnimatedBackground';
-import { applyTheme } from '@/components/layout/AppLayout';
-
-function getAutoTheme() {
-  const hour = new Date().getHours();
-  return (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
-}
-
-function getThemeMode() {
-  // Always default to auto on login screen
-  return 'auto';
-}
+import BrandMark from '@/components/brand/BrandMark';
+import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
 export default function Login() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [themeMode, setThemeMode] = useState(getThemeMode);
 
-  const activeTheme = themeMode === 'auto' ? getAutoTheme() : themeMode;
+  // Follow the saved mode (Auto by default) so signing out never flips the
+  // login screen to a different theme than the rest of the app.
+  const activeTheme = resolveTheme(getThemeMode());
   const isDark = activeTheme === 'midnight';
 
   // Apply theme class to document so AnimatedBackground picks it up
   React.useEffect(() => {
-    document.documentElement.className = '';
-    document.documentElement.classList.add(`theme-${activeTheme}`);
+    applyResolvedTheme(activeTheme);
   }, [activeTheme]);
-
-  const cycleTheme = () => {
-    const next = themeMode === 'auto' ? 'sunrise' : themeMode === 'sunrise' ? 'midnight' : 'auto';
-    setThemeMode(next);
-    const resolved = next === 'auto' ? getAutoTheme() : next;
-    applyTheme(resolved);
-  };
 
 
   const handleLogin = async () => {
@@ -58,7 +42,9 @@ export default function Login() {
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.5 }}
           className="relative text-center space-y-6 max-w-xs w-full">
 
-          <img src="/icons/icon-192.png" alt="Uttar Fitness" width="96" height="96" className="mx-auto w-24 h-24 rounded-[2rem] shadow-2xl" />
+          <div className="flex justify-center">
+            <BrandMark className="h-24 w-24 rounded-[2rem] shadow-2xl" emblemClassName="w-16" />
+          </div>
 
           <div className="space-y-2">
             <h1 className="text-4xl font-black tracking-tight whitespace-nowrap" style={{ color: isDark ? '#f8fafc' : '#1c1917' }}>Uttar Fitness</h1>

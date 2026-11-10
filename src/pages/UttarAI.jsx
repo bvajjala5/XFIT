@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import GlassCard from '@/components/shared/GlassCard'
+import BrandMark from '@/components/brand/BrandMark'
+import BrandLoader from '@/components/brand/BrandLoader'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -469,9 +471,7 @@ export default function UttarAI({ onClose }) {
       : 'mx-auto flex h-[calc(100dvh-6rem)] max-w-2xl flex-col md:h-dvh'}>
       <header className={`flex shrink-0 items-start justify-between gap-3 px-4 pb-3 ${isSheet ? 'pt-4' : 'pt-6'}`}>
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-black ring-1 ring-white/25 shadow-lg shadow-black/30">
-            <img src="/icons/emblem-white.png" alt="" aria-hidden="true" className="w-7 select-none object-contain" />
-          </div>
+          <BrandMark className="h-10 w-10 rounded-2xl shadow-lg shadow-black/20" emblemClassName="w-7" />
           <div className="min-w-0">
             <h1 id="uttar-ai-title" className="text-xl font-black">Uttar AI</h1>
             <p className="truncate text-xs text-muted-foreground">Your coach for training, nutrition, and recovery</p>
@@ -566,8 +566,8 @@ export default function UttarAI({ onClose }) {
 
         {busy && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-border/50 bg-card/75 px-3.5 py-3 text-xs text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            <div className="flex items-center gap-2.5 rounded-2xl rounded-bl-md border border-border/50 bg-card/75 px-3.5 py-3 text-xs text-muted-foreground">
+              <BrandLoader size="xs" />
               {mode === 'chat' ? 'Thinking…' : mode === 'plan' ? 'Building your week…' : 'Building your workout…'}
             </div>
           </div>

@@ -7,15 +7,50 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy, where } from 'fire
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { clearAppCaches } from '@/lib/cache';
-import { applyTheme } from '@/components/layout/AppLayout';
+import { getThemeMode, setThemeMode } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
+
+const THEME_OPTIONS = [
+  { key: 'midnight', label: 'Midnight', desc: 'Always dark',  icon: Moon },
+  { key: 'sunrise',  label: 'Sunrise',  desc: 'Always light', icon: Sun },
+  { key: 'auto',     label: 'Auto',     desc: 'By time',      icon: Clock },
+];
+
+function ThemePreview({ mode }) {
+  if (mode === 'auto') {
+    return (
+      <div
+        className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10"
+        style={{ background: 'linear-gradient(135deg, #0b1020 0%, #111a33 49.5%, #fff1de 50.5%, #fff7ed 100%)' }}
+      >
+        <Moon className="absolute left-2 top-1.5 h-3.5 w-3.5 text-slate-200" />
+        <span className="absolute left-7 top-2 h-0.5 w-0.5 rounded-full bg-white/80" />
+        <span className="absolute left-6 top-4 h-px w-px rounded-full bg-white/60" />
+        <Sun className="absolute bottom-1.5 right-2 h-4 w-4 text-orange-500" />
+      </div>
+    )
+  }
+
+  const dark = mode === 'midnight'
+  return (
+    <div className={`relative h-11 w-full overflow-hidden rounded-xl border ${dark ? 'border-white/10 bg-[#0b1020]' : 'border-black/5 bg-[#fff7ed]'}`}>
+      <span className={`absolute left-2 top-2 h-1 w-9 rounded-full ${dark ? 'bg-white/30' : 'bg-black/15'}`} />
+      <span className={`absolute left-2 top-4 h-1 w-6 rounded-full ${dark ? 'bg-white/15' : 'bg-black/10'}`} />
+      <span
+        className={`absolute bottom-2 right-2 h-3.5 w-3.5 rounded-full ${dark
+          ? 'bg-blue-500 shadow-[0_0_12px_2px_rgba(59,130,246,0.55)]'
+          : 'bg-orange-500 shadow-[0_0_12px_2px_rgba(249,115,22,0.45)]'}`}
+      />
+    </div>
+  )
+}
 
 export default function Profile() {
   const { user, userData, updateUserData, logout } = useAuth();
@@ -23,7 +58,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('xfit-theme') || 'auto');
+  const [theme, setTheme] = useState(() => getThemeMode());
 
   // Uttar AI can deep-link to a Profile card, e.g. /profile#profile-settings.
   useEffect(() => {
@@ -131,36 +166,38 @@ export default function Profile() {
           <div className="text-sm font-semibold">App Theme</div>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          {[
-            { key: 'midnight', label: 'Midnight', bg: 'bg-slate-900', accent: 'bg-blue-500',   desc: 'Dark' },
-            { key: 'sunrise',  label: 'Sunrise',  bg: 'bg-orange-50', accent: 'bg-orange-500', desc: 'Light' },
-            { key: 'auto',     label: 'Auto',     bg: 'bg-gradient-to-r from-slate-900 to-orange-50', accent: 'bg-yellow-400', desc: 'By time' },
-          ].map(t => (
-            <button key={t.key} onClick={() => {
-              if (t.key === 'auto') {
-                localStorage.removeItem('xfit-theme');
-                const hour = new Date().getHours();
-                const autoTheme = (hour >= 6 && hour < 19) ? 'sunrise' : 'midnight';
-                applyTheme(autoTheme);
-                setTheme('auto');
-              } else {
-                setTheme(t.key);
-                applyTheme(t.key);
-                localStorage.setItem('xfit-theme', t.key);
-              }
-            }}
-              className={`rounded-2xl p-3 flex flex-col items-center gap-2 border-2 transition-all ${theme === t.key ? 'border-primary bg-primary/10' : 'border-transparent bg-secondary/50 hover:bg-secondary'}`}>
-              <div className={`w-12 h-8 rounded-lg ${t.bg} flex items-end justify-end p-1.5 border border-white/10`}>
-                <div className={`w-3 h-3 rounded-full ${t.accent}`} />
-              </div>
-              <div className="text-center">
-                <div className="text-xs font-semibold">{t.label}</div>
-                <div className="text-[10px] text-muted-foreground">{t.desc}</div>
-              </div>
-              {theme === t.key && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
-            </button>
-          ))}
+          {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
+            const selected = theme === key
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setThemeMode(key); setTheme(key) }}
+                aria-pressed={selected}
+                className={`relative rounded-2xl border p-2 text-left transition-all duration-200 ${
+                  selected
+                    ? 'border-primary/70 bg-primary/10 ring-2 ring-primary/25'
+                    : 'border-border/40 bg-secondary/40 hover:bg-secondary/70'
+                }`}
+              >
+                {selected && (
+                  <span className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                )}
+                <ThemePreview mode={key} />
+                <div className="mt-2 flex items-center gap-1.5 px-0.5">
+                  <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="truncate text-xs font-semibold">{label}</span>
+                </div>
+                <div className="px-0.5 text-[10px] text-muted-foreground">{desc}</div>
+              </button>
+            )
+          })}
         </div>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Auto picks Sunrise from 6am–7pm and Midnight the rest of the day.
+        </p>
       </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
