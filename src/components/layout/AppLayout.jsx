@@ -52,7 +52,7 @@ export default function AppLayout() {
     return (
       <Link key={path} to={path}
         aria-current={isActive ? 'page' : undefined}
-        className="flex w-full flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl min-w-0 relative transition-all active:scale-90">
+        className="flex flex-1 min-w-0 flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl relative transition-all active:scale-90">
         {isActive && (
           <motion.div layoutId="activeMobileNav"
             className="absolute inset-0 bg-primary/12 rounded-xl"
@@ -111,7 +111,7 @@ export default function AppLayout() {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-border/40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="grid grid-cols-6 items-end py-2 px-1">
+        <div className="flex items-end py-2 px-1">
           {navItems.slice(0, 3).map(renderMobileNav)}
           <button
             type="button"
@@ -120,7 +120,7 @@ export default function AppLayout() {
             onFocus={preloadUttarAI}
             aria-label="Open Uttar AI coach"
             aria-haspopup="dialog"
-            className="ai-logo group relative flex w-full flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="ai-logo ai-nav-tab group relative flex flex-1 min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(var(--brand-tile))] ring-1 ring-[hsl(var(--brand-mark)/0.22)] transition-transform duration-300 group-hover:scale-105">
               <BrandEmblem className="w-5" />
@@ -131,6 +131,27 @@ export default function AppLayout() {
           {navItems.slice(3).map(renderMobileNav)}
         </div>
       </nav>
+
+      {/* Narrow desktop windows (Chrome not maximised, split screen) are too
+          cramped for a sixth tab, so the original floating orb comes back.
+          Touch devices keep the centre tab instead. */}
+      <button
+        type="button"
+        onClick={() => setAiOpen(true)}
+        onPointerEnter={preloadUttarAI}
+        onFocus={preloadUttarAI}
+        aria-label="Open Uttar AI coach"
+        aria-haspopup="dialog"
+        className="ai-logo ai-fab-narrow group fixed right-4 z-[60] h-14 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
+      >
+        <span className="absolute inset-0 rounded-full bg-[hsl(var(--brand-tile))] shadow-[0_10px_30px_-6px_rgba(0,0,0,0.45)]" />
+        <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-[hsl(var(--brand-mark)/0.16)] via-transparent to-transparent" />
+        <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-[hsl(var(--brand-mark)/0.30)]" />
+        <BrandEmblem className="relative w-[30px] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110" />
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[hsl(var(--brand-tile))]">
+          <Sparkles className="h-3 w-3" />
+        </span>
+      </button>
     </div>
   );
 }

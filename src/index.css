@@ -203,6 +203,22 @@
   .ai-logo::before { animation: none; }
 }
 
+/* A narrow desktop window (Chrome not maximised, split screen) still gets the
+   mobile bottom bar, but a sixth tab is cramped there. Keep the orb the user
+   already knows, and reserve the centre tab for touch screens. */
+.ai-fab-narrow { display: none; }
+@media (max-width: 767px) and (hover: hover) and (pointer: fine) {
+  .ai-fab-narrow {
+    display: flex;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+  .ai-fab-narrow::before {
+    inset: -9px;
+    border-radius: 9999px;
+  }
+  .ai-nav-tab { display: none; }
+}
+
 /* ── Theme cross-fade ─────────────────────────────────────────────────────
    Auto flips at 6am/7pm and the Profile picker can switch on demand. Ease the
    colour swap so the wallpaper and UI melt into the new theme. */
