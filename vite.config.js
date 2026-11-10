@@ -11,8 +11,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'XFit | AI Workout & Fitness Tracker',
-        short_name: 'XFit',
+        name: 'Uttar Fitness',
+        short_name: 'Uttar Fitness',
         description: 'AI-powered fitness tracker for workouts, weekly plans, nutrition, health metrics, and progress.',
         theme_color: '#20212d',
         background_color: '#20212d',
