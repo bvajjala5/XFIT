@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight } from 'lucide-react';
+import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -15,6 +15,7 @@ import useFocusTrap from '@/hooks/useFocusTrap';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import { toast } from 'sonner';
 import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
+import { expectedWorkoutSeconds, isWorkoutTooFast, MIN_WORKOUT_DURATION_RATIO } from '@/lib/workoutValidation';
 import { savePR } from '@/lib/personalRecords';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 
@@ -290,6 +291,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     });
   }, [workout?.id, workout?.exercises, customDurations]);
 
+  // How long this workout should take. Used to reject sessions that were
+  // skipped through far too quickly to be real.
+  const expectedSeconds = useMemo(() => {
+    const fallback = exercises.reduce((s, e) => s + exerciseDurationSeconds(e), 0);
+    return expectedWorkoutSeconds(workout, fallback);
+  }, [workout, exercises]);
+
   // Set the timer and announce the exercise whenever it changes, and once the workout has loaded
   // (the exercise list arrives after the first render, which used to leave the timer at 0 and skip exercise 1).
   useEffect(() => {
@@ -418,6 +426,10 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   const handleLogWorkout = async () => {
     if (!user) { navigate('/'); return; }
+    if (isWorkoutTooFast(totalTime, expectedSeconds)) {
+      toast.error('This workout was completed too quickly to count. Finish at least half the expected time before logging it.');
+      return;
+    }
     try {
       const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
       await addDoc(collection(db,'users',user.uid,'workouts'), {
@@ -498,6 +510,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   const currentExercise = exercises[currentEx] || exercises[0] || {};
   const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s + exerciseDurationSeconds(e), 0) : 1;
+  const tooFast = isWorkoutTooFast(totalTime, expectedSeconds);
+  const minimumSeconds = Math.round(expectedSeconds * MIN_WORKOUT_DURATION_RATIO);
   const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s + exerciseDurationSeconds(e), 0);
   const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
@@ -517,9 +531,20 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             <GlassCard className="text-center"><div className="text-xl font-bold">{calories}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
             <GlassCard className="text-center"><div className="text-xl font-bold">{exercises.length}</div><div className="text-[10px] text-muted-foreground">Exercises</div></GlassCard>
           </div>
+          {tooFast && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left">
+              <p className="flex items-center gap-2 text-xs font-semibold text-amber-500">
+                <AlertTriangle className="w-4 h-4 shrink-0" /> This workout won’t count
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                You finished in {formatTime(totalTime)}, but this plan expects about {Math.round(expectedSeconds / 60)} min.
+                Complete at least {formatTime(minimumSeconds)} to log it.
+              </p>
+            </div>
+          )}
           <div className="flex gap-3">
-            <Button className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowLogModal(true)}>
-              Log Workout <ArrowRight className="w-5 h-5 ml-2" />
+            <Button className="flex-1 h-14 rounded-2xl text-base font-bold disabled:opacity-50" onClick={() => setShowLogModal(true)} disabled={tooFast}>
+              {tooFast ? 'Too short to log' : <>Log Workout <ArrowRight className="w-5 h-5 ml-2" /></>}
             </Button>
             <Button variant="secondary" className="flex-1 h-14 rounded-2xl text-base font-bold" onClick={() => setShowPRModal(true)}>
               <Trophy className="w-5 h-5 mr-2" /> New PR

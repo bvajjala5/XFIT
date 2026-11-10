@@ -23,8 +23,21 @@ export function resolveTheme(mode = getThemeMode()) {
   return mode === 'auto' ? autoTheme() : mode
 }
 
+let themeTransitionTimer
+
+function beginThemeTransition(root) {
+  root.classList.add('theme-transitioning')
+  clearTimeout(themeTransitionTimer)
+  themeTransitionTimer = setTimeout(() => {
+    root.classList.remove('theme-transitioning')
+  }, 1200)
+}
+
 export function applyResolvedTheme(resolved) {
   const root = document.documentElement
+  // Only animate real changes; the first application (or a repeat every
+  // minute while Auto has not crossed a boundary) should be instant.
+  if (root.dataset.theme && root.dataset.theme !== resolved) beginThemeTransition(root)
   root.classList.remove('theme-midnight', 'theme-sunrise')
   root.classList.add(`theme-${resolved}`)
   root.dataset.theme = resolved

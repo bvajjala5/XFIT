@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Dumbbell, User, Heart, BarChart2 } from 'lucide-react';
+import { Home, Dumbbell, User, Heart, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
-import UttarAILauncher from '@/components/ai/UttarAILauncher';
-import BrandMark from '@/components/brand/BrandMark';
+import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher';
+import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
 const navItems = [
@@ -47,8 +47,26 @@ export default function AppLayout() {
     navigate(location.pathname + location.search, { replace: true, state: null });
   }, [location.state, location.pathname, location.search, navigate]);
 
-  // The coach floats over every tab. Full-screen sessions such as /player/* and
-  // /run render outside this layout, so the FAB can never sit over their controls.
+  const renderMobileNav = ({ path, icon: Icon, label }) => {
+    const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
+    return (
+      <Link key={path} to={path}
+        aria-current={isActive ? 'page' : undefined}
+        className="flex w-full flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl min-w-0 relative transition-all active:scale-90">
+        {isActive && (
+          <motion.div layoutId="activeMobileNav"
+            className="absolute inset-0 bg-primary/12 rounded-xl"
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
+        )}
+        <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+        <span className={`truncate max-w-full text-[9px] min-[380px]:text-[10px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
+      </Link>
+    );
+  };
+
+  // The coach lives in the app chrome on every tab: the sidebar logo on desktop
+  // and the centre of the mobile tab bar. Full-screen sessions such as
+  // /player/* and /run render outside this layout.
   return (
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
@@ -56,7 +74,21 @@ export default function AppLayout() {
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
-        <BrandMark className="mb-6 h-10 w-10 rounded-2xl shadow-lg" emblemClassName="w-7" />
+        <button
+          type="button"
+          onClick={() => setAiOpen(true)}
+          onPointerEnter={preloadUttarAI}
+          onFocus={preloadUttarAI}
+          aria-label="Open Uttar AI coach"
+          aria-haspopup="dialog"
+          title="Ask Uttar AI"
+          className="ai-logo group relative mb-6 flex h-11 w-11 items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        >
+          <BrandMark className="relative h-11 w-11 rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-105" emblemClassName="w-7" />
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[hsl(var(--brand-tile))]">
+            <Sparkles className="h-2.5 w-2.5" />
+          </span>
+        </button>
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
           return (
@@ -79,23 +111,24 @@ export default function AppLayout() {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-border/40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="flex items-center justify-around py-2 px-1">
-          {navItems.map(({ path, icon: Icon, label }) => {
-            const isActive = location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
-            return (
-              <Link key={path} to={path}
-                aria-current={isActive ? 'page' : undefined}
-                className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl min-w-0 relative transition-all active:scale-90">
-                {isActive && (
-                  <motion.div layoutId="activeMobileNav"
-                    className="absolute inset-0 bg-primary/12 rounded-xl"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
-                )}
-                <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-[10px] font-semibold transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-6 items-end py-2 px-1">
+          {navItems.slice(0, 3).map(renderMobileNav)}
+          <button
+            type="button"
+            onClick={() => setAiOpen(true)}
+            onPointerEnter={preloadUttarAI}
+            onFocus={preloadUttarAI}
+            aria-label="Open Uttar AI coach"
+            aria-haspopup="dialog"
+            className="ai-logo group relative flex w-full flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(var(--brand-tile))] ring-1 ring-[hsl(var(--brand-mark)/0.22)] transition-transform duration-300 group-hover:scale-105">
+              <BrandEmblem className="w-5" />
+              <Sparkles className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 text-primary" />
+            </span>
+            <span className="relative z-10 text-[9px] min-[380px]:text-[10px] font-semibold text-primary">AI</span>
+          </button>
+          {navItems.slice(3).map(renderMobileNav)}
         </div>
       </nav>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { getThemeMode, resolveTheme } from '@/lib/theme';
 
 // ── STAR FIELD + MOON (midnight theme) ───────────────────────────────────
@@ -168,6 +169,7 @@ function SunBackground() {
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────
 export default function AnimatedBackground() {
   const [theme, setTheme] = useState(() => resolveTheme(getThemeMode()));
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const getTheme = () => {
@@ -181,6 +183,37 @@ export default function AnimatedBackground() {
     return () => observer.disconnect();
   }, []);
 
-  if (theme === 'sunrise') return <SunBackground />;
-  return <StarField />;
+  // Cross-fade the two wallpapers so Auto (6am/7pm) and manual theme changes
+  // melt from sunrise to midnight instead of snapping.
+  const fade = { duration: reduceMotion ? 0.01 : 1.1, ease: 'easeInOut' };
+
+  return (
+    <AnimatePresence initial={false} mode="sync">
+      {theme === 'sunrise' ? (
+        <motion.div
+          key="sunrise"
+          data-wallpaper="sunrise"
+          className="fixed inset-0 z-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={fade}
+        >
+          <SunBackground />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="midnight"
+          data-wallpaper="midnight"
+          className="fixed inset-0 z-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={fade}
+        >
+          <StarField />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }

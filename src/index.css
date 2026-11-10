@@ -49,7 +49,8 @@
     /* Brand mark: white barbell on a pitch-black tile. */
     --brand-tile: 0 0% 0%;
     --brand-mark: 0 0% 100%;
-    --brand-glow: 255 255 255;
+    /* Midnight wallpaper is a blue moon/starfield, so the AI glow is blue. */
+    --brand-glow: 217 91% 60%;
     --radius: 0.875rem;
   }
 
@@ -80,6 +81,7 @@
     /* Invert the brand mark on light backgrounds: black barbell on white. */
     --brand-tile: 0 0% 100%;
     --brand-mark: 0 0% 0%;
+    /* Sunrise wallpaper is warm orange, so the AI glow matches the sun. */
     --brand-glow: 22 95% 52%;
     --radius: 0.875rem;
   }
@@ -172,18 +174,52 @@
   .brand-loader-u { animation-duration: 3.2s; }
 }
 
-/* Uttar AI launcher: float above the mobile tab bar, and settle into the corner
-   on desktop where there is no bottom navigation. */
-.ai-fab {
-  bottom: calc(5.25rem + env(safe-area-inset-bottom));
+/* ── AI entry point ───────────────────────────────────────────────────────
+   The sidebar logo (desktop) and the centre tab (mobile) double as the Uttar
+   AI launcher. Its glow is pulled from the active wallpaper accent so it feels
+   like part of the current theme instead of a floating button. */
+.ai-logo::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 18px;
+  background: radial-gradient(circle, hsl(var(--brand-glow) / 0.5), transparent 70%);
+  filter: blur(8px);
+  opacity: 0.55;
+  animation: ai-logo-pulse 4.5s ease-in-out infinite;
+  pointer-events: none;
+  transition: opacity 300ms ease, filter 300ms ease;
 }
-@media (min-width: 768px) {
-  .ai-fab { bottom: 2rem; }
+.ai-logo:hover::before,
+.ai-logo:focus-visible::before {
+  opacity: 0.95;
+  filter: blur(11px);
 }
-/* Onboarding is a full-screen takeover, so keep the launcher out of it. */
-body[data-onboarding="true"] .ai-fab { display: none; }
-/* The PWA install prompt occupies the same corner on phones. */
-body[data-install-banner="true"] .ai-fab { display: none; }
+@keyframes ai-logo-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.96); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-logo::before { animation: none; }
+}
+
+/* ── Theme cross-fade ─────────────────────────────────────────────────────
+   Auto flips at 6am/7pm and the Profile picker can switch on demand. Ease the
+   colour swap so the wallpaper and UI melt into the new theme. */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 900ms;
+  transition-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition-duration: 0.01ms;
+  }
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
