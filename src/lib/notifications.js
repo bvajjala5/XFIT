@@ -1,4 +1,3 @@
-import { getToken, onMessage, getMessaging, isSupported } from 'firebase/messaging';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore/lite';
 import { app } from './firebase';
 import { db } from './firestore';
@@ -44,6 +43,7 @@ export async function registerPushNotifications(userId) {
   if (permission !== 'granted') return null;
 
   try {
+    const { getToken, getMessaging, isSupported } = await import('firebase/messaging');
     const supported = await isSupported().catch(() => false);
     if (!supported) return null;
     const messaging = getMessaging(app);
@@ -102,8 +102,10 @@ export function onForegroundMessage(callback) {
   let unsub = () => {};
   let cancelled = false;
 
-  isSupported()
-    .then(supported => {
+  import('firebase/messaging')
+    .then(async ({ getMessaging, isSupported, onMessage }) => {
+      if (cancelled) return;
+      const supported = await isSupported().catch(() => false);
       if (!supported || cancelled) return;
       unsub = onMessage(getMessaging(app), callback) || (() => {});
     })

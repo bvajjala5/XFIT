@@ -8,7 +8,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // Registered from src/main.jsx after the window load event so the script
+      // never sits on the critical rendering path.
+      injectRegister: null,
       includeAssets: ['icons/*.png'],
       manifest: {
         name: 'Uttar Fitness',
@@ -31,18 +33,19 @@ export default defineConfig({
         categories: ['fitness', 'health', 'sports'],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
         globIgnores: [
           // Large lazy chunks are cached on demand instead of downloaded at install time.
           '**/foods-*.js',
           '**/vendor-charts-*.js',
           '**/vendor-firestore-*.js',
           '**/vendor-zxing-*.js',
+          '**/vendor-firebase-messaging-*.js',
         ],
         maximumFileSizeToCacheInBytes: 800 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(foods|vendor-charts|vendor-firestore|vendor-zxing)-.*\.js$/,
+            urlPattern: /\/assets\/(foods|vendor-charts|vendor-firestore|vendor-zxing|vendor-firebase-messaging)-.*\.js$/,
             handler: 'CacheFirst',
             options: { cacheName: 'lazy-code', expiration: { maxEntries: 4, maxAgeSeconds: 86400 * 30 } }
           },
@@ -59,10 +62,21 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') }
   },
   build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: { passes: 2, drop_debugger: true },
+      mangle: true,
+      format: { comments: false },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
+          // Messaging is dynamically imported, so keep it out of the eager
+          // auth/app bundle and let the browser fetch it only when needed.
+          if (id.includes('/node_modules/@firebase/messaging/') || id.includes('/node_modules/firebase/messaging/')) {
+            return 'vendor-firebase-messaging';
+          }
           if (id.includes('/node_modules/@firebase/') || id.includes('/node_modules/firebase/')) {
             // Firestore is imported dynamically, so Rollup keeps this chunk async.
             if (id.includes('firestore')) return 'vendor-firestore';

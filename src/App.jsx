@@ -49,9 +49,10 @@ function PageLoader() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth()
-  if (loading) return <LoadingScreen />
-
+  const { user } = useAuth()
+  // Do not gate the whole router on Firebase auth. AuthGuard already shows the
+  // loading screen for protected routes, while /login can paint immediately so
+  // signed-out visitors see content without waiting for auth to initialize.
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />

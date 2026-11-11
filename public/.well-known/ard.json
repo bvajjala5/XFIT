@@ -1,0 +1,9 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Uttar Fitness",
+    "identifier": "did:web:xfit-bpe.pages.dev",
+    "documentationUrl": "https://xfit-bpe.pages.dev/llms.txt"
+  },
+  "entries": []
+}

@@ -17,6 +17,11 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/inter-latin-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://xfit-723dd.firebaseapp.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="ard" href="/.well-known/ard.json" />
 
     <meta name="apple-mobile-web-app-title" content="Uttar Fitness" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -24,20 +29,44 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#20212d" />
 
-    <!-- Resolve the saved theme before the first paint (same-origin, CSP-safe). -->
-    <script src="/theme-boot.js"></script>
+    <!-- Resolve the saved theme before the first paint. Kept inline so the theme
+         never flashes and the browser does not wait on an extra script request.
+         public/_headers carries the matching CSP sha256 hash. -->
+    <script>
+(function () {
+  var KEY = 'xfit-theme';
+  var saved = null;
+  try {
+    saved = localStorage.getItem(KEY);
+  } catch (error) {
+    /* private mode */
+  }
+  var mode = saved === 'midnight' || saved === 'sunrise' ? saved : 'auto';
+  var hour = new Date().getHours();
+  var resolved = mode === 'auto' ? (hour >= 6 && hour < 19 ? 'sunrise' : 'midnight') : mode;
+  var root = document.documentElement;
+  root.classList.remove('theme-midnight', 'theme-sunrise');
+  root.classList.add('theme-' + resolved);
+  root.setAttribute('data-theme', resolved);
+  root.setAttribute('data-theme-mode', mode);
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', resolved === 'sunrise' ? '#fbf6ef' : '#20212d');
+})();
+    </script>
 
     <!-- Critical boot styles: keep the first paint branded even before the CSS bundle loads. -->
     <style>
       :root {
         --boot-page: #20212d;
         --boot-text: #a0a8b8;
+        --boot-heading: #f8fafc;
         --boot-tile: #000;
         --boot-mark: #fff;
       }
       html.theme-sunrise {
         --boot-page: #fbf6ef;
         --boot-text: #78716c;
+        --boot-heading: #1c1917;
         --boot-tile: #fff;
         --boot-mark: #000;
       }
@@ -46,28 +75,38 @@
         position: fixed;
         inset: 0;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 16px;
         background: var(--boot-page);
         color: var(--boot-text);
         font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
       }
+      #boot .boot-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        width: 100%;
+        max-width: 384px;
+        box-sizing: border-box;
+        padding: 0 24px;
+        text-align: center;
+      }
+      #boot .boot-copy { width: 100%; }
       #boot .boot-tile {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
+        width: 96px;
+        height: 96px;
+        border-radius: 32px;
         background: var(--boot-tile);
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(128, 128, 128, 0.25);
       }
       #boot .boot-emblem {
         position: relative;
         display: block;
-        width: 44px;
+        width: 64px;
         aspect-ratio: 384 / 136;
       }
       #boot .boot-frame,
@@ -81,44 +120,63 @@
       }
       #boot .boot-frame {
         inset: 0;
-        -webkit-mask-image: url('/icons/emblem-frame.png');
-        mask-image: url('/icons/emblem-frame.png');
+        -webkit-mask-image: url('/icons/emblem-frame.webp');
+        mask-image: url('/icons/emblem-frame.webp');
       }
       #boot .boot-u {
         left: 28.646%;
         top: 16.176%;
         width: 42.708%;
         height: 71.324%;
-        -webkit-mask-image: url('/icons/emblem-u.png');
-        mask-image: url('/icons/emblem-u.png');
+        -webkit-mask-image: url('/icons/emblem-u.webp');
+        mask-image: url('/icons/emblem-u.webp');
         animation: boot-u-spin 1.5s linear infinite;
       }
       @keyframes boot-u-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) {
         #boot .boot-u { animation-duration: 3.2s; }
       }
-      #boot .boot-label { font-size: 14px; color: var(--boot-text); }
+      #boot h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        line-height: 1.1;
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        color: var(--boot-heading);
+      }
+      #boot .boot-tagline { margin: 8px 0 0; font-size: 1rem; }
+      #boot .boot-label { font-size: 13px; color: var(--boot-text); opacity: 0.8; }
     </style>
+
+    <!-- Module scripts defer automatically; starting the fetch in the head
+         removes the body-parsing wait without blocking the first paint. -->
+    <script type="module" src="/src/main.jsx"></script>
   </head>
   <body>
-    <div id="root">
-      <!-- Static shell in the delivered HTML; replaced as soon as React mounts. -->
-      <div id="boot" role="status" aria-live="polite" aria-label="Loading Uttar Fitness">
+    <!-- Static shell in the delivered HTML. It sits beside #root so React can
+         mount without destroying the already-painted first frame; main.jsx
+         hides it once the app has committed. -->
+    <div id="boot" role="status" aria-live="polite" aria-label="Loading Uttar Fitness">
+      <div class="boot-hero">
         <span class="boot-tile" aria-hidden="true">
           <span class="boot-emblem">
             <span class="boot-frame"></span>
             <span class="boot-u"></span>
           </span>
         </span>
+        <div class="boot-copy">
+          <h1>Uttar Fitness</h1>
+          <p class="boot-tagline">Direct Your Greatness, Live Uttar</p>
+        </div>
         <span class="boot-label">Loading Uttar Fitness&hellip;</span>
       </div>
     </div>
+    <div id="root"></div>
     <noscript>
       <div style="padding:24px;font-family:system-ui,sans-serif;text-align:center">
         <strong>Uttar Fitness needs JavaScript.</strong>
         <p>Please enable JavaScript in your browser to use the workout tracker.</p>
       </div>
     </noscript>
-    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

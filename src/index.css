@@ -127,8 +127,8 @@
   display: block;
   aspect-ratio: 384 / 136;
   background-color: hsl(var(--brand-mark));
-  -webkit-mask-image: url('/icons/emblem-white.png');
-  mask-image: url('/icons/emblem-white.png');
+  -webkit-mask-image: url('/icons/emblem-white.webp');
+  mask-image: url('/icons/emblem-white.webp');
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -154,16 +154,16 @@
 }
 .brand-loader-frame {
   inset: 0;
-  -webkit-mask-image: url('/icons/emblem-frame.png');
-  mask-image: url('/icons/emblem-frame.png');
+  -webkit-mask-image: url('/icons/emblem-frame.webp');
+  mask-image: url('/icons/emblem-frame.webp');
 }
 .brand-loader-u {
   left: 28.646%;
   top: 16.176%;
   width: 42.708%;
   height: 71.324%;
-  -webkit-mask-image: url('/icons/emblem-u.png');
-  mask-image: url('/icons/emblem-u.png');
+  -webkit-mask-image: url('/icons/emblem-u.webp');
+  mask-image: url('/icons/emblem-u.webp');
   transform-origin: 50% 50%;
   animation: brand-u-spin 1.5s linear infinite;
 }

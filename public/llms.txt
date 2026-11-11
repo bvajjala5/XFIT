@@ -1,0 +1,28 @@
+# Uttar Fitness
+
+> Uttar Fitness is an AI-powered fitness tracker for workouts, weekly training plans, nutrition, health metrics, and progress.
+
+Uttar Fitness is a web app for planning and tracking strength, cardio, mobility, and nutrition. The app is built with React and Firebase and is available at [xfit-bpe.pages.dev](https://xfit-bpe.pages.dev/).
+
+## Main pages
+
+- [Uttar Fitness home](https://xfit-bpe.pages.dev/)
+- [Workouts and run tracking](https://xfit-bpe.pages.dev/workouts)
+- [Weekly training plan](https://xfit-bpe.pages.dev/plan)
+- [Health, weight, and nutrition](https://xfit-bpe.pages.dev/health)
+- [Community workouts](https://xfit-bpe.pages.dev/community)
+
+## Policies
+
+- [Privacy policy](https://xfit-bpe.pages.dev/privacy)
+- [Terms of service](https://xfit-bpe.pages.dev/terms)
+
+## Source and agent resources
+
+- [Source code and README](https://github.com/bvajjala5/XFIT)
+- [Agentic resource manifest](https://xfit-bpe.pages.dev/.well-known/ard.json)
+
+## Notes for agents
+
+- Most in-app pages require a signed-in Firebase account; signed-out visitors are redirected to the login page.
+- The site is a single-page React app. Static metadata lives at `/llms.txt`, `/robots.txt`, and `/.well-known/ard.json`.

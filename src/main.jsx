@@ -14,10 +14,25 @@ import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
 // logo, and the app background never flash the wrong mode.
 applyResolvedTheme(resolveTheme(getThemeMode()))
 
+// Register the PWA worker after the page has loaded so it never competes with
+// the critical rendering path. VitePWA's auto-update worker handles activation.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
+  }, { once: true })
+}
+
 const container = document.getElementById('root')
-// The HTML ships a lightweight boot shell so the first paint is not blank.
-// Clear it before mounting so React owns the container.
-container.replaceChildren()
+const boot = document.getElementById('boot')
+
+function hideBoot() {
+  if (!boot) return
+  // Keep the node in the document: it already painted the first frame and is
+  // the LCP candidate. Hiding (rather than removing) it leaves that candidate
+  // addressable for metrics while keeping the DOM stable.
+  boot.style.display = 'none'
+  boot.setAttribute('aria-hidden', 'true')
+}
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
@@ -33,3 +48,23 @@ ReactDOM.createRoot(container).render(
     </BrowserRouter>
   </React.StrictMode>
 )
+
+// The static shell is a sibling of #root, so React mounting does not destroy
+// the first painted frame. Reveal the app once React has committed, after a
+// couple of frames so the shell's paint is registered as the LCP candidate.
+let waited = 0
+function revealWhenReady() {
+  if (container.childElementCount > 0) {
+    requestAnimationFrame(() => requestAnimationFrame(hideBoot))
+    return
+  }
+  if (++waited > 600) {
+    // Roughly 10 seconds: only hide if React never commits (e.g. a crashed
+    // bundle) so visitors are not stuck on the splash forever. A slow but
+    // working device keeps the splash until the app is actually ready.
+    hideBoot()
+    return
+  }
+  requestAnimationFrame(revealWhenReady)
+}
+requestAnimationFrame(revealWhenReady)
