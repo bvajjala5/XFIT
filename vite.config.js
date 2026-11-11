@@ -37,11 +37,12 @@ export default defineConfig({
           '**/foods-*.js',
           '**/vendor-charts-*.js',
           '**/vendor-firestore-*.js',
+          '**/vendor-zxing-*.js',
         ],
         maximumFileSizeToCacheInBytes: 800 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(foods|vendor-charts|vendor-firestore)-.*\.js$/,
+            urlPattern: /\/assets\/(foods|vendor-charts|vendor-firestore|vendor-zxing)-.*\.js$/,
             handler: 'CacheFirst',
             options: { cacheName: 'lazy-code', expiration: { maxEntries: 4, maxAgeSeconds: 86400 * 30 } }
           },
@@ -73,6 +74,7 @@ export default defineConfig({
           if (id.includes('/node_modules/recharts/') || id.includes('/node_modules/d3-') || id.includes('/node_modules/victory-vendor/')) {
             return 'vendor-charts';
           }
+          if (id.includes('/node_modules/@zxing/')) return 'vendor-zxing';
           if (id.includes('/node_modules/framer-motion/') || id.includes('/node_modules/@tanstack/')) {
             return 'vendor-ui';
           }

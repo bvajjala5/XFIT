@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react'
+import React, { lazy, Suspense, useEffect, useMemo, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore/lite'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, Clock } from 'lucide-react'
+import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, Clock, ScanBarcode } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firestore'
 import GlassCard from '@/components/shared/GlassCard'
@@ -11,6 +11,11 @@ import useFocusTrap from '@/hooks/useFocusTrap'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createFoodSearch, calcNutrition, compositeFromItems, defaultGrams } from '@/lib/foodSearch'
+
+// Keep the barcode decoder out of the first paint; it is only fetched when the
+// scan button is used.
+const BarcodeScanner = lazy(() => import('@/components/nutrition/BarcodeScanner'))
+const preloadBarcodeScanner = () => import('@/components/nutrition/BarcodeScanner').catch(() => {})
 
 export const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack']
 
@@ -116,13 +121,14 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const [online, setOnline] = useState(null)              // null = not searched, [] = no results
   const [onlineBusy, setOnlineBusy] = useState(false)
   const [custom, setCustom] = useState({ name: '', serving: '100', calories: '', protein: '', carbs: '', fat: '' })
+  const [scanOpen, setScanOpen] = useState(false)
   const qc = useQueryClient()
   const contentRef = useRef(null)
 
   useEffect(() => { if (open) loadEngine().then(setEngine).catch(() => setEngineError(true)) }, [open])
   useEffect(() => {
     if (open) { setMealType(defaultMeal || defaultMealForNow()); return }
-    setView('search'); setText(''); setSelected(null); setDraft(null); setOnline(null)
+    setView('search'); setText(''); setSelected(null); setDraft(null); setOnline(null); setScanOpen(false)
   }, [open, defaultMeal])
   useEffect(() => { setOnline(null) }, [text])
 
@@ -161,7 +167,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       setDraft({ ...draft, items: [...draft.items, { food, grams: defaultGrams(food) }] })
       setText(''); setView('meal'); return
     }
-    setSelected(food); setGrams(food.source === 'custom' || food.source === 'meal' ? (food.servingGrams || 100) : defaultGrams(food)); setView('detail')
+    setSelected(food); setGrams(food.servingGrams || (food.source === 'custom' || food.source === 'meal' ? 100 : defaultGrams(food))); setView('detail')
   }
   const startMeal = (m) => { setDraft({ title: m?.title || 'My meal', items: m?.items || [], save: true }); setText(''); setView('meal') }
 
@@ -292,8 +298,19 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       <>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-10 bg-secondary/40 border-0 h-12" autoFocus />
-          {!engine && !engineError && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-20 bg-secondary/40 border-0 h-12" autoFocus />
+          {!engine && !engineError && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+          <button
+            type="button"
+            onClick={() => setScanOpen(true)}
+            onPointerEnter={preloadBarcodeScanner}
+            onFocus={preloadBarcodeScanner}
+            aria-label="Scan a barcode"
+            title="Scan a barcode"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+          >
+            <ScanBarcode className="w-4 h-4" />
+          </button>
         </div>
         {draft && <p className="text-xs text-primary">Adding an ingredient to “{draft.title}” — <button className="underline" onClick={() => setView('meal')}>back to meal</button></p>}
         {engineError && <GlassCard className="text-sm text-center space-y-2"><p>Couldn't load the food database.</p><Button size="sm" onClick={() => { setEngineError(false); loadEngine().then(setEngine).catch(() => setEngineError(true)) }}>Try again</Button></GlassCard>}
@@ -337,7 +354,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   }
 
   // Portal to <body> so the picker clears the app nav and page stacking contexts.
-  return createPortal(
+  const picker = createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 md:items-center md:p-4" onClick={onClose}>
       <motion.div ref={contentRef} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}
         initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -349,5 +366,20 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       </motion.div>
     </div>,
     document.body
+  )
+
+  return (
+    <>
+      {picker}
+      {scanOpen && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            open
+            onClose={() => setScanOpen(false)}
+            onFood={(food) => { setScanOpen(false); pick(food) }}
+          />
+        </Suspense>
+      )}
+    </>
   )
 }

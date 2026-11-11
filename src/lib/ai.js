@@ -164,7 +164,7 @@ async function getMockResponse(prompt = '') {
 
 // allowMock: workout building can fall back to the local generator, but the conversational
 // coach must never pretend a failed request was answered, so chat passes false.
-export async function callAI({ system, messages, maxTokens = 1000, allowMock = true }) {
+export async function callAI({ system, messages, maxTokens = 1000, allowMock = true, image = null }) {
   const userPrompt = messages?.find(m => m.role === 'user')?.content || '';
 
   if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
@@ -180,7 +180,7 @@ export async function callAI({ system, messages, maxTokens = 1000, allowMock = t
     const res = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ system, messages, maxTokens }),
+      body: JSON.stringify({ system, messages, maxTokens, ...(image ? { image } : {}) }),
     });
 
     if (!res.ok) {

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Dumbbell, User, Heart, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
 import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher';
+import { UttarAIProvider } from '@/components/ai/UttarAIContext';
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
@@ -20,6 +21,7 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
+  const openAI = useCallback(() => setAiOpen(true), []);
 
   useEffect(() => {
     const sync = () => applyResolvedTheme(resolveTheme(getThemeMode()));
@@ -105,7 +107,9 @@ export default function AppLayout() {
 
       {/* Main content */}
       <main className="pb-24 md:pb-0 md:pl-20">
-        <Outlet />
+        <UttarAIProvider onOpen={openAI}>
+          <Outlet />
+        </UttarAIProvider>
       </main>
 
       {/* Mobile bottom nav */}

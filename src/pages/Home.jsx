@@ -6,7 +6,7 @@ import { db } from '@/lib/firestore'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
 import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
-import { Pencil, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp, CalendarDays } from 'lucide-react'
+import { Sparkles, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp, CalendarDays } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
@@ -17,6 +17,7 @@ import { seedWorkouts } from '@/lib/seedWorkouts'
 import { withBuiltinWorkouts } from '@/lib/workoutLibrary'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import { getDailyQuote } from '@/components/home/DailyQuote'
+import { useUttarAI } from '@/components/ai/UttarAIContext'
 import { toast } from 'sonner'
 
 function getGreeting() {
@@ -50,6 +51,7 @@ function computeNextPopup(after, uid) {
 
 export default function Home() {
   const { user, userDoc, refreshUserDoc } = useAuth()
+  const openAI = useUttarAI()
   const qc = useQueryClient()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [sharingId, setSharingId] = useState(null)
@@ -315,11 +317,15 @@ export default function Home() {
 
         {/* Quick links */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-3 gap-3">
-          {[['/plan', CalendarDays, 'Plan'], ['/builder', Pencil, 'Build'], ['/run', Zap, 'Run']].map(([to, Icon, label]) => (
-            <Link key={to} to={to} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
-              <Icon className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">{label}</span>
-            </Link>
-          ))}
+          <Link to="/plan" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+            <CalendarDays className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Plan</span>
+          </Link>
+          <button type="button" onClick={openAI} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+            <Sparkles className="w-4 h-4 text-primary" /><span className="text-sm font-medium">Ask AI</span>
+          </button>
+          <Link to="/run" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+            <Zap className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Run</span>
+          </Link>
         </motion.div>
       </div>
     </div>

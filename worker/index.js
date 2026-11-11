@@ -7,11 +7,14 @@
 
 import { verifyFirebaseToken } from './auth.js';
 
-const MAX_BODY_CHARS = 30000;
+const MAX_BODY_CHARS = 2_000_000;
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_CHARS = 6000;
 const MAX_SYSTEM_CHARS = 6000;
 const MAX_OUTPUT_TOKENS = 2000;
+// Form checks send one compressed camera frame. 1.5 MB of base64 is roughly a
+// 1.1 MB image — far more than the app's 720px JPEGs ever produce.
+const MAX_IMAGE_BASE64 = 1_500_000;
 
 // Best-effort per-isolate limiter (resets when the isolate recycles). For hard limits,
 // add Cloudflare's Rate Limiting rules in the dashboard for this Worker's route.
@@ -101,13 +104,32 @@ export default {
     } catch {
       return json({ error: 'Invalid JSON' }, 400, cors);
     }
-    const { system, messages, maxTokens } = body || {};
+    const { system, messages, maxTokens, image } = body || {};
     if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
       return json({ error: 'Invalid messages' }, 400, cors);
     }
     if (system != null && (typeof system !== 'string' || system.length > MAX_SYSTEM_CHARS)) {
       return json({ error: 'Invalid system prompt' }, 400, cors);
     }
+
+    // Optional vision input for form checks: one inline image, attached to the
+    // first user turn.
+    let imagePart = null;
+    if (image != null) {
+      if (
+        typeof image !== 'object' ||
+        typeof image.data !== 'string' ||
+        typeof image.mimeType !== 'string' ||
+        !/^image\/(jpeg|png|webp)$/.test(image.mimeType)
+      ) {
+        return json({ error: 'Invalid image' }, 400, cors);
+      }
+      if (image.data.length > MAX_IMAGE_BASE64) {
+        return json({ error: 'Image too large' }, 413, cors);
+      }
+      imagePart = { inline_data: { mime_type: image.mimeType, data: image.data } };
+    }
+
     const outTokens = Math.min(Math.max(parseInt(maxTokens, 10) || 1000, 1), MAX_OUTPUT_TOKENS);
 
     if (!env.GEMINI_API_KEY) return json({ error: 'AI is not configured on the server.' }, 500, cors);
@@ -116,6 +138,8 @@ export default {
     // output-token budget is spent on the answer itself. If the primary model is overloaded
     // (503) or rate limited (429), retry with a lighter model.
     const models = [...new Set([env.GEMINI_MODEL, 'gemini-3.5-flash', 'gemini-3.1-flash-lite'].filter(Boolean))];
+    const contents = toGeminiContents(messages);
+    if (imagePart) contents[0].parts.unshift(imagePart);
     const callGemini = async (model, generationConfig) => {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -123,7 +147,7 @@ export default {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
           body: JSON.stringify({
-            contents: toGeminiContents(messages),
+            contents,
             ...(system && { system_instruction: { parts: [{ text: system }] } }),
             generationConfig,
           }),

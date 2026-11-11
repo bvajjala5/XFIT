@@ -6,12 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, RotateCcw, ScanFace } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 import { normalizeExercise } from '@/lib/exerciseTiming';
+import FormCheck from '@/components/workout/FormCheck';
 
 const typeColors = {
   hiit:'bg-red-500/20 text-red-400', yoga:'bg-purple-500/20 text-purple-400',
@@ -62,6 +63,7 @@ export default function WorkoutDetail() {
   const [customDurations, setCustomDurations] = useState({});
   const [savedDurations, setSavedDurations] = useState({});
   const [justSaved, setJustSaved] = useState(false);
+  const [formExercise, setFormExercise] = useState(null);
 
   const { data: workout, isLoading } = useQuery({
     queryKey: ['workout', id, user?.uid],
@@ -257,6 +259,13 @@ export default function WorkoutDetail() {
                             {ex.reps ? `${ex.reps} reps` : ''}
                             {ex.weight ? ` · ${ex.weight}` : ''}
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => setFormExercise(ex.name)}
+                            className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20"
+                          >
+                            <ScanFace className="h-3 w-3" /> Check Form
+                          </button>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -293,6 +302,12 @@ export default function WorkoutDetail() {
           Start Workout · {totalCustomMins || workout.duration} min
         </Button>
       </div>
+
+      <FormCheck
+        open={!!formExercise}
+        exerciseName={formExercise}
+        onClose={() => setFormExercise(null)}
+      />
     </div>
   );
 }

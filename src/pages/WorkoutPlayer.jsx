@@ -7,12 +7,13 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
 import useFocusTrap from '@/hooks/useFocusTrap';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
+import FormCheck from '@/components/workout/FormCheck';
 import { toast } from 'sonner';
 import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
 import { expectedWorkoutSeconds, isWorkoutTooFast, MIN_WORKOUT_DURATION_RATIO } from '@/lib/workoutValidation';
@@ -206,6 +207,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const formWasPausedRef = useRef(false);
   const [totalTime, setTotalTime] = useState(0);
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
@@ -508,6 +511,18 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     actionLabel="Browse workouts"
   />;
 
+  // Checking form pauses the session so the timer resumes exactly where it
+  // stopped when the camera sheet closes.
+  const openFormCheck = () => {
+    formWasPausedRef.current = isPaused;
+    setIsPaused(true);
+    setFormOpen(true);
+  };
+  const closeFormCheck = () => {
+    setFormOpen(false);
+    if (!formWasPausedRef.current) setIsPaused(false);
+  };
+
   const currentExercise = exercises[currentEx] || exercises[0] || {};
   const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s + exerciseDurationSeconds(e), 0) : 1;
   const tooFast = isWorkoutTooFast(totalTime, expectedSeconds);
@@ -737,6 +752,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
             {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
             <WorkoutDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
+            <button
+              type="button"
+              onClick={openFormCheck}
+              className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
+            >
+              <ScanFace className="h-4 w-4" /> Check Form
+            </button>
           </motion.div>
         </AnimatePresence>
         <div className="relative w-48 h-48">
@@ -772,6 +794,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           <SkipForward className="w-5 h-5" />
         </Button>
       </div>
+
+      <FormCheck open={formOpen} exerciseName={currentExercise?.name} onClose={closeFormCheck} />
     </div>
   );
 }

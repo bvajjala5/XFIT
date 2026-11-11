@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/appNavigation.test.mjs src/lib/theme.test.mjs src/lib/workoutValidation.test.mjs src/lib/foodSearch.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs worker/auth.test.mjs"
+    "test": "node --test src/lib/appNavigation.test.mjs src/lib/theme.test.mjs src/lib/workoutValidation.test.mjs src/lib/barcode.test.mjs src/lib/foodSearch.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs worker/auth.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -22,6 +22,7 @@
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack/react-query": "^5.84.1",
+    "@zxing/browser": "^0.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "firebase": "^11.0.0",
