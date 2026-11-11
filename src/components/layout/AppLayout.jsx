@@ -10,7 +10,7 @@ import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
 const navItems = [
-  { path: '/',          icon: Home,           label: 'Home'     },
+  { path: '/home',      icon: Home,           label: 'Home'     },
   { path: '/health',    icon: Heart,          label: 'Health'   },
   { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
   { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
@@ -57,7 +57,7 @@ export default function AppLayout() {
         className="flex flex-1 min-w-0 flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl relative transition-all active:scale-90">
         {isActive && (
           <motion.div layoutId="activeMobileNav"
-            className="absolute inset-0 bg-primary/12 rounded-xl"
+            className="absolute inset-0 bg-primary/10 rounded-xl"
             transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
         )}
         <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />

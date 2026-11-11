@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { auth, googleProvider } from './firebase';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { clearAppCaches } from './cache';
+import { clearSessionHint, markSessionHint } from './session';
 
 // Load Firestore on demand. Anonymous visitors only need Auth to reach the login
 // screen, so the Firestore SDK stays out of the first-paint bundle.
@@ -43,9 +44,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        markSessionHint();
         setUser(firebaseUser);
         await fetchUserData(firebaseUser.uid, firebaseUser);
       } else {
+        clearSessionHint();
         setUser(null);
         setUserData(null);
       }
@@ -57,6 +60,7 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const { user: u } = result;
+    markSessionHint();
     const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
     const ref = doc(db, 'users', u.uid);
     const snap = await getDoc(ref);
@@ -81,7 +85,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await clearAppCaches();
-    return signOut(auth);
+    await signOut(auth);
+    clearSessionHint();
   };
 
   const updateUserData = async (updates) => {

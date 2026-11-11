@@ -4,7 +4,7 @@
 
 export const APP_DESTINATIONS = [
   {
-    path: '/',
+    path: '/home',
     label: 'Go to Home',
     title: 'Home',
     description: 'Daily dashboard with today’s workout, weekly progress, the daily check-in, and quick links to Plan, Build, and Run.',

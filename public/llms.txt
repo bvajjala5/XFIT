@@ -7,6 +7,7 @@ Uttar Fitness is a web app for planning and tracking strength, cardio, mobility,
 ## Main pages
 
 - [Uttar Fitness home](https://xfit-bpe.pages.dev/)
+- [Try the live demo](https://xfit-bpe.pages.dev/demo)
 - [Workouts and run tracking](https://xfit-bpe.pages.dev/workouts)
 - [Weekly training plan](https://xfit-bpe.pages.dev/plan)
 - [Health, weight, and nutrition](https://xfit-bpe.pages.dev/health)
@@ -24,5 +25,6 @@ Uttar Fitness is a web app for planning and tracking strength, cardio, mobility,
 
 ## Notes for agents
 
-- Most in-app pages require a signed-in Firebase account; signed-out visitors are redirected to the login page.
+- Signed-out visitors see a public landing page at `/` with an interactive demo at `/demo`. No account is needed to evaluate the product.
+- In-app pages require a signed-in Firebase account. Signed-in visitors who open `/` are redirected to their dashboard at `/home`.
 - The site is a single-page React app. Static metadata lives at `/llms.txt`, `/robots.txt`, and `/.well-known/ard.json`.

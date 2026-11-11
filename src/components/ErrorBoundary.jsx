@@ -32,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              to="/"
+              to="/home"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-primary/90"
             >
               <Home className="w-4 h-4" /> Home

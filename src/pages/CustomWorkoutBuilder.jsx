@@ -141,7 +141,7 @@ Rules:
       queryClient.invalidateQueries({ queryKey: ['custom-workouts', user.uid] })
       toast.success('Workout saved!')
       if (startNow) navigate(`/player/custom/${id}`)
-      else navigate('/')
+      else navigate('/home')
     } catch (err) {
       console.error(err)
       toast.error('Failed to save workout')

@@ -428,7 +428,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   }, [currentEx, exercises]);
 
   const handleLogWorkout = async () => {
-    if (!user) { navigate('/'); return; }
+    if (!user) { navigate('/home'); return; }
     if (isWorkoutTooFast(totalTime, expectedSeconds)) {
       toast.error('This workout was completed too quickly to count. Finish at least half the expected time before logging it.');
       return;
@@ -450,7 +450,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       });
 
     } catch(e) { console.error('handleLogWorkout error:', e); }
-    navigate('/');
+    navigate('/home');
   };
 
   const handleSavePR = async () => {
@@ -568,7 +568,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
             </Button>
           </div>
-          <Button variant="ghost" className="w-full" onClick={() => navigate('/')}>Skip</Button>
+          <Button variant="ghost" className="w-full" onClick={() => navigate('/home')}>Skip</Button>
         </motion.div>
 
         {/* ── LOG MODAL ── */}

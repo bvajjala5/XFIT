@@ -113,7 +113,7 @@ export default function WeeklyPlan() {
   return (
     <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-28 space-y-5">
       <header className="flex items-center gap-1">
-        <Link to="/" aria-label="Back" className="w-11 h-11 -ml-3 flex items-center justify-center text-muted-foreground"><ChevronLeft className="w-6 h-6" /></Link>
+        <Link to="/home" aria-label="Back" className="w-11 h-11 -ml-3 flex items-center justify-center text-muted-foreground"><ChevronLeft className="w-6 h-6" /></Link>
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Weekly plan</h1>
           <p className="text-sm text-muted-foreground">Pick a split, then change any day you like.</p>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firestore';
 import { deleteUser } from 'firebase/auth';
@@ -55,6 +55,7 @@ function ThemePreview({ mode }) {
 export default function Profile() {
   const { user, userData, updateUserData, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -95,6 +96,11 @@ export default function Profile() {
     setEditing(false);
   };
 
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
+
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
@@ -113,6 +119,7 @@ export default function Profile() {
         ? 'Your data was deleted, but signing out failed for security reasons. Sign in again to finish removing the account.'
         : 'Could not finish deleting your account. Please sign in again and retry.');
       await logout();
+      navigate('/', { replace: true });
     }
   };
 
@@ -211,7 +218,7 @@ export default function Profile() {
             <div className="border-t border-border/30" />
             <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
           </GlassCard>
-          <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={logout}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
+          <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={handleSignOut}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>
         <AlertDialogTrigger asChild><Button variant="ghost" className="w-full rounded-xl h-12 text-destructive/60 hover:text-destructive hover:bg-destructive/10 text-sm"><Trash2 className="w-4 h-4 mr-2"/>Delete Account</Button></AlertDialogTrigger>
         <AlertDialogContent className="bg-card border-border">
