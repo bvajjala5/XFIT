@@ -27,7 +27,7 @@ test('resolveNavActions drops unknown paths and duplicates', () => {
     { path: '/plan', label: 'Open weekly plan again' },
     { path: '/health?tab=overview' },
   ])
-  assert.deepEqual(actions.map((action) => action.path), ['/plan', '/health'])
+  assert.deepEqual(actions.map((action) => action.path), ['/plan', '/insights'])
 })
 
 test('resolveNavActions accepts a parsed object and caps the list', () => {
@@ -53,7 +53,7 @@ test('extractNavActions reads the fenced variant', () => {
   const reply = 'Your food diary lives in Health.\n```nav\n{"actions":[{"path":"/health?tab=nutrition","label":"Open food diary"}]}\n```'
   const { text, actions } = extractNavActions(reply)
   assert.equal(text, 'Your food diary lives in Health.')
-  assert.deepEqual(actions.map((action) => action.path), ['/health?tab=nutrition'])
+  assert.deepEqual(actions.map((action) => action.path), ['/insights?tab=nutrition'])
 })
 
 test('extractNavActions leaves ordinary replies untouched', () => {
@@ -78,8 +78,24 @@ test('findNavSuggestions ignores questions that are not about the app', () => {
   assert.deepEqual(findNavSuggestions('How much protein should I eat?'), [])
 })
 
+test('old Health and Stats links resolve into Insights', () => {
+  assert.deepEqual(
+    resolveNavActions([
+      { path: '/health' },
+      { path: '/stats' },
+      { path: '/weight' },
+    ]).map((action) => action.path),
+    ['/insights', '/insights?view=stats', '/insights?tab=weight']
+  )
+  assert.deepEqual(
+    resolveNavActions([{ path: '/food' }]).map((action) => action.path),
+    ['/insights?tab=nutrition']
+  )
+})
+
 test('describeLocation names the current screen', () => {
-  assert.equal(describeLocation('/health', '?tab=weight'), 'Health Hub · Weight (/health?tab=weight)')
+  assert.equal(describeLocation('/insights', '?tab=weight'), 'Insights · Health · Weight (/insights?tab=weight)')
+  assert.equal(describeLocation('/insights', '?view=stats'), 'Insights · Stats (/insights?view=stats)')
   assert.equal(describeLocation('/profile'), 'Profile (/profile)')
   assert.match(describeLocation('/workouts/abc'), /Workout details/)
 })

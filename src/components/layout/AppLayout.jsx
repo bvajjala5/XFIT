@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Dumbbell, User, Heart, BarChart2, Sparkles } from 'lucide-react';
+import { Home, Dumbbell, User, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
@@ -11,9 +11,8 @@ import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
 
 const navItems = [
   { path: '/home',      icon: Home,           label: 'Home'     },
-  { path: '/health',    icon: Heart,          label: 'Health'   },
+  { path: '/insights',  icon: BarChart2,      label: 'Insights' },
   { path: '/workouts',  icon: Dumbbell,       label: 'Workouts' },
-  { path: '/stats',     icon: BarChart2,      label: 'Stats'    },
   { path: '/profile',   icon: User,           label: 'Profile'  },
 ];
 
@@ -67,8 +66,8 @@ export default function AppLayout() {
   };
 
   // The coach lives in the app chrome on every tab: the sidebar logo on desktop
-  // and the centre of the mobile tab bar. Full-screen sessions such as
-  // /player/* and /run render outside this layout.
+  // and the first slot of the mobile tab bar, before Home. Full-screen sessions
+  // such as /player/* and /run render outside this layout.
   return (
     <div className="min-h-screen bg-background">
       <AnimatedBackground />
@@ -116,7 +115,7 @@ export default function AppLayout() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-border/40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-end py-2 px-1">
-          {navItems.slice(0, 3).map(renderMobileNav)}
+          {/* AI is the leftmost item on mobile, before Home. */}
           <button
             type="button"
             onClick={() => setAiOpen(true)}
@@ -132,13 +131,13 @@ export default function AppLayout() {
             </span>
             <span className="relative z-10 text-[9px] min-[380px]:text-[10px] font-semibold text-primary">AI</span>
           </button>
-          {navItems.slice(3).map(renderMobileNav)}
+          {navItems.map(renderMobileNav)}
         </div>
       </nav>
 
       {/* Narrow desktop windows (Chrome not maximised, split screen) are too
-          cramped for a sixth tab, so the original floating orb comes back.
-          Touch devices keep the centre tab instead. */}
+          cramped for a crowded tab bar, so the original floating orb comes back.
+          Touch devices keep the first AI tab instead. */}
       <button
         type="button"
         onClick={() => setAiOpen(true)}

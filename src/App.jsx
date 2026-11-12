@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import AppLayout from '@/components/layout/AppLayout'
 import NotFound from '@/components/shared/NotFound'
@@ -14,8 +14,7 @@ const WeeklyPlan = lazy(() => import('@/pages/WeeklyPlan'))
 const WorkoutDetail = lazy(() => import('@/pages/WorkoutDetail'))
 const WorkoutPlayer = lazy(() => import('@/pages/WorkoutPlayer'))
 const Profile = lazy(() => import('@/pages/Profile'))
-const Stats = lazy(() => import('@/pages/Stats'))
-const HealthHub = lazy(() => import('@/pages/HealthHub'))
+const Insights = lazy(() => import('@/pages/Insights'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
@@ -66,6 +65,14 @@ function PageLoader() {
   )
 }
 
+/** Old /health deep links now live under Insights, keeping the Health section. */
+function HealthRedirect() {
+  const { search } = useLocation()
+  const tab = new URLSearchParams(search).get('tab')
+  const suffix = tab && tab !== 'overview' ? `?tab=${encodeURIComponent(tab)}` : ''
+  return <Navigate to={`/insights${suffix}`} replace />
+}
+
 export default function App() {
   const { user } = useAuth()
   return (
@@ -96,13 +103,14 @@ export default function App() {
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
         <Route path="plan" element={<Suspense fallback={<PageLoader />}><WeeklyPlan /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
-        <Route path="health" element={<Suspense fallback={<PageLoader />}><HealthHub /></Suspense>} />
+        <Route path="insights" element={<Suspense fallback={<PageLoader />}><Insights /></Suspense>} />
+        <Route path="health" element={<HealthRedirect />} />
         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />
         {/* Uttar AI is now a pop-up. Keep the old URL working by opening it on Home. */}
         <Route path="ai" element={<Navigate to="/home" replace state={{ openAI: true }} />} />
         {/* Redirects for old routes */}
         <Route path="ranks" element={<Navigate to="/home" replace />} />
-        <Route path="stats" element={<Suspense fallback={<PageLoader />}><Stats /></Suspense>} />
+        <Route path="stats" element={<Navigate to="/insights?view=stats" replace />} />
         <Route path="leaderboard" element={<Navigate to="/home" replace />} />
         <Route path="friends" element={<Navigate to="/profile" replace />} />
         <Route path="progress" element={<Navigate to="/home" replace />} />

@@ -304,7 +304,7 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────
 const HEALTH_TABS = ['overview', 'weight', 'nutrition'];
 
-export default function HealthHub() {
+export default function HealthHub({ embedded = false } = {}) {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [logModalOpen, setLogModalOpen] = useState(false);
@@ -314,7 +314,7 @@ export default function HealthHub() {
   );
   const queryClient = useQueryClient();
 
-  // Deep links such as /health?tab=weight from Uttar AI (or a shared URL).
+  // Deep links such as /insights?tab=weight from Uttar AI (or a shared URL).
   useEffect(() => {
     const next = searchParams.get('tab');
     setActiveTab(HEALTH_TABS.includes(next) ? next : 'overview');
@@ -322,8 +322,14 @@ export default function HealthHub() {
 
   const selectTab = (key) => {
     setActiveTab(key);
-    // Keep the URL reload-safe without adding history entries for every tap.
-    setSearchParams(key === 'overview' ? {} : { tab: key }, { replace: true });
+    // Keep the URL reload-safe without adding history entries for every tap,
+    // and preserve the parent Insights view while switching Health sections.
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (key === 'overview') next.delete('tab');
+      else next.set('tab', key);
+      return next;
+    }, { replace: true });
   };
 
   const { data: todayLog = {}, isLoading } = useQuery({
@@ -356,6 +362,77 @@ export default function HealthHub() {
     { key:'spo2',    label:'Blood Oxygen', icon:Wind,       color:'hsl(175,70%,45%)',  colorClass:'text-teal-400',   value:todayLog.spo2||0,                                         target:100,   format:v=>v?`${v}%`:'—' },
   ];
 
+  const tabSwitcher = (
+    <div className="flex gap-1.5 rounded-2xl bg-secondary/50 p-1.5">
+      {[{ key:'overview', label:'Overview', Icon:BarChart3 },{ key:'weight', label:'Weight', Icon:Scale },{ key:'nutrition', label:'Nutrition', Icon:Utensils }].map(t => (
+        <button key={t.key} type="button" onClick={() => selectTab(t.key)}
+          aria-pressed={activeTab === t.key}
+          className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all sm:text-sm ${activeTab===t.key?'bg-primary text-primary-foreground shadow-sm':'text-muted-foreground hover:text-foreground'}`}>
+          <span className="inline-flex items-center justify-center gap-1.5"><t.Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const overview = activeTab === 'overview' && (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {isLoading
+          ? Array(5).fill(0).map((_,i) => <Skeleton key={i} className="h-36 rounded-2xl"/>)
+          : metrics.map((m,i) => (
+            <motion.div key={m.key} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.06}}>
+              <HealthMetricCard metric={m} onClick={() => setLogModalOpen(true)} />
+            </motion.div>
+          ))
+        }
+      </div>
+      <GlassCard className="flex items-start gap-3">
+        <Activity className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold">Connect a Fitness Device</p>
+          <p className="text-xs text-muted-foreground mt-1">Apple Health, Fitbit, and Garmin integrations require a published app. For now, log your stats manually above or use the Run tracker for GPS-based step counting.</p>
+        </div>
+      </GlassCard>
+    </>
+  );
+
+  const sections = (
+    <>
+      {overview}
+      {activeTab === 'weight' && <WeightTracker userId={user?.uid} />}
+      {activeTab === 'nutrition' && <MealTracker userId={user?.uid} />}
+    </>
+  );
+
+  const logModal = (
+    <HealthLogModal
+      open={logModalOpen}
+      onClose={() => setLogModalOpen(false)}
+      existing={todayLog}
+      onSave={data => saveMutation.mutate(data)}
+      saving={saveMutation.isPending}
+    />
+  );
+
+  // Embedded inside the Insights page: no page heading or outer padding, and a
+  // compact Log action beside the Health section tabs.
+  if (embedded) {
+    return (
+      <section className="space-y-5">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">{tabSwitcher}</div>
+          {activeTab === 'overview' && (
+            <Button onClick={() => setLogModalOpen(true)} size="sm" className="h-10 shrink-0 gap-1.5 rounded-xl px-3">
+              <Plus className="w-4 h-4" /> Log
+            </Button>
+          )}
+        </div>
+        {sections}
+        {logModal}
+      </section>
+    );
+  }
+
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-24">
       <div className="flex items-center justify-between">
@@ -370,48 +447,9 @@ export default function HealthHub() {
         )}
       </div>
 
-      {/* Tab switcher */}
-      <div className="flex gap-2">
-        {[{ key:'overview', label:'Overview', Icon:BarChart3 },{ key:'weight', label:'Weight', Icon:Scale },{ key:'nutrition', label:'Nutrition', Icon:Utensils }].map(t => (
-          <button key={t.key} onClick={() => selectTab(t.key)}
-            className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab===t.key?'bg-primary text-primary-foreground':'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-            <span className="inline-flex items-center justify-center gap-1.5"><t.Icon className="w-4 h-4" />{t.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'overview' && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {isLoading
-              ? Array(5).fill(0).map((_,i) => <Skeleton key={i} className="h-36 rounded-2xl"/>)
-              : metrics.map((m,i) => (
-                <motion.div key={m.key} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.06}}>
-                  <HealthMetricCard metric={m} onClick={() => setLogModalOpen(true)} />
-                </motion.div>
-              ))
-            }
-          </div>
-          <GlassCard className="flex items-start gap-3">
-            <Activity className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">Connect a Fitness Device</p>
-              <p className="text-xs text-muted-foreground mt-1">Apple Health, Fitbit, and Garmin integrations require a published app. For now, log your stats manually above or use the Run tracker for GPS-based step counting.</p>
-            </div>
-          </GlassCard>
-        </>
-      )}
-
-      {activeTab === 'weight' && <WeightTracker userId={user?.uid} />}
-      {activeTab === 'nutrition' && <MealTracker userId={user?.uid} />}
-
-      <HealthLogModal
-        open={logModalOpen}
-        onClose={() => setLogModalOpen(false)}
-        existing={todayLog}
-        onSave={data => saveMutation.mutate(data)}
-        saving={saveMutation.isPending}
-      />
+      {tabSwitcher}
+      {sections}
+      {logModal}
     </div>
   );
 }

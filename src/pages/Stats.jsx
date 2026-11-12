@@ -76,7 +76,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 
-export default function Stats() {
+export default function Stats({ embedded = false } = {}) {
   const { user } = useAuth();
   const [range, setRange] = useState('1M');
   const [metric, setMetric] = useState('workouts');
@@ -104,9 +104,8 @@ export default function Stats() {
   const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
   const maxTypeCount = Math.max(...typeEntries.map(e => e[1]), 1);
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 pt-7 pb-28 space-y-6">
-      <h1 className="text-2xl font-bold">Stats</h1>
+  const content = (
+    <>
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Workouts', value: logs.length,  color: 'text-primary',    icon: Calendar },
@@ -256,6 +255,16 @@ export default function Stats() {
 
       {/* Badges */}
       <Badges logs={logs} streak={streak} />
+    </>
+  );
+
+  // Embedded inside Insights: the page owns the heading and outer padding.
+  if (embedded) return <section className="space-y-6">{content}</section>;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 pt-7 pb-28 space-y-6">
+      <h1 className="text-2xl font-bold">Stats</h1>
+      {content}
     </div>
   );
 }

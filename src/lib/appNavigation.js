@@ -11,23 +11,23 @@ export const APP_DESTINATIONS = [
     keywords: ['home', 'dashboard', 'today', 'check-in', 'check in', 'daily check-in', 'daily check in'],
   },
   {
-    path: '/health',
-    label: 'Open Health Hub',
-    title: 'Health Hub · Overview',
-    description: 'Overview of weight, sleep, steps, heart rate, blood oxygen, and calories burned. Tap Log Stats to add today’s numbers.',
-    keywords: ['health', 'health hub', 'overview', 'sleep', 'steps', 'heart rate', 'blood oxygen', 'spo2', 'log stats'],
+    path: '/insights',
+    label: 'Open Insights',
+    title: 'Insights · Health',
+    description: 'Health overview of weight, sleep, steps, heart rate, blood oxygen, and calories burned, plus training stats in the Stats tab. Tap Log to add today’s numbers.',
+    keywords: ['health', 'health hub', 'insights', 'overview', 'sleep', 'steps', 'heart rate', 'blood oxygen', 'spo2', 'log stats'],
   },
   {
-    path: '/health?tab=weight',
+    path: '/insights?tab=weight',
     label: 'Log or view weight',
-    title: 'Health Hub · Weight',
+    title: 'Insights · Health · Weight',
     description: 'Log body weight and see the weight trend over time.',
     keywords: ['weight', 'body weight', 'weigh in', 'scale', 'weight log'],
   },
   {
-    path: '/health?tab=nutrition',
+    path: '/insights?tab=nutrition',
     label: 'Open food diary',
-    title: 'Health Hub · Nutrition',
+    title: 'Insights · Health · Nutrition',
     description: 'Search foods, log meals, and track calories, protein, carbs, and fat.',
     keywords: ['nutrition', 'food', 'food diary', 'meal', 'meals', 'diet', 'calories', 'macros', 'protein', 'log food'],
   },
@@ -60,10 +60,10 @@ export const APP_DESTINATIONS = [
     keywords: ['run', 'running', 'gps', 'track a run', 'run tracker', 'start a run'],
   },
   {
-    path: '/stats',
+    path: '/insights?view=stats',
     label: 'View my stats',
-    title: 'Stats',
-    description: 'Workout totals, streaks, minutes and calories, activity charts, weekly volume, and recent workouts.',
+    title: 'Insights · Stats',
+    description: 'Workout totals, streaks, minutes and calories, activity charts, weekly volume, goals, badges, and recent workouts.',
     keywords: ['stats', 'statistics', 'progress', 'charts', 'trend', 'streak', 'volume'],
   },
   {
@@ -149,10 +149,15 @@ const ALIASES = {
   '/theme': '/profile#app-theme',
   '/profile#theme': '/profile#app-theme',
   '/appearance': '/profile#app-theme',
-  '/weight': '/health?tab=weight',
-  '/nutrition': '/health?tab=nutrition',
-  '/food': '/health?tab=nutrition',
-  '/food-diary': '/health?tab=nutrition',
+  '/health': '/insights',
+  '/health?tab=weight': '/insights?tab=weight',
+  '/health?tab=nutrition': '/insights?tab=nutrition',
+  '/health?tab=overview': '/insights',
+  '/stats': '/insights?view=stats',
+  '/weight': '/insights?tab=weight',
+  '/nutrition': '/insights?tab=nutrition',
+  '/food': '/insights?tab=nutrition',
+  '/food-diary': '/insights?tab=nutrition',
   '/plans': '/plan',
   '/custom': '/builder',
   '/custom-workout': '/builder',
@@ -192,7 +197,7 @@ function normalizePath(raw) {
   }
   if (!path.startsWith('/')) path = `/${path}`
   if (path.length > 1) path = path.replace(/\/+$/, '') || '/'
-  if (path === '/health?tab=overview') return '/health'
+  if (path === '/insights?tab=overview' || path === '/insights?view=health') return '/insights'
   return ALIASES[path] || path
 }
 

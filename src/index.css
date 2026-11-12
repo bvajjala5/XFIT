@@ -204,8 +204,8 @@
 }
 
 /* A narrow desktop window (Chrome not maximised, split screen) still gets the
-   mobile bottom bar, but a sixth tab is cramped there. Keep the orb the user
-   already knows, and reserve the centre tab for touch screens. */
+   mobile bottom bar, but an extra tab is cramped there. Keep the orb the user
+   already knows, and reserve the AI tab for touch screens. */
 .ai-fab-narrow { display: none; }
 @media (max-width: 767px) and (hover: hover) and (pointer: fine) {
   .ai-fab-narrow {

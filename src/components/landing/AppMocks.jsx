@@ -69,7 +69,7 @@ export function DemoFrame({ children, className = '' }) {
             <span className="h-2 w-2 rounded-full bg-red-400/70" />
             <span className="h-2 w-2 rounded-full bg-amber-400/70" />
             <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
-            <span className="mx-auto rounded-md bg-secondary/70 px-3 py-0.5 text-[9px] text-muted-foreground">app.uttar.fit</span>
+            <span className="mx-auto rounded-md bg-secondary/70 px-3 py-0.5 text-[9px] text-muted-foreground">xfit-bpe.pages.dev</span>
           </div>
           <div className="p-3 sm:p-5">
             <div className="mx-auto w-full max-w-[340px]">{children}</div>
