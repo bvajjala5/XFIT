@@ -203,22 +203,6 @@
   .ai-logo::before { animation: none; }
 }
 
-/* A narrow desktop window (Chrome not maximised, split screen) still gets the
-   mobile bottom bar, but an extra tab is cramped there. Keep the orb the user
-   already knows, and reserve the AI tab for touch screens. */
-.ai-fab-narrow { display: none; }
-@media (max-width: 767px) and (hover: hover) and (pointer: fine) {
-  .ai-fab-narrow {
-    display: flex;
-    bottom: calc(5.25rem + env(safe-area-inset-bottom));
-  }
-  .ai-fab-narrow::before {
-    inset: -9px;
-    border-radius: 9999px;
-  }
-  .ai-nav-tab { display: none; }
-}
-
 /* Barcode scanner sweep. */
 @keyframes scanner-line {
   0% { transform: translateY(0); opacity: 0.35; }

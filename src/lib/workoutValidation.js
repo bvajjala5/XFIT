@@ -3,11 +3,18 @@
 // a "workout complete" record.
 export const MIN_WORKOUT_DURATION_RATIO = 0.5
 
-/** Expected workout length in seconds, from the plan or a computed fallback. */
-export function expectedWorkoutSeconds(workout, fallbackSeconds = 0) {
+/**
+ * Expected workout length in seconds.
+ *
+ * The player knows the exact durations the user picked on the sliders (including
+ * per-exercise overrides), so that total wins over the workout's rounded plan
+ * duration. Only fall back to the plan when there are no exercises to measure.
+ */
+export function expectedWorkoutSeconds(workout, actualSeconds = 0) {
+  if (Number.isFinite(actualSeconds) && actualSeconds > 0) return actualSeconds
   const minutes = Number(workout?.duration ?? workout?.estimated_duration)
   if (Number.isFinite(minutes) && minutes > 0) return minutes * 60
-  return Number.isFinite(fallbackSeconds) && fallbackSeconds > 0 ? fallbackSeconds : 0
+  return 0
 }
 
 /** True when the elapsed time is too short for the workout to be legitimate. */

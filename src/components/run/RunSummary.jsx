@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, Share2, RotateCcw } from 'lucide-react'
 import { db } from '@/lib/firestore'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore/lite'
+import { saveWorkoutLog } from '@/lib/workoutLogQueue'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
@@ -43,20 +44,29 @@ export default function RunSummary({ summary, userId, onClose }) {
         completedAt: serverTimestamp(),
         type: 'run',
       }
-      // Save to runs collection
-      await addDoc(collection(db, 'users', userId, 'runs'), runData)
-      // Also save to workouts collection so it shows in Recent Workouts + Progress + Streak
-      await addDoc(collection(db, 'users', userId, 'workouts'), {
+      // The workout log is the one that feeds Recent Workouts, Progress, and
+      // Streak, so save it through the durable queue first. A failed write is
+      // kept on the device instead of losing the run.
+      const { queued } = await saveWorkoutLog(userId, {
         workout_title: `Run — ${(distance / 1000).toFixed(2)} km`,
         workout_type: 'cardio',
         duration_seconds: elapsed,
         calories_burned: calories,
-        completedAt: serverTimestamp(),
+        completedAt: new Date().toISOString(),
         type: 'run',
         distance,
         pace,
       })
-      toast.success('Run saved!')
+      if (!queued) {
+        try {
+          await addDoc(collection(db, 'users', userId, 'runs'), runData)
+        } catch (err) {
+          console.warn('Run history write failed; the workout log was still saved.', err)
+        }
+        toast.success('Run saved!')
+      } else {
+        toast.success('Saved on this device — it will sync when you’re back online.')
+      }
     } catch (err) {
       console.error('Save run error:', err)
       toast.error('Failed to save: ' + (err.message || 'Unknown error'))

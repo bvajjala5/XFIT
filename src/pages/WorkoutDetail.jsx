@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
+import { cacheWorkout, findCachedWorkout } from '@/lib/workoutCache';
 import { normalizeExercise } from '@/lib/exerciseTiming';
 import FormCheck from '@/components/workout/FormCheck';
 
@@ -68,15 +69,28 @@ export default function WorkoutDetail() {
   const { data: workout, isLoading } = useQuery({
     queryKey: ['workout', id, user?.uid],
     queryFn: async () => {
-      const snap = await getDoc(doc(db, 'workouts', id));
-      if (snap.exists()) return { id: snap.id, ...snap.data() };
-      // AI-saved and builder workouts live under the user, but are linked from the same
-      // library grid as global workouts. Resolve them here so the detail page doesn't 404.
-      if (user) {
-        const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', id));
-        if (customSnap.exists()) return { id: customSnap.id, ...customSnap.data(), isCustom: true };
+      try {
+        const snap = await getDoc(doc(db, 'workouts', id));
+        if (snap.exists()) {
+          const remote = { id: snap.id, ...snap.data(), isCustom: false };
+          cacheWorkout(remote, user?.uid);
+          return remote;
+        }
+        // AI-saved and builder workouts live under the user, but are linked from the same
+        // library grid as global workouts. Resolve them here so the detail page doesn't 404.
+        if (user) {
+          const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', id));
+          if (customSnap.exists()) {
+            const custom = { id: customSnap.id, ...customSnap.data(), isCustom: true };
+            cacheWorkout(custom, user.uid);
+            return custom;
+          }
+        }
+        return findBuiltinWorkout(id) || findCachedWorkout(id, user?.uid);
+      } catch (error) {
+        console.warn('Workout detail is offline; using the cached copy.', error);
+        return findCachedWorkout(id, user?.uid) || findBuiltinWorkout(id);
       }
-      return findBuiltinWorkout(id);
     },
     enabled: !!id,
   });

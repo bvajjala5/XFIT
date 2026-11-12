@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/lib/AuthContext'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore/lite'
@@ -14,7 +14,8 @@ import WeeklyRecap from '@/components/shared/WeeklyRecap'
 import NotificationSetup from '@/components/shared/NotificationSetup'
 import { shareWorkout, unshareWorkout, isShared } from '@/lib/shareWorkout'
 import { seedWorkouts } from '@/lib/seedWorkouts'
-import { withBuiltinWorkouts } from '@/lib/workoutLibrary'
+import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache'
+import { getPendingWorkoutLogs, WORKOUT_LOGS_CHANGED } from '@/lib/workoutLogQueue'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import { getDailyQuote } from '@/components/home/DailyQuote'
 import { useUttarAI } from '@/components/ai/UttarAIContext'
@@ -115,14 +116,10 @@ export default function Home() {
 
   const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],
-    queryFn: async () => {
-      const snap = await getDocs(collection(db, 'workouts'))
-      const remote = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(w => w.id !== 'locked-in')
-      return withBuiltinWorkouts(remote)
-    },
+    queryFn: fetchWorkoutLibrary,
   })
 
-  const { data: logs = [] } = useQuery({
+  const { data: remoteLogs = [] } = useQuery({
     queryKey: ['workout-logs', user?.uid],
     queryFn: async () => {
       if (!user) return []
@@ -133,13 +130,27 @@ export default function Home() {
     enabled: !!user,
   })
 
+  // Sessions completed offline stay visible here until they sync, so the
+  // workout never appears to have vanished just because the write failed.
+  const [pendingLogs, setPendingLogs] = useState([])
+  useEffect(() => {
+    if (!user?.uid) { setPendingLogs([]); return }
+    const refresh = () => setPendingLogs(getPendingWorkoutLogs(user.uid))
+    refresh()
+    window.addEventListener(WORKOUT_LOGS_CHANGED, refresh)
+    return () => window.removeEventListener(WORKOUT_LOGS_CHANGED, refresh)
+  }, [user?.uid])
+
+  const logs = useMemo(() => {
+    const time = (log) => new Date(log.completedAt?.toDate?.() || log.completedAt || 0).getTime() || 0
+    const pending = pendingLogs.map(entry => ({ id: entry.id, ...entry.log, pending: true }))
+    const seen = new Set(remoteLogs.map(log => log.id))
+    return [...pending.filter(log => !seen.has(log.id)), ...remoteLogs].sort((a, b) => time(b) - time(a))
+  }, [remoteLogs, pendingLogs])
+
   const { data: customWorkouts = [] } = useQuery({
     queryKey: ['custom-workouts', user?.uid],
-    queryFn: async () => {
-      if (!user) return []
-      const snap = await getDocs(collection(db, 'users', user.uid, 'customWorkouts'))
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    },
+    queryFn: () => fetchCustomWorkouts(user.uid),
     enabled: !!user,
   })
 

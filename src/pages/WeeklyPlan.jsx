@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, getDocs } from 'firebase/firestore/lite'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Play, Moon, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { db } from '@/lib/firestore'
+import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache'
 import { useAuth } from '@/lib/AuthContext'
 import { getLocalWeekday } from '@/lib/utils'
 import { DAYS, PRESETS, TEMPLATES, templateById } from '@/data/splits'
@@ -72,11 +71,11 @@ export default function WeeklyPlan() {
   const { data: schedule = {} } = useQuery({ queryKey: ['schedule', uid], queryFn: () => fetchSchedule(uid), enabled: !!uid })
   const { data: custom = [] } = useQuery({
     queryKey: ['custom-workouts', uid], enabled: !!uid,
-    queryFn: async () => (await getDocs(collection(db, 'users', uid, 'customWorkouts'))).docs.map((d) => ({ id: d.id, ...d.data() })),
+    queryFn: () => fetchCustomWorkouts(uid),
   })
   const { data: library = [] } = useQuery({
     queryKey: ['workouts'],
-    queryFn: async () => (await getDocs(collection(db, 'workouts'))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((w) => w.id !== 'locked-in'),
+    queryFn: fetchWorkoutLibrary,
   })
 
   const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: ['schedule', uid] }), qc.invalidateQueries({ queryKey: ['custom-workouts', uid] })])

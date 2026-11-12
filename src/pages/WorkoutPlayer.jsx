@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firestore';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore/lite';
-import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc } from 'firebase/firestore/lite';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,6 +19,8 @@ import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
 import { expectedWorkoutSeconds, isWorkoutTooFast, MIN_WORKOUT_DURATION_RATIO } from '@/lib/workoutValidation';
 import { savePR } from '@/lib/personalRecords';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
+import { cacheWorkout, findCachedWorkout } from '@/lib/workoutCache';
+import { saveWorkoutLog } from '@/lib/workoutLogQueue';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
 const GOOD_VOICES = [
@@ -190,6 +192,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const customDurationsParam = searchParams.get('durations');
   const customDurations = useMemo(() => {
     if (!customDurationsParam) return null;
@@ -269,18 +272,35 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const { data: workout, isLoading, error } = useQuery({
     queryKey: ['workout-player', workoutId, isCustom],
     queryFn: async () => {
-      if (isCustom && user) {
-        const snap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
-        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      try {
+        if (isCustom && user) {
+          const snap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
+          if (snap.exists()) {
+            const custom = { id: snap.id, ...snap.data(), isCustom: true };
+            cacheWorkout(custom, user.uid);
+            return custom;
+          }
+        }
+        // Check if it's a custom workout but the route was /player/:id instead of /player/custom/:id
+        if (user) {
+          const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
+          if (customSnap.exists()) {
+            const custom = { id: customSnap.id, ...customSnap.data(), isCustom: true };
+            cacheWorkout(custom, user.uid);
+            return custom;
+          }
+        }
+        const snap = await getDoc(doc(db, 'workouts', workoutId));
+        if (snap.exists()) {
+          const remote = { id: snap.id, ...snap.data(), isCustom: false };
+          cacheWorkout(remote, user?.uid);
+          return remote;
+        }
+        return findBuiltinWorkout(workoutId) || findCachedWorkout(workoutId, user?.uid);
+      } catch (error) {
+        console.warn('Workout player is offline; using the cached copy.', error);
+        return findCachedWorkout(workoutId, user?.uid) || findBuiltinWorkout(workoutId);
       }
-      // Check if it's a custom workout but the route was /player/:id instead of /player/custom/:id
-      if (user) {
-        const customSnap = await getDoc(doc(db, 'users', user.uid, 'customWorkouts', workoutId));
-        if (customSnap.exists()) return { id: customSnap.id, ...customSnap.data(), isCustom: true };
-      }
-      const snap = await getDoc(doc(db, 'workouts', workoutId));
-      if (snap.exists()) return { id: snap.id, ...snap.data() };
-      return findBuiltinWorkout(workoutId);
     },
     enabled: !!workoutId
   });
@@ -294,12 +314,17 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     });
   }, [workout?.id, workout?.exercises, customDurations]);
 
-  // How long this workout should take. Used to reject sessions that were
-  // skipped through far too quickly to be real.
+  // How long this workout should take. The durations the user picked on the
+  // detail sliders (or the durations stored with the workout) are the source of
+  // truth; the plan's rounded duration is only a fallback for empty workouts.
   const expectedSeconds = useMemo(() => {
-    const fallback = exercises.reduce((s, e) => s + exerciseDurationSeconds(e), 0);
-    return expectedWorkoutSeconds(workout, fallback);
+    const selectedSeconds = exercises.reduce((s, e) => s + exerciseDurationSeconds(e), 0);
+    return expectedWorkoutSeconds(workout, selectedSeconds);
   }, [workout, exercises]);
+
+  const caloriesFor = (seconds) => Math.round(
+    (workout?.calories_estimate || 200) * Math.min(seconds / (expectedSeconds || 1800), 1.2)
+  );
 
   // Set the timer and announce the exercise whenever it changes, and once the workout has loaded
   // (the exercise list arrives after the first render, which used to leave the timer at 0 and skip exercise 1).
@@ -430,26 +455,33 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const handleLogWorkout = async () => {
     if (!user) { navigate('/home'); return; }
     if (isWorkoutTooFast(totalTime, expectedSeconds)) {
-      toast.error('This workout was completed too quickly to count. Finish at least half the expected time before logging it.');
+      toast.error(`This workout was completed too quickly to count. Finish at least ${formatTime(minimumSeconds)} of the ${Math.round(expectedSeconds / 60)}-minute session before logging it.`);
       return;
     }
     try {
-      const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
-      await addDoc(collection(db,'users',user.uid,'workouts'), {
+      const { queued } = await saveWorkoutLog(user.uid, {
         workout_id: workoutId,
         workout_title: workout?.title||workout?.name||'',
         workout_type: workout?.type||'',
         workout_category: workout?.category||'',
-        completedAt: serverTimestamp(),
+        completedAt: new Date().toISOString(),
         duration_seconds: totalTime,
-        calories_burned: calories,
+        calories_burned: caloriesFor(totalTime),
         exercises_completed: currentEx+1,
         rating: rating || null,
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
       });
-
-    } catch(e) { console.error('handleLogWorkout error:', e); }
+      if (queued) toast.success('Saved on this device — it will sync when you’re back online.');
+      else toast.success('Workout logged');
+      ['workout-logs', 'workout-logs-stats', 'workout-logs-profile'].forEach((key) => {
+        queryClient.invalidateQueries({ queryKey: [key, user.uid] });
+      });
+    } catch(e) {
+      console.error('handleLogWorkout error:', e);
+      toast.error('Could not save this workout. Please try again.');
+      return;
+    }
     navigate('/home');
   };
 
@@ -474,7 +506,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const handleShare = async () => {
     setSharing(true);
     try {
-      const calories = Math.round((workout?.calories_estimate||200) * (totalTime/((workout?.duration||30)*60)));
+      const calories = caloriesFor(totalTime);
       const dataUrl = await generateShareCard({
         workoutTitle: workout?.title || workout?.name || 'Workout',
         duration: formatTime(totalTime),
@@ -530,7 +562,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s + exerciseDurationSeconds(e), 0);
   const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
-  const calories = Math.round((workout.calories_estimate||workout.estimated_duration*10||300)*Math.min(totalTime/((workout.duration||workout.estimated_duration||30)*60),1.2));
+  const calories = caloriesFor(totalTime);
 
 
   if (isComplete) {
@@ -549,10 +581,10 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           {tooFast && (
             <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-left">
               <p className="flex items-center gap-2 text-xs font-semibold text-amber-500">
-                <AlertTriangle className="w-4 h-4 shrink-0" /> This workout won’t count
+                <AlertTriangle className="w-4 h-4 shrink-0" /> Workout too short to count
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                You finished in {formatTime(totalTime)}, but this plan expects about {Math.round(expectedSeconds / 60)} min.
+                You finished in {formatTime(totalTime)}, but this session is set for about {Math.round(expectedSeconds / 60)} min.
                 Complete at least {formatTime(minimumSeconds)} to log it.
               </p>
             </div>

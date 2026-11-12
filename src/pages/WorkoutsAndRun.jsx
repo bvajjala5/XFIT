@@ -3,13 +3,13 @@ import { useAuth } from '@/lib/AuthContext';
 import RunTracker from '@/components/run/RunTracker';
 import RunSummary from '@/components/run/RunSummary';
 import { db } from '@/lib/firestore';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore/lite';
+import { deleteDoc, doc } from 'firebase/firestore/lite';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Dumbbell, Footprints, Clock, Flame, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutCard from '@/components/shared/WorkoutCard';
-import { withBuiltinWorkouts } from '@/lib/workoutLibrary';
+import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -28,20 +28,12 @@ export default function WorkoutsAndRun() {
 
   const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],
-    queryFn: async () => {
-      const snap = await getDocs(collection(db, 'workouts'));
-      const remote = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: false })).filter(w => w.id !== 'locked-in');
-      return withBuiltinWorkouts(remote);
-    },
+    queryFn: fetchWorkoutLibrary,
   });
 
   const { data: customWorkouts = [], isLoading: customLoading } = useQuery({
     queryKey: ['custom-workouts', user?.uid],
-    queryFn: async () => {
-      if (!user) return []
-      const snap = await getDocs(collection(db, 'users', user.uid, 'customWorkouts'))
-      return snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }))
-    },
+    queryFn: () => fetchCustomWorkouts(user.uid),
     enabled: !!user,
   });
 

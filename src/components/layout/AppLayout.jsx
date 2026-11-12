@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Dumbbell, User, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useAuth } from '@/lib/AuthContext';
 import AnimatedBackground from './AnimatedBackground';
 import InstallBanner from '@/components/shared/InstallBanner';
 import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher';
@@ -19,8 +22,44 @@ const navItems = [
 export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [aiOpen, setAiOpen] = useState(false);
   const openAI = useCallback(() => setAiOpen(true), []);
+
+  // Completed workouts are queued locally when the network is unavailable.
+  // Flush them on launch, when the browser comes back online, and periodically
+  // while the app stays open (signal in a gym basement comes and goes).
+  useEffect(() => {
+    if (!user?.uid) return;
+    let cancelled = false;
+    let syncing = false;
+    const sync = async () => {
+      if (cancelled || syncing || navigator.onLine === false) return;
+      syncing = true;
+      try {
+        const { flushWorkoutLogQueue } = await import('@/lib/workoutLogQueue');
+        const count = await flushWorkoutLogQueue(user.uid);
+        if (cancelled || count === 0) return;
+        toast.success(`${count} offline workout${count === 1 ? '' : 's'} synced`);
+        ['workout-logs', 'workout-logs-stats', 'workout-logs-profile'].forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: [key, user.uid] });
+        });
+      } catch (error) {
+        console.warn('Could not sync offline workouts yet; will retry.', error);
+      } finally {
+        syncing = false;
+      }
+    };
+    sync();
+    window.addEventListener('online', sync);
+    const timer = window.setInterval(sync, 60_000);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', sync);
+      window.clearInterval(timer);
+    };
+  }, [user?.uid, queryClient]);
 
   useEffect(() => {
     const sync = () => applyResolvedTheme(resolveTheme(getThemeMode()));
@@ -123,7 +162,7 @@ export default function AppLayout() {
             onFocus={preloadUttarAI}
             aria-label="Open Uttar AI coach"
             aria-haspopup="dialog"
-            className="ai-logo ai-nav-tab group relative flex flex-1 min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="ai-logo group relative flex flex-1 min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(var(--brand-tile))] ring-1 ring-[hsl(var(--brand-mark)/0.22)] transition-transform duration-300 group-hover:scale-105">
               <BrandEmblem className="w-5" />
@@ -134,27 +173,6 @@ export default function AppLayout() {
           {navItems.map(renderMobileNav)}
         </div>
       </nav>
-
-      {/* Narrow desktop windows (Chrome not maximised, split screen) are too
-          cramped for a crowded tab bar, so the original floating orb comes back.
-          Touch devices keep the first AI tab instead. */}
-      <button
-        type="button"
-        onClick={() => setAiOpen(true)}
-        onPointerEnter={preloadUttarAI}
-        onFocus={preloadUttarAI}
-        aria-label="Open Uttar AI coach"
-        aria-haspopup="dialog"
-        className="ai-logo ai-fab-narrow group fixed right-4 z-[60] h-14 w-14 items-center justify-center rounded-full outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
-      >
-        <span className="absolute inset-0 rounded-full bg-[hsl(var(--brand-tile))] shadow-[0_10px_30px_-6px_rgba(0,0,0,0.45)]" />
-        <span className="absolute inset-[1.5px] rounded-full bg-gradient-to-b from-[hsl(var(--brand-mark)/0.16)] via-transparent to-transparent" />
-        <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-[hsl(var(--brand-mark)/0.30)]" />
-        <BrandEmblem className="relative w-[30px] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-110" />
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[hsl(var(--brand-tile))]">
-          <Sparkles className="h-3 w-3" />
-        </span>
-      </button>
     </div>
   );
 }

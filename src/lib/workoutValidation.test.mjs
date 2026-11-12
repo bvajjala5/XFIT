@@ -6,15 +6,16 @@ import {
   MIN_WORKOUT_DURATION_RATIO,
 } from './workoutValidation.js'
 
-test('expected duration prefers the plan duration', () => {
+test('expected duration uses the exercise time the user chose', () => {
+  assert.equal(expectedWorkoutSeconds({ duration: 30 }, 720), 720)
+  assert.equal(expectedWorkoutSeconds({ duration: 30, estimated_duration: 25 }, 720), 720)
+  assert.equal(expectedWorkoutSeconds({}, 1200), 1200)
+})
+
+test('expected duration falls back to the plan when there are no exercises', () => {
   assert.equal(expectedWorkoutSeconds({ duration: 30 }), 1800)
   assert.equal(expectedWorkoutSeconds({ estimated_duration: 24 }), 1440)
   assert.equal(expectedWorkoutSeconds({ duration: 30, estimated_duration: 24 }), 1800)
-})
-
-test('expected duration falls back to the computed exercise time', () => {
-  assert.equal(expectedWorkoutSeconds({}, 1200), 1200)
-  assert.equal(expectedWorkoutSeconds({ duration: 0, estimated_duration: null }, 600), 600)
   assert.equal(expectedWorkoutSeconds({}, 0), 0)
 })
 
