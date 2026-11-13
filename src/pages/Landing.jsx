@@ -16,7 +16,6 @@ import {
   Play,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   Utensils,
   WifiOff,
 } from 'lucide-react'
@@ -174,24 +173,6 @@ function Reveal({ children, delay = 0, className = '' }) {
   )
 }
 
-function FloatingCard({ className = '', children, delay = 0 }) {
-  const reduceMotion = useReducedMotion()
-  return (
-    <motion.div
-      className={`pointer-events-none absolute hidden rounded-2xl border border-border/60 bg-card/90 p-3 shadow-2xl backdrop-blur-xl sm:block ${className}`}
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
-      animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: [0, -7, 0] }}
-      transition={{
-        opacity: { duration: 0.5, delay: 0.5 + delay },
-        scale: { duration: 0.5, delay: 0.5 + delay },
-        y: { duration: 5.5, delay: delay, repeat: Infinity, ease: 'easeInOut' },
-      }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
 /** A small conversion bar that appears after the hero and hides near the footer. */
 function MobileCta() {
   const [visible, setVisible] = useState(false)
@@ -326,70 +307,28 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              <figure className="relative">
-                <div className="relative overflow-hidden rounded-[2rem]">
-                  {/* The photo is tilted, so its left wall carries a sliver of the
-                      poster's marketing copy. This diagonal mask fades that lower-left
-                      wedge into the page, following the phone's edge. */}
-                  <img
-                    src="/hero-app.jpg"
-                    alt="A hand holding a phone showing the Uttar Fitness home screen with today's workout, weekly progress, and quick actions."
-                    width={659}
-                    height={957}
-                    decoding="async"
-                    className="block h-auto w-full"
-                    style={{
-                      WebkitMaskImage: 'linear-gradient(84deg, transparent 0%, transparent 14%, black 26%)',
-                      maskImage: 'linear-gradient(84deg, transparent 0%, transparent 14%, black 26%)',
-                    }}
-                  />
-                  {/* Bottom scrim softens the source photo's cut-off wrist. */}
-                  <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
-                </div>
-                <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-4 pb-4">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold leading-tight">Today, decided</p>
-                    <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">Open the app and your next step is ready.</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-[hsl(var(--accent-text))]">Live preview</span>
-                </figcaption>
+              <figure className="relative overflow-hidden rounded-[2rem] border border-border/50 shadow-[0_35px_90px_-35px_rgba(0,0,0,0.75)]">
+                {/* Matched light/dark posters, shown at their full uncropped aspect
+                    ratio. The warm artwork shows on the sunrise theme and the dark
+                    artwork on the midnight theme; only the visible one loads. */}
+                <img
+                  src="/hero-sunrise.jpg"
+                  alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
+                  width={820}
+                  height={1099}
+                  decoding="async"
+                  className="hero-art hero-art--sunrise block h-auto w-full"
+                />
+                <img
+                  src="/hero-midnight.jpg"
+                  alt="Uttar Fitness in midnight mode on a phone held in one hand."
+                  width={820}
+                  height={794}
+                  loading="lazy"
+                  decoding="async"
+                  className="hero-art hero-art--midnight h-auto w-full"
+                />
               </figure>
-
-              <FloatingCard className="-left-4 top-24" delay={0.2}>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
-                    <Flame className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-bold leading-none">7 day streak</p>
-                    <p className="mt-1 text-[9px] text-muted-foreground">Consistency wins</p>
-                  </div>
-                </div>
-              </FloatingCard>
-
-              <FloatingCard className="-right-5 top-56" delay={0.45}>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-[hsl(var(--accent-text))]">
-                    <CalendarDays className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-bold leading-none">Week planned</p>
-                    <p className="mt-1 text-[9px] text-muted-foreground">5 sessions ready</p>
-                  </div>
-                </div>
-              </FloatingCard>
-
-              <FloatingCard className="bottom-16 -left-6" delay={0.65}>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-[hsl(var(--accent-text))]">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-bold leading-none">Ask Uttar AI</p>
-                    <p className="mt-1 text-[9px] text-muted-foreground">&ldquo;Adjust my week&rdquo;</p>
-                  </div>
-                </div>
-              </FloatingCard>
             </motion.div>
           </div>
         </section>

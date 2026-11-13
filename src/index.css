@@ -108,6 +108,14 @@
     --muted-foreground: 210 12% 58%;
   }
 
+  /* The landing hero ships as a matched light/dark poster pair so it follows the
+     active theme. Both are shown at their full aspect ratio (never cropped);
+     only the visible artwork paints, and the hidden one is kept display:none so
+     its lazy image is never fetched. */
+  .hero-art--midnight { display: none; }
+  .theme-midnight .hero-art--sunrise { display: none; }
+  .theme-midnight .hero-art--midnight { display: block; }
+
   * { @apply border-border; }
 
   body {
