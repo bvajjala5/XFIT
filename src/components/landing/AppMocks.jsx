@@ -98,14 +98,14 @@ export function DashboardMock({ done = false, onToggleDone }) {
           <p className="text-[9px] text-muted-foreground">Good morning, Bhanu</p>
           <p className="truncate text-lg font-extrabold leading-tight">Let&rsquo;s move.</p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold text-primary">
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[9px] font-bold text-[hsl(var(--accent-text))]">
           <Flame className="h-3 w-3" /> 7
         </span>
       </div>
 
       <div className={`${CARD} p-3`}>
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[hsl(var(--accent-text))]">
             {done ? <Check className="h-4 w-4" /> : <Dumbbell className="h-4 w-4" />}
           </span>
           <div className="min-w-0 flex-1">
@@ -155,7 +155,7 @@ export function DashboardMock({ done = false, onToggleDone }) {
       <div className={`${CARD} overflow-hidden`}>
         <div className="flex items-center justify-between px-3 pb-1 pt-2.5">
           <p className="text-[10px] font-semibold">Start a workout</p>
-          <span className="flex items-center text-[9px] text-primary">All <ChevronRight className="h-2.5 w-2.5" /></span>
+          <span className="flex items-center text-[9px] text-[hsl(var(--accent-text))]">All <ChevronRight className="h-2.5 w-2.5" /></span>
         </div>
         {[
           ['Lower Body Strength', 'Mine · 40 min · 6 exercises', Dumbbell],
@@ -228,7 +228,7 @@ export function PlanMock({ selected = 'Mon', onSelect }) {
             <p className="text-sm font-bold">{day.title}</p>
             <p className="text-[9px] text-muted-foreground">{day.focus}</p>
           </div>
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[9px] font-semibold text-primary">
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[9px] font-semibold text-[hsl(var(--accent-text))]">
             {day.rest ? <Moon className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
             {day.rest ? 'Rest' : `${day.duration} min`}
           </span>
@@ -236,7 +236,7 @@ export function PlanMock({ selected = 'Mon', onSelect }) {
 
         {day.rest ? (
           <div className="mt-3 flex items-center gap-2 rounded-xl bg-secondary/60 p-2.5">
-            <Moon className="h-4 w-4 shrink-0 text-primary" />
+            <Moon className="h-4 w-4 shrink-0 text-[hsl(var(--accent-text))]" />
             <p className="text-[9px] leading-snug text-muted-foreground">Recovery is part of the plan. A short walk or mobility flow is plenty.</p>
           </div>
         ) : (
@@ -244,7 +244,7 @@ export function PlanMock({ selected = 'Mon', onSelect }) {
             <ul className="mt-2.5 space-y-1.5">
               {day.exercises.map((exercise) => (
                 <li key={exercise} className="flex items-center gap-2 text-[9px]">
-                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary/10 text-[hsl(var(--accent-text))]">
                     <Check className="h-2 w-2" />
                   </span>
                   <span className="text-muted-foreground">{exercise}</span>
@@ -259,7 +259,7 @@ export function PlanMock({ selected = 'Mon', onSelect }) {
       </div>
 
       <div className="flex items-center justify-between rounded-xl bg-secondary/40 px-3 py-2 text-[9px] text-muted-foreground">
-        <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-primary" /> Adapt the week with AI</span>
+        <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-[hsl(var(--accent-text))]" /> Adapt the week with AI</span>
         <ChevronRight className="h-3 w-3" />
       </div>
     </div>
@@ -308,7 +308,7 @@ export function HealthMock({ water = 5, onWater }) {
 
       <div className={`${CARD} p-3`}>
         <div className="flex items-baseline justify-between">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold"><Utensils className="h-3 w-3 text-primary" /> Nutrition</p>
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold"><Utensils className="h-3 w-3 text-[hsl(var(--accent-text))]" /> Nutrition</p>
           <p className="text-[9px] text-muted-foreground"><span className="font-semibold text-foreground">1,840</span> / 2,300 kcal</p>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -342,7 +342,7 @@ export function HealthMock({ water = 5, onWater }) {
             <button type="button" onClick={() => onWater(-1)} aria-label="Remove a glass of water" className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground">
               <Minus className="h-3 w-3" />
             </button>
-            <button type="button" onClick={() => onWater(1)} aria-label="Add a glass of water" className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary hover:bg-primary/25">
+            <button type="button" onClick={() => onWater(1)} aria-label="Add a glass of water" className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[hsl(var(--accent-text))] hover:bg-primary/25">
               <Plus className="h-3 w-3" />
             </button>
           </div>
@@ -372,7 +372,7 @@ export function WorkoutMock() {
   return (
     <div className="space-y-3 p-3.5">
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.14em] text-primary">Full body · HIIT</span>
+        <span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--accent-text))]">Full body · HIIT</span>
         <span className="text-[9px] text-muted-foreground">3 of 6</span>
       </div>
 
