@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Check, Dumbbell, HeartPulse, Home, RotateCcw, Sparkles, CalendarDays } from 'lucide-react'
+import { ArrowLeft, BarChart2, Check, Dumbbell, Home, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
 import AnimatedBackground from '@/components/layout/AnimatedBackground'
 import BrandMark from '@/components/brand/BrandMark'
@@ -8,12 +8,19 @@ import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 import useAutoTheme from '@/hooks/useAutoTheme'
 import usePageMeta from '@/hooks/usePageMeta'
 import { useAuth } from '@/lib/AuthContext'
-import { DashboardMock, DemoFrame, HealthMock, PlanMock, WorkoutMock } from '@/components/landing/AppMocks'
+import {
+  DemoFrame,
+  HomeMock,
+  InsightsHealthMock,
+  InsightsStatsMock,
+  ProfileMock,
+  WorkoutsMock,
+} from '@/components/landing/AppMocks'
 
 const TABS = [
   {
-    key: 'today',
-    label: 'Today',
+    key: 'home',
+    label: 'Home',
     icon: Home,
     title: 'Your daily home screen',
     copy: 'Open the app and the next step is already chosen. Today’s session, weekly progress, and your streak live in one calm view.',
@@ -24,61 +31,68 @@ const TABS = [
     ],
   },
   {
-    key: 'plan',
-    label: 'Plan',
-    icon: CalendarDays,
-    title: 'A week you can follow',
-    copy: 'Set a split once, then move a day when life happens. The rest of the week reflows instead of falling apart.',
+    key: 'insights',
+    label: 'Insights',
+    icon: BarChart2,
+    title: 'Health and training, side by side',
+    copy: 'Steps, sleep, heart rate, and calories sit next to your training totals, so the whole picture makes sense in one place.',
     bullets: [
-      'Start from a preset or build your own split',
-      'Select any day to see the session',
-      'Rest days are part of the plan, not a failure',
+      'Switch between Health and Stats',
+      'Log steps, sleep, heart rate, and calories',
+      'Tap a range chip to redraw the activity chart',
     ],
   },
   {
-    key: 'health',
-    label: 'Health',
-    icon: HeartPulse,
-    title: 'Food, sleep, and recovery',
-    copy: 'Your training only makes sense next to the rest of your day. Log meals, water, sleep, steps, and weight in the same place.',
-    bullets: [
-      'Track meals, calories, and macros',
-      'See sleep, steps, heart rate, and weight together',
-      'Try the water buttons to add or remove a glass',
-    ],
-  },
-  {
-    key: 'train',
-    label: 'Train',
+    key: 'workouts',
+    label: 'Workouts',
     icon: Dumbbell,
-    title: 'A coach in your pocket',
-    copy: 'The workout player keeps the timer, sets, rest, and form cues on screen so you can focus on the rep in front of you.',
+    title: 'Find your next session',
+    copy: 'Search the library and narrow it down by type, difficulty, and muscle group. Every card shows the time and effort before you start.',
     bullets: [
-      'Timers, sets, and rest built in',
-      'Form cues while you train',
-      'Full-screen and thumb-friendly on mobile',
+      'Search workouts by name',
+      'Filter by type, difficulty, and muscle group',
+      'Plan and build your own sessions',
+    ],
+  },
+  {
+    key: 'profile',
+    label: 'Profile',
+    icon: User,
+    title: 'Make the app yours',
+    copy: 'Your goal, level, and preferred training sit above your all-time totals, with an app theme you can switch in one tap.',
+    bullets: [
+      'See your all-time totals at a glance',
+      'Review your goal, level, and preferences',
+      'Tap Midnight, Sunrise, or Auto to change the theme',
     ],
   },
 ]
+
+// Keys the in-phone bottom bar can send, mapped to demo tabs.
+const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
 
 export default function Demo() {
   useAutoTheme()
   usePageMeta({
     title: 'Try the Uttar Fitness demo — no account needed',
-    description: 'Tap through a live demo of Uttar Fitness: today’s workout, the weekly plan, health tracking, and the workout player. Nothing is saved until you sign in.',
+    description: 'Tap through a live demo of Uttar Fitness: your home screen, health and stats, the workout library, and your profile. Nothing is saved until you sign in.',
     path: '/demo',
   })
   const { user } = useAuth()
-  const [tab, setTab] = useState('today')
+  const [tab, setTab] = useState('home')
   const [workoutDone, setWorkoutDone] = useState(false)
-  const [selectedDay, setSelectedDay] = useState('Mon')
-  const [water, setWater] = useState(5)
+  const [insightsView, setInsightsView] = useState('health')
+  const [healthTab, setHealthTab] = useState('overview')
+  const [statsRange, setStatsRange] = useState('1M')
+  const [workoutSearch, setWorkoutSearch] = useState('')
+  const [workoutType, setWorkoutType] = useState('All')
+  const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
+  const [workoutMuscle, setWorkoutMuscle] = useState('All')
+  const [theme, setTheme] = useState('midnight')
   const tabRefs = useRef({})
 
   const active = TABS.find((item) => item.key === tab) ?? TABS[0]
   const ActiveIcon = active.icon
-
-  const selectTab = (key) => setTab(key)
 
   const handleTabKeyDown = (event) => {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
@@ -98,11 +112,33 @@ export default function Demo() {
     toast[next ? 'success' : 'message'](next ? 'Sample workout complete. Nice work.' : 'Sample workout reopened.')
   }
 
+  const handleNavigate = (key) => {
+    if (NAV_TO_TAB[key]) {
+      setTab(NAV_TO_TAB[key])
+      return
+    }
+    if (key === 'ai') toast.message('Uttar AI opens as a full-screen coach in the app.')
+    else if (key === 'plan') toast.message('The weekly plan opens from the Plan quick link.')
+    else if (key === 'run') toast.message('The run tracker is built into the app.')
+    else toast.message('That screen opens in the full app.')
+  }
+
+  const handleTheme = (key) => {
+    setTheme(key)
+    toast.message(`Theme set to ${key === 'auto' ? 'Auto' : key[0].toUpperCase() + key.slice(1)}.`)
+  }
+
   const resetDemo = () => {
-    setTab('today')
+    setTab('home')
     setWorkoutDone(false)
-    setSelectedDay('Mon')
-    setWater(5)
+    setInsightsView('health')
+    setHealthTab('overview')
+    setStatsRange('1M')
+    setWorkoutSearch('')
+    setWorkoutType('All')
+    setWorkoutDifficulty('All')
+    setWorkoutMuscle('All')
+    setTheme('midnight')
     toast.message('Demo reset. Nothing was saved.')
   }
 
@@ -136,7 +172,7 @@ export default function Demo() {
             Take the app for a spin.
           </h1>
           <p className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Tap through a sample day. Complete a workout, switch training days, and log a glass of water. Sign in only when you want to keep your own data.
+            Tap through the real screens. Complete a workout, switch between Health and Stats, filter the workout library, and change the app theme. Sign in only when you want to keep your own data.
           </p>
         </div>
 
@@ -160,7 +196,7 @@ export default function Demo() {
                     aria-selected={selected}
                     aria-controls={selected ? `demo-panel-${key}` : undefined}
                     tabIndex={selected ? 0 : -1}
-                    onClick={() => selectTab(key)}
+                    onClick={() => setTab(key)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:text-sm ${selected ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -170,7 +206,7 @@ export default function Demo() {
               })}
             </div>
 
-            <DemoFrame>
+            <DemoFrame active={tab} onNavigate={handleNavigate}>
               <div
                 role="tabpanel"
                 id={`demo-panel-${tab}`}
@@ -178,10 +214,34 @@ export default function Demo() {
                 tabIndex={0}
                 className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                {tab === 'today' && <DashboardMock done={workoutDone} onToggleDone={toggleWorkout} />}
-                {tab === 'plan' && <PlanMock selected={selectedDay} onSelect={setSelectedDay} />}
-                {tab === 'health' && <HealthMock water={water} onWater={(delta) => setWater((value) => Math.max(0, Math.min(8, value + delta)))} />}
-                {tab === 'train' && <WorkoutMock />}
+                {tab === 'home' && (
+                  <HomeMock done={workoutDone} onToggleDone={toggleWorkout} onNavigate={handleNavigate} />
+                )}
+                {tab === 'insights' && insightsView === 'health' && (
+                  <InsightsHealthMock
+                    view="health"
+                    onView={setInsightsView}
+                    tab={healthTab}
+                    onTab={setHealthTab}
+                    onLog={() => toast.message('In the app this opens the health log sheet.')}
+                  />
+                )}
+                {tab === 'insights' && insightsView === 'stats' && (
+                  <InsightsStatsMock view="stats" onView={setInsightsView} range={statsRange} onRange={setStatsRange} />
+                )}
+                {tab === 'workouts' && (
+                  <WorkoutsMock
+                    search={workoutSearch}
+                    onSearch={setWorkoutSearch}
+                    type={workoutType}
+                    onType={setWorkoutType}
+                    difficulty={workoutDifficulty}
+                    onDifficulty={setWorkoutDifficulty}
+                    muscle={workoutMuscle}
+                    onMuscle={setWorkoutMuscle}
+                  />
+                )}
+                {tab === 'profile' && <ProfileMock theme={theme} onTheme={handleTheme} />}
               </div>
             </DemoFrame>
 

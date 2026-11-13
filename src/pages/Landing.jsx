@@ -26,10 +26,9 @@ import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 import useAutoTheme from '@/hooks/useAutoTheme'
 import usePageMeta from '@/hooks/usePageMeta'
 import {
-  DashboardMock,
   PhoneFrame,
   PREVIEW_SCREENS,
-  WorkoutMock,
+  WorkoutsMock,
 } from '@/components/landing/AppMocks'
 
 const PRIMARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
@@ -150,10 +149,11 @@ const FAQS = [
 ]
 
 const PREVIEW_LABELS = {
-  today: 'Today',
-  plan: 'Weekly plan',
-  health: 'Health Hub',
-  workout: 'Workout player',
+  home: 'Home',
+  health: 'Health',
+  stats: 'Stats',
+  workouts: 'Workouts',
+  profile: 'Profile',
 }
 
 function Reveal({ children, delay = 0, className = '' }) {
@@ -237,8 +237,8 @@ function MobileCta() {
 export default function Landing() {
   useAutoTheme()
   usePageMeta({
-    title: 'Uttar Fitness — Your whole fitness week, in one place',
-    description: 'Workouts, weekly plans, nutrition, sleep, health metrics, and AI coaching in one calm app. Try the interactive demo free — no account needed.',
+    title: 'Uttar Fitness — The all-in-one fitness app',
+    description: 'The all-in-one fitness app for workouts, weekly plans, nutrition, sleep, health metrics, and AI coaching. Try the interactive demo free — no account needed.',
     path: '/',
   })
 
@@ -289,12 +289,12 @@ export default function Landing() {
             </span>
 
             <h1 className="mt-6 text-balance text-[2.75rem] font-black leading-[0.96] tracking-[-0.045em] sm:text-6xl lg:text-[4.3rem]">
-              Your whole fitness week,
-              <span className="mt-1 block text-[hsl(var(--accent-text))]">in one place.</span>
+              Your all-in-one
+              <span className="mt-1 block text-[hsl(var(--accent-text))]">fitness app.</span>
             </h1>
 
             <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Strength, cardio, food, sleep, and recovery come together in one clear weekly plan. Uttar AI remembers your history, spots what&rsquo;s working, and keeps the next step obvious.
+              Strength, cardio, food, sleep, and recovery live in one app. Uttar AI remembers your history, spots what&rsquo;s working, and keeps the next step obvious.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -326,9 +326,34 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              <PhoneFrame label="Preview of the Uttar Fitness dashboard">
-                <DashboardMock />
-              </PhoneFrame>
+              <figure className="relative">
+                <div className="relative overflow-hidden rounded-[2rem]">
+                  {/* The photo is tilted, so its left wall carries a sliver of the
+                      poster's marketing copy. This diagonal mask fades that lower-left
+                      wedge into the page, following the phone's edge. */}
+                  <img
+                    src="/hero-app.jpg"
+                    alt="A hand holding a phone showing the Uttar Fitness home screen with today's workout, weekly progress, and quick actions."
+                    width={659}
+                    height={957}
+                    decoding="async"
+                    className="block h-auto w-full"
+                    style={{
+                      WebkitMaskImage: 'linear-gradient(84deg, transparent 0%, transparent 14%, black 26%)',
+                      maskImage: 'linear-gradient(84deg, transparent 0%, transparent 14%, black 26%)',
+                    }}
+                  />
+                  {/* Bottom scrim softens the source photo's cut-off wrist. */}
+                  <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
+                </div>
+                <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 px-4 pb-4">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold leading-tight">Today, decided</p>
+                    <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">Open the app and your next step is ready.</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-[hsl(var(--accent-text))]">Live preview</span>
+                </figcaption>
+              </figure>
 
               <FloatingCard className="-left-4 top-24" delay={0.2}>
                 <div className="flex items-center gap-2">
@@ -509,15 +534,15 @@ export default function Landing() {
               </Link>
             </div>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              A quick look at the screens you&rsquo;ll live in: today&rsquo;s plan, the week ahead, your health, and the workout player.
+              A quick look at the screens you&rsquo;ll live in: your home, health and stats, the workout library, and your profile.
             </p>
           </Reveal>
 
-          <div className="mt-10 flex snap-x gap-5 overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
-            {PREVIEW_SCREENS.map(({ key, label, caption, Component }, index) => (
+          <div className="mt-10 flex snap-x gap-5 overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:pb-0">
+            {PREVIEW_SCREENS.map(({ key, label, caption, Component, active }, index) => (
               <Reveal key={key} delay={index * 0.06} className="min-w-[248px] snap-center lg:min-w-0">
                 <div className="mx-auto w-full max-w-[260px]">
-                  <PhoneFrame label={`${PREVIEW_LABELS[key] ?? label} screen preview`}>
+                  <PhoneFrame label={`${PREVIEW_LABELS[key] ?? label} screen preview`} active={active}>
                     <Component />
                   </PhoneFrame>
                 </div>
@@ -627,8 +652,8 @@ export default function Landing() {
                 <div className="relative mx-auto w-full max-w-[280px]">
                   <div aria-hidden="true" className="absolute inset-8 rounded-full bg-primary/20 blur-3xl" />
                   <div className="relative mx-auto w-full max-w-[260px]">
-                    <PhoneFrame label="Preview of the Uttar Fitness workout player">
-                      <WorkoutMock />
+                    <PhoneFrame label="Preview of the Uttar Fitness workout library" active="workouts">
+                      <WorkoutsMock />
                     </PhoneFrame>
                   </div>
                 </div>
