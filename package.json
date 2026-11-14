@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/inline-css.mjs",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "test": "node --test src/lib/appNavigation.test.mjs src/lib/theme.test.mjs src/lib/workoutValidation.test.mjs src/lib/barcode.test.mjs src/lib/foodSearch.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs worker/auth.test.mjs"
   },
   "dependencies": {

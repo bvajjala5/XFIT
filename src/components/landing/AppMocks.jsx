@@ -77,7 +77,7 @@ function BottomNav({ active = 'home', onNavigate }) {
     <div className="flex items-end gap-0.5 border-t border-border/40 bg-card/60 px-1 py-1.5">
       {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
         const isActive = key === active
-        const tone = isActive ? 'text-primary' : 'text-muted-foreground'
+        const tone = isActive ? 'text-[hsl(var(--accent-text))]' : 'text-muted-foreground'
         const inner = (
           <>
             {key === 'ai' ? (
@@ -310,8 +310,7 @@ function InsightsHeader({ view, onView }) {
       <p className="text-[10px] text-muted-foreground">Your health and training, in one place.</p>
 
       <div
-        role="tablist"
-        aria-label="Insights sections"
+        {...(onView ? { role: 'tablist', 'aria-label': 'Insights sections' } : {})}
         className="mt-2.5 grid grid-cols-2 gap-1.5 rounded-2xl border border-border/60 bg-secondary/40 p-1.5"
       >
         {INSIGHTS_VIEWS.map(({ key, label, blurb, icon: Icon }) => {

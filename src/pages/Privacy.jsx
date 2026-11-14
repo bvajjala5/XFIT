@@ -5,7 +5,7 @@ export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b border-border/40 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-secondary/50 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+        <button onClick={() => navigate(-1)} aria-label="Go back" className="p-2 rounded-xl hover:bg-secondary/50 transition-colors"><ArrowLeft className="w-5 h-5" aria-hidden="true" /></button>
         <h1 className="font-bold text-lg">Privacy Policy</h1>
       </div>
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6 text-sm text-muted-foreground leading-relaxed">

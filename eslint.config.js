@@ -9,9 +9,8 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
  *
  * This config is intentionally pragmatic. Rules that catch real bugs
  * (undefined globals, unused bindings, hook mistakes, accessibility slips)
- * are enabled. A handful of rules fire on pre-existing patterns in the
- * codebase and are set to `warn` so CI stays green while the backlog is
- * worked through; see the "Backlog" section below.
+ * are enabled. The rules below are kept at `warn`, but the `lint` script runs
+ * with `--max-warnings=0`, so any warning still fails CI.
  */
 export default [
   {
@@ -64,14 +63,14 @@ export default [
       // Allow intentionally-unused args/vars prefixed with an underscore.
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
 
-      // --- Backlog (pre-existing patterns; tracked as warnings) ---
+      // --- Stricter rules (warnings still fail CI via --max-warnings=0) ---
       // Anonymous components in a few render helpers.
       'react/display-name': 'warn',
       // New React-Compiler-era rules; the codebase predates them.
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/static-components': 'warn',
       'react-hooks/purity': 'warn',
-      // Accessibility backlog: labels, clickable divs, and autofocus.
+      // Accessibility: labels, clickable divs, and autofocus.
       'jsx-a11y/label-has-associated-control': 'warn',
       'jsx-a11y/no-autofocus': 'warn',
       'jsx-a11y/click-events-have-key-events': 'warn',

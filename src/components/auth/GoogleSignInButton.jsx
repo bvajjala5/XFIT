@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import GoogleIcon from './GoogleIcon'
 
 const VARIANTS = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20',
+  primary: 'bg-[hsl(var(--accent-solid))] text-primary-foreground hover:brightness-95 shadow-lg shadow-primary/20',
   outline: 'border border-border bg-card/60 text-foreground hover:bg-secondary/80',
   light: 'bg-white text-gray-800 shadow-sm hover:bg-gray-50',
 }

@@ -124,6 +124,8 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const [scanOpen, setScanOpen] = useState(false)
   const qc = useQueryClient()
   const contentRef = useRef(null)
+  const searchRef = useRef(null)
+  const customNameRef = useRef(null)
 
   useEffect(() => { if (open) loadEngine().then(setEngine).catch(() => setEngineError(true)) }, [open])
   // Reset the sheet when it opens (or the default meal changes), and clear the
@@ -167,6 +169,15 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
 
   const recent = useMemo(() => (open && userId ? loadRecent(userId) : []), [open, userId])
   useFocusTrap(contentRef, open, onClose)
+
+  // The focus trap lands on the first focusable element (the header Close
+  // button). Put the caret where the user is about to type instead. This runs
+  // after the trap's own effect, so it wins on open.
+  useEffect(() => {
+    if (!open) return
+    if (view === 'search') searchRef.current?.focus()
+    else if (view === 'custom') customNameRef.current?.focus()
+  }, [open, view])
 
   if (!open) return null
 
@@ -294,7 +305,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     body = (
       <div className="space-y-4">
         <button onClick={() => setView('search')} className="text-xs text-primary inline-flex items-center gap-0.5"><ChevronLeft className="w-3 h-3" />Back to search</button>
-        <Input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Food name (e.g. Mom's lasagna)" className="bg-secondary/40 border-0 h-11 font-semibold" />
+        <Input ref={customNameRef} value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Food name (e.g. Mom's lasagna)" className="bg-secondary/40 border-0 h-11 font-semibold" />
         <p className="text-xs text-muted-foreground">Enter the numbers for ONE serving (check the label), and how many grams that serving is.</p>
         <div className="grid grid-cols-2 gap-3">{field('serving', 'Serving size (g)', '100')}{field('calories', 'Calories', '250')}{field('protein', 'Protein (g)', '20')}{field('carbs', 'Carbs (g)', '30')}{field('fat', 'Fat (g)', '8')}</div>
         <Button className="w-full h-12 rounded-xl text-base" onClick={saveCustom}>Save food</Button>
@@ -307,7 +318,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       <>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-20 bg-secondary/40 border-0 h-12" />
+          <Input ref={searchRef} value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-20 bg-secondary/40 border-0 h-12" />
           {!engine && !engineError && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
           <button
             type="button"

@@ -157,8 +157,8 @@ export default function Demo() {
               <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Overview</span>
             </Link>
             {user
-              ? <Link to="/home" className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90">Dashboard</Link>
-              : <Link to="/login" className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90">Sign in</Link>}
+              ? <Link to="/home" className="inline-flex h-10 items-center rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">Dashboard</Link>
+              : <Link to="/login" className="inline-flex h-10 items-center rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">Sign in</Link>}
           </div>
         </div>
       </header>
@@ -198,7 +198,7 @@ export default function Demo() {
                     aria-controls={selected ? `demo-panel-${key}` : undefined}
                     tabIndex={selected ? 0 : -1}
                     onClick={() => setTab(key)}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:text-sm ${selected ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:text-sm ${selected ? 'bg-[hsl(var(--accent-solid))] text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span className="truncate">{label}</span>
@@ -283,7 +283,7 @@ export default function Demo() {
                   : 'Create a free account and the demo is replaced by your own week.'}
               </p>
               {user ? (
-                <Link to="/home" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90">
+                <Link to="/home" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">
                   Back to my dashboard
                 </Link>
               ) : (

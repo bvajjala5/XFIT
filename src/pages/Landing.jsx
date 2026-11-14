@@ -30,7 +30,7 @@ import {
   WorkoutsMock,
 } from '@/components/landing/AppMocks'
 
-const PRIMARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
+const PRIMARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--accent-solid))] px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:brightness-95 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
 const SECONDARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-card/60 px-6 text-sm font-semibold text-foreground backdrop-blur-md transition-all hover:bg-secondary/70 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
 
 const FEATURES = [
@@ -206,7 +206,7 @@ function MobileCta() {
         </Link>
         <Link
           to="/login"
-          className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 active:scale-[0.99]"
+          className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[hsl(var(--accent-solid))] text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 active:scale-[0.99]"
         >
           Start free <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -227,7 +227,7 @@ export default function Landing() {
     <div className="landing-surface relative min-h-screen overflow-hidden">
       <AnimatedBackground />
 
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-[hsl(var(--accent-solid))] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">
         Skip to content
       </a>
 
@@ -251,7 +251,7 @@ export default function Landing() {
             <Link to="/login" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:inline-flex">
               Sign in
             </Link>
-            <Link to="/demo" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            <Link to="/demo" className="inline-flex h-10 items-center gap-2 rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
               Try demo <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </nav>
