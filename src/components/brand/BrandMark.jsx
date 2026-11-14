@@ -1,4 +1,3 @@
-import React from 'react'
 
 /**
  * The Uttar barbell emblem, drawn with a CSS mask so its colour follows the

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Select = SelectPrimitive.Root;
@@ -13,6 +13,7 @@ const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) 
     <SelectPrimitive.Icon asChild><ChevronDown className="h-4 w-4 opacity-50" /></SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
+SelectTrigger.displayName = "SelectTrigger";
 
 const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => (
   <SelectPrimitive.Portal>
@@ -23,10 +24,12 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ));
+SelectContent.displayName = "SelectContent";
 
 const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
   <SelectPrimitive.Label ref={ref} className={cn("px-2 py-1.5 text-sm font-semibold", className)} {...props} />
 ));
+SelectLabel.displayName = "SelectLabel";
 
 const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Item ref={ref} className={cn("relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className)} {...props}>
@@ -36,9 +39,11 @@ const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => 
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
 ));
+SelectItem.displayName = "SelectItem";
 
 const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-muted", className)} {...props} />
 ));
+SelectSeparator.displayName = "SelectSeparator";
 
 export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem, SelectSeparator };

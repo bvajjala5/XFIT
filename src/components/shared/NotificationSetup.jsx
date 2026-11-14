@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
@@ -10,9 +10,13 @@ export default function NotificationSetup({ userId, open, onDismiss }) {
   const [loading, setLoading] = useState(false);
 
   // Controlled mode: show with 5 s delay when open becomes true
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (controlled && open !== prevOpen) {
+    setPrevOpen(open);
+    if (!open) setShow(false);
+  }
   useEffect(() => {
-    if (!controlled) return;
-    if (!open) { setShow(false); return; }
+    if (!controlled || !open) return undefined;
     const t = setTimeout(() => setShow(true), 5000);
     return () => clearTimeout(t);
   }, [open, controlled]);

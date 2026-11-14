@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Camera, CameraOff, Loader2, Play, RotateCcw, ShieldCheck, Sparkles, Square, X } from 'lucide-react'
@@ -51,14 +51,6 @@ export default function FormCheck({ open, onClose, exerciseName }) {
     if (!open) return undefined
     let cancelled = false
     sessionRef.current += 1
-    setPhase('starting')
-    setFeedback('')
-    setChecks(0)
-    setElapsed(0)
-    setHasRun(false)
-    setBusy(false)
-    setError('')
-    setCueError('')
     busyRef.current = false
     lastCheckRef.current = 0
 
@@ -66,6 +58,14 @@ export default function FormCheck({ open, onClose, exerciseName }) {
     document.body.style.overflow = 'hidden'
 
     const start = async () => {
+      setPhase('starting')
+      setFeedback('')
+      setChecks(0)
+      setElapsed(0)
+      setHasRun(false)
+      setBusy(false)
+      setError('')
+      setCueError('')
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
         const stream = await navigator.mediaDevices.getUserMedia({

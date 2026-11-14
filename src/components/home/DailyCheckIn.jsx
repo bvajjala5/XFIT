@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Droplets, X, CheckCircle2, Frown, Annoyed, Meh, Smile, Laugh, BatteryWarning, BatteryLow, BatteryMedium, BatteryFull, Zap } from 'lucide-react'
@@ -34,8 +34,8 @@ function advice(score, jointPain) {
 }
 
 const waterKey = () => 'xfit_water_' + localDateStr()
-const readWater = () => { try { return Number(localStorage.getItem(waterKey())) || 0 } catch (e) { return 0 } }
-const waterGoal = () => { try { return Number(localStorage.getItem('xfit_water_goal')) || 8 } catch (e) { return 8 } }
+const readWater = () => { try { return Number(localStorage.getItem(waterKey())) || 0 } catch { return 0 } }
+const waterGoal = () => { try { return Number(localStorage.getItem('xfit_water_goal')) || 8 } catch { return 8 } }
 
 function Row({ title, hint, children }) {
   return (
@@ -72,13 +72,19 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
   const contentRef = useRef(null)
   const goal = waterGoal()
 
-  useEffect(() => { if (open) { setWater(readWater()); setResult(null) } }, [open])
+  // Reset the sheet each time it opens (adjust state during render instead of
+  // an effect so the reset lands in the same commit as the open change).
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) { setWater(readWater()); setResult(null) }
+  }
   useFocusTrap(contentRef, open, onDismiss)
 
   const setGlasses = (n) => {
     const next = Math.max(0, Math.min(12, n))
     setWater(next)
-    try { localStorage.setItem(waterKey(), String(next)) } catch (e) {}   // same place the water tracker uses
+    try { localStorage.setItem(waterKey(), String(next)) } catch {}   // same place the water tracker uses
   }
 
   const answered = sleepTouched || sleepFeel || energy || food || soreness || jointPain || water > 0
@@ -97,7 +103,7 @@ export default function DailyCheckIn({ userId, open, onDismiss, onComplete }) {
     try {
       if (userId) await setDoc(doc(db, 'users', userId, 'checkins', today), data)
     } catch (e) { console.error('Check-in save error:', e) }
-    try { localStorage.setItem('xfit_checkin_date', today) } catch (e) {}
+    try { localStorage.setItem('xfit_checkin_date', today) } catch {}
     setResult(advice(score, jointPain))
     setSaving(false)
     onComplete?.(data)

@@ -1,4 +1,3 @@
-import React from 'react'
 
 const SIZES = {
   xs: { tile: 'h-7 w-7 rounded-lg', mark: 'w-5' },

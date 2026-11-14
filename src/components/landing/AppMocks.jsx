@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   BarChart2,
   BarChart3,
@@ -377,7 +376,6 @@ export function InsightsHealthMock({
   tab = 'overview',
   onTab,
   onLog,
-  onNavigate,
 }) {
   return (
     <>
@@ -483,7 +481,7 @@ const STATS_RANGES = {
   All: [1, 2, 1, 3, 2, 4, 3, 2, 5, 3, 4, 2, 3, 4, 2, 3, 5, 4, 3, 2],
 }
 
-export function InsightsStatsMock({ view = 'stats', onView, range = '1M', onRange, onNavigate }) {
+export function InsightsStatsMock({ view = 'stats', onView, range = '1M', onRange }) {
   const points = STATS_RANGES[range] || STATS_RANGES['1M']
   return (
     <>

@@ -139,7 +139,6 @@ Rules for the block:
 - Do not include it for ordinary training, nutrition, or recovery questions that do not need app navigation.
 - If you are not sure where something lives, say so instead of guessing.`
 
-const NAV_PATHS = new Set(APP_DESTINATIONS.map((destination) => destination.path))
 
 const ALIASES = {
   '/settings': '/profile#profile-settings',

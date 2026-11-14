@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firestore';
@@ -73,11 +73,14 @@ export default function Profile() {
     return () => cancelAnimationFrame(frame);
   }, [location.hash]);
 
-  useEffect(() => {
+  // Hydrate the settings form when the profile loads (adjust state during render).
+  const [prevUserData, setPrevUserData] = useState(null);
+  if (userData !== prevUserData) {
+    setPrevUserData(userData);
     if (userData) {
       setForm({fitness_goal:userData.fitness_goal||'',experience_level:userData.experience_level||'',preferred_types:userData.preferred_types||[],distance_unit:userData.distance_unit||'miles'});
     }
-  }, [userData]);
+  }
 
   const { data: logs=[] } = useQuery({
     queryKey: ['workout-logs-profile', user?.uid],

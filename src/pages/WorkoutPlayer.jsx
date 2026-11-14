@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/firestore';
 import { doc, getDoc } from 'firebase/firestore/lite';
@@ -100,7 +100,7 @@ function speakText(text, enabled = true, opts = {}) {
 
 // iOS/Safari only allow speech after a tap: unlock it on the first touch anywhere on the page.
 function unlockSpeech() {
-  try { window.speechSynthesis?.speak(Object.assign(new SpeechSynthesisUtterance(' '), { volume: 0 })); } catch (e) {}
+  try { window.speechSynthesis?.speak(Object.assign(new SpeechSynthesisUtterance(' '), { volume: 0 })); } catch {}
 }
 
 const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it up.', 'Well done.'];
@@ -312,7 +312,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i]};
       return ex;
     });
-  }, [workout?.id, workout?.exercises, customDurations]);
+  }, [workout, customDurations]);
 
   // How long this workout should take. The durations the user picked on the
   // detail sliders (or the durations stored with the workout) are the source of
@@ -326,24 +326,27 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     (workout?.calories_estimate || 200) * Math.min(seconds / (expectedSeconds || 1800), 1.2)
   );
 
-  // Set the timer and announce the exercise whenever it changes, and once the workout has loaded
-  // (the exercise list arrives after the first render, which used to leave the timer at 0 and skip exercise 1).
+  // Set the timer whenever the exercise, rest state, or exercise list changes,
+  // and once the workout has loaded (the exercise list arrives after the first
+  // render, which used to leave the timer at 0 and skip exercise 1). State is
+  // adjusted during render; the ref mirrors `timeLeft` for the interval below.
+  const [prevTimerPhase, setPrevTimerPhase] = useState(null);
+  const timerPhase = `${exercises.length}:${currentEx}:${isResting}:${isComplete}`;
+  if (timerPhase !== prevTimerPhase) {
+    setPrevTimerPhase(timerPhase);
+    if (!isComplete && exercises.length) {
+      const ex = exercises[currentEx];
+      if (ex) setTimeLeft(isResting ? (ex.rest_seconds || 30) : exerciseDurationSeconds(ex));
+    }
+  }
+
+  // Announce the exercise whenever it changes.
   useEffect(() => {
     if (!exercises.length || isComplete) return;
     const ex = exercises[currentEx];
     if (!ex) return;
 
     const dur = exerciseDurationSeconds(ex);
-    const rest = ex.rest_seconds || 30;
-
-    if (isResting) {
-      timeLeftRef.current = rest;
-      setTimeLeft(rest);
-    } else {
-      timeLeftRef.current = dur;
-      setTimeLeft(dur);
-    }
-
     announcedRef.current.countdown = false;
     if (announcedRef.current.exIndex !== currentEx) {
       announcedRef.current.exIndex = currentEx;
@@ -353,13 +356,14 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       else if (isLast) speakText(`${pick(PRAISE)} Last one. ${ex.name}. ${amount}. Give it everything.`, voiceEnabled);
       else speakText(`${pick(PRAISE)} Next, ${ex.name}. ${amount}.`, voiceEnabled);
     }
-  }, [currentEx, isComplete, exercises.length, isResting]);
+  }, [currentEx, isComplete, exercises, voiceEnabled]);
 
   // Exercise countdown — use refs to avoid stale closures
   const exercisesRef = useRef(exercises);
   const currentExRef = useRef(currentEx);
   useEffect(() => { exercisesRef.current = exercises; }, [exercises]);
   useEffect(() => { currentExRef.current = currentEx; }, [currentEx]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   const mountedRef = useRef(false);
   useEffect(() => { mountedRef.current = true; }, []);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import { useQueryClient } from '@tanstack/react-query'
@@ -23,21 +23,6 @@ const EXAMPLE_PROMPTS = [
   '5 min abs finisher after any workout',
   'Weekly plan for weight loss and muscle gain',
 ]
-
-function guessAnimation(name) {
-  const n = name.toLowerCase()
-  if (n.includes('curl') || n.includes('bicep')) return 'curl'
-  if (n.includes('push') || n.includes('press') && n.includes('chest')) return 'push_up'
-  if (n.includes('squat')) return 'squat'
-  if (n.includes('lateral') || n.includes('raise') && n.includes('side')) return 'lateral_raise'
-  if (n.includes('plank') || n.includes('hold')) return 'plank'
-  if (n.includes('lunge') || n.includes('split')) return 'lunge'
-  if (n.includes('twist') || n.includes('russian')) return 'russian_twist'
-  if (n.includes('hip') || n.includes('glute') || n.includes('bridge')) return 'hip_raise'
-  if (n.includes('press') || n.includes('shoulder') || n.includes('overhead')) return 'overhead_press'
-  if (n.includes('jump') || n.includes('hop') || n.includes('jack')) return 'jump'
-  return 'squat'
-}
 
 export default function CustomWorkoutBuilder() {
   const { user } = useAuth()
@@ -192,8 +177,9 @@ Rules:
           <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
             {/* Prompt input */}
             <GlassCard className="space-y-3">
-              <label className="text-sm font-semibold">Describe your workout</label>
+              <label htmlFor="cwb-prompt" className="text-sm font-semibold">Describe your workout</label>
               <Textarea
+                id="cwb-prompt"
                 placeholder="e.g. 20 minute full body HIIT, no equipment, beginner friendly..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -251,8 +237,9 @@ Rules:
           <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
             {/* Workout name */}
             <GlassCard className="space-y-2">
-              <label className="text-xs text-muted-foreground uppercase tracking-wider">Workout Name</label>
+              <label htmlFor="cwb-name" className="text-xs text-muted-foreground uppercase tracking-wider">Workout Name</label>
               <Input
+                id="cwb-name"
                 value={workoutName}
                 onChange={(e) => setWorkoutName(e.target.value)}
                 className="bg-transparent border-white/10 font-bold text-lg h-12"
@@ -276,8 +263,9 @@ Rules:
                         />
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="text-[10px] text-muted-foreground">Sets</label>
+                            <label htmlFor={`cwb-sets-${ex.id}`} className="text-[10px] text-muted-foreground">Sets</label>
                             <Input
+                              id={`cwb-sets-${ex.id}`}
                               type="number"
                               value={ex.sets}
                               onChange={(e) => updateExercise(ex.id, 'sets', Number(e.target.value))}
@@ -285,16 +273,18 @@ Rules:
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-muted-foreground">Reps</label>
+                            <label htmlFor={`cwb-reps-${ex.id}`} className="text-[10px] text-muted-foreground">Reps</label>
                             <Input
+                              id={`cwb-reps-${ex.id}`}
                               value={ex.reps}
                               onChange={(e) => updateExercise(ex.id, 'reps', e.target.value)}
                               className="bg-transparent border-white/10 h-8 text-sm"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-muted-foreground">Rest (s)</label>
+                            <label htmlFor={`cwb-rest-${ex.id}`} className="text-[10px] text-muted-foreground">Rest (s)</label>
                             <Input
+                              id={`cwb-rest-${ex.id}`}
                               type="number"
                               value={ex.rest_seconds}
                               onChange={(e) => updateExercise(ex.id, 'rest_seconds', Number(e.target.value))}

@@ -1,4 +1,3 @@
-import React from 'react';
 import ExerciseDemo from '@/components/workout/ExerciseDemo';
 
 /** One combined view: animated exercise demo with the muscles it works shown beside it. */

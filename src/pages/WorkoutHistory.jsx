@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { db } from "@/lib/firestore";
 import { collection, getDocs, query, orderBy } from "firebase/firestore/lite";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
-import { Clock, Flame, Dumbbell, ChevronRight } from "lucide-react";
+import { Clock, Flame, Dumbbell } from "lucide-react";
 import { motion } from "framer-motion";
 import GlassCard from "@/components/shared/GlassCard";
 import { Link } from "react-router-dom";

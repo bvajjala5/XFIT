@@ -167,18 +167,18 @@ function SunBackground() {
 }
 
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────
+function readResolvedTheme() {
+  if (typeof document === 'undefined') return resolveTheme(getThemeMode());
+  const dom = document.documentElement.dataset.theme;
+  return dom === 'sunrise' || dom === 'midnight' ? dom : resolveTheme(getThemeMode());
+}
+
 export default function AnimatedBackground() {
-  const [theme, setTheme] = useState(() => resolveTheme(getThemeMode()));
+  const [theme, setTheme] = useState(readResolvedTheme);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const getTheme = () => {
-      const cls = document.documentElement.className;
-      if (cls.includes('theme-sunrise')) return 'sunrise';
-      return 'midnight';
-    };
-    setTheme(getTheme());
-    const observer = new MutationObserver(() => setTheme(getTheme()));
+    const observer = new MutationObserver(() => setTheme(readResolvedTheme()));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);

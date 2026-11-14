@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef } from 'react'
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import useFocusTrap from '@/hooks/useFocusTrap'

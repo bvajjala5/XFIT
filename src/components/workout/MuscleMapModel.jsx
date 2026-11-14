@@ -1,4 +1,3 @@
-import React from 'react';
 
 function getMuscles(name = '') {
   const n = name.toLowerCase();

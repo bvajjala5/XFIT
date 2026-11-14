@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Polyline, Circle, useMap } from 'react-leaflet'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, Square, Navigation, Footprints, Flame, Clock, ChevronUp } from 'lucide-react'
+import { Play, Pause, Square, Navigation, Footprints, Flame } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 
 // Map auto-pan to latest position
@@ -44,7 +44,6 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   const [steps, setSteps] = useState(0)
   const [splits, setSplits] = useState([]) // [{km, time}]
   const [calories, setCalories] = useState(0)
-  const [showStats, setShowStats] = useState(false)
   const [gpsError, setGpsError] = useState(null)
 
   const watchIdRef = useRef(null)
@@ -53,7 +52,6 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
   const lastStepTimeRef = useRef(0)
   const splitDistRef = useRef(0)
   const startTimeRef = useRef(null)
-  const pausedTimeRef = useRef(0)
   const positionsRef = useRef([])
   const distanceRef = useRef(0)
   const caloriesRef = useRef(0)

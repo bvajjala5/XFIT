@@ -74,10 +74,6 @@ const EXERCISE_LIBRARY = {
   ]
 };
 
-function getRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 async function getMockResponse(prompt = '') {
   await new Promise(resolve => setTimeout(resolve, 1500));
   const p = prompt.toLowerCase();

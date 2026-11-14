@@ -80,10 +80,16 @@ export default function AppLayout() {
   }, []);
 
   // Support the old /ai deep link by opening the pop-up on Home instead of
-  // sending people to a now-removed tab.
+  // sending people to a now-removed tab. A new navigation gets a new location
+  // key, so this opens the panel during render and then clears the one-shot
+  // navigation state in an effect.
+  const [prevLocationKey, setPrevLocationKey] = useState(location.key);
+  if (location.key !== prevLocationKey) {
+    setPrevLocationKey(location.key);
+    if (location.state?.openAI) setAiOpen(true);
+  }
   useEffect(() => {
     if (!location.state?.openAI) return;
-    setAiOpen(true);
     navigate(location.pathname + location.search, { replace: true, state: null });
   }, [location.state, location.pathname, location.search, navigate]);
 

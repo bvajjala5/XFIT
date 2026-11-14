@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { db } from '@/lib/firestore';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore/lite';
@@ -9,7 +9,7 @@ import { importWorkout } from '@/lib/shareWorkout';
 import { toast } from 'sonner';
 
 export default function Community() {
-  const { user, userDoc } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [importing, setImporting] = useState(null);
 
@@ -42,7 +42,7 @@ export default function Community() {
       await importWorkout(user.uid, workout);
       qc.invalidateQueries({ queryKey: ['custom-workouts', user.uid] });
       toast.success(`"${workout.name}" added to your workouts!`);
-    } catch (err) {
+    } catch {
       toast.error('Import failed');
     } finally {
       setImporting(null);

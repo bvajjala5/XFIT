@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react';
 import { Footprints } from 'lucide-react'
 import { useAuth } from '@/lib/AuthContext'
 import RunTracker from '@/components/run/RunTracker'

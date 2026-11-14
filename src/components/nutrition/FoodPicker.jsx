@@ -1,9 +1,9 @@
-import React, { lazy, Suspense, useEffect, useMemo, useState, useRef } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore/lite'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, Clock, ScanBarcode } from 'lucide-react'
+import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, ScanBarcode } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firestore'
 import GlassCard from '@/components/shared/GlassCard'
@@ -99,8 +99,8 @@ function MacroCard({ n }) {
 function MealTypePicker({ value, onChange }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-semibold">Meal</label>
-      <div className="flex gap-2">
+      <span className="text-sm font-semibold">Meal</span>
+      <div className="flex gap-2" role="group" aria-label="Meal">
         {MEAL_TYPES.map((m) => (
           <button key={m} onClick={() => onChange(m)} className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${value === m ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>{m}</button>
         ))}
@@ -126,11 +126,20 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const contentRef = useRef(null)
 
   useEffect(() => { if (open) loadEngine().then(setEngine).catch(() => setEngineError(true)) }, [open])
-  useEffect(() => {
-    if (open) { setMealType(defaultMeal || defaultMealForNow()); return }
-    setView('search'); setText(''); setSelected(null); setDraft(null); setOnline(null); setScanOpen(false)
-  }, [open, defaultMeal])
-  useEffect(() => { setOnline(null) }, [text])
+  // Reset the sheet when it opens (or the default meal changes), and clear the
+  // search when it closes, adjusting state during render.
+  const [prevOpenMeal, setPrevOpenMeal] = useState(null)
+  const openMealKey = `${open}:${defaultMeal || ''}`
+  if (prevOpenMeal !== openMealKey) {
+    setPrevOpenMeal(openMealKey)
+    if (open) setMealType(defaultMeal || defaultMealForNow())
+    else { setView('search'); setText(''); setSelected(null); setDraft(null); setOnline(null); setScanOpen(false) }
+  }
+  const [prevText, setPrevText] = useState(text)
+  if (text !== prevText) {
+    setPrevText(text)
+    setOnline(null)
+  }
 
   const { data: myFoods = [] } = useQuery({
     queryKey: ['custom-foods', userId],
@@ -156,7 +165,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  const recent = useMemo(() => (open && userId ? loadRecent(userId) : []), [open, userId, view])
+  const recent = useMemo(() => (open && userId ? loadRecent(userId) : []), [open, userId])
   useFocusTrap(contentRef, open, onClose)
 
   if (!open) return null
@@ -241,8 +250,8 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold">Amount (grams)</label>
-          <Input type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(Math.max(1, Number(e.target.value) || 1))} className="bg-secondary/40 border-0 w-32 text-center text-lg font-bold h-12" />
+          <label htmlFor="food-amount-grams" className="text-sm font-semibold">Amount (grams)</label>
+          <Input id="food-amount-grams" type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(Math.max(1, Number(e.target.value) || 1))} className="bg-secondary/40 border-0 w-32 text-center text-lg font-bold h-12" />
           <div className="flex flex-wrap gap-1.5">
             {chips.map(([label, g]) => (
               <button key={label + g} onClick={() => setGrams(g)} className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${grams === g ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>{label.length > 30 ? label.slice(0, 29) + '…' : label}{g !== 100 || label !== '100 g' ? ` · ${g}g` : ''}</button>
@@ -285,7 +294,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     body = (
       <div className="space-y-4">
         <button onClick={() => setView('search')} className="text-xs text-primary inline-flex items-center gap-0.5"><ChevronLeft className="w-3 h-3" />Back to search</button>
-        <Input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Food name (e.g. Mom's lasagna)" className="bg-secondary/40 border-0 h-11 font-semibold" autoFocus />
+        <Input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Food name (e.g. Mom's lasagna)" className="bg-secondary/40 border-0 h-11 font-semibold" />
         <p className="text-xs text-muted-foreground">Enter the numbers for ONE serving (check the label), and how many grams that serving is.</p>
         <div className="grid grid-cols-2 gap-3">{field('serving', 'Serving size (g)', '100')}{field('calories', 'Calories', '250')}{field('protein', 'Protein (g)', '20')}{field('carbs', 'Carbs (g)', '30')}{field('fat', 'Fat (g)', '8')}</div>
         <Button className="w-full h-12 rounded-xl text-base" onClick={saveCustom}>Save food</Button>
@@ -298,7 +307,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       <>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-20 bg-secondary/40 border-0 h-12" autoFocus />
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={draft ? 'Search an ingredient…' : 'Search any food… (try "banana" or "chicken and rice")'} className="pl-9 pr-20 bg-secondary/40 border-0 h-12" />
           {!engine && !engineError && <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
           <button
             type="button"
@@ -355,12 +364,11 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
 
   // Portal to <body> so the picker clears the app nav and page stacking contexts.
   const picker = createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 md:items-center md:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 md:items-center md:p-4" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <motion.div ref={contentRef} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}
         initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-lg bg-card border border-border rounded-t-3xl md:rounded-2xl focus:outline-none"
-        style={{ maxHeight: '90dvh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
-        onClick={event => event.stopPropagation()}>
+        style={{ maxHeight: '90dvh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {header}
         <div className="p-5 space-y-4">{body}</div>
       </motion.div>

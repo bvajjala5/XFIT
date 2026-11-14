@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CameraOff, Loader2, ScanBarcode, X } from 'lucide-react'
@@ -21,10 +21,10 @@ export default function BarcodeScanner({ open, onClose, onFood }) {
   useEffect(() => {
     if (!open) return undefined
     let cancelled = false
-    setPhase('starting')
-    setMessage('')
 
     const start = async () => {
+      setPhase('starting')
+      setMessage('')
       try {
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         if (cancelled) return

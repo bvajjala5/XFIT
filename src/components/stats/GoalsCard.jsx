@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import GlassCard from '@/components/shared/GlassCard';
 import { Input } from '@/components/ui/input';
@@ -18,15 +18,24 @@ export default function GoalsCard() {
   const [editingGoal, setEditingGoal] = useState(null);
   const [editGoalVal, setEditGoalVal] = useState('');
   const [goalData, setGoalData] = useState({});
+  const editRef = useRef(null);
 
   useEffect(() => {
+    if (editingGoal) editRef.current?.focus();
+  }, [editingGoal]);
+
+  // Hydrate the editable goals whenever the profile loads (adjust state during
+  // render so it lands before paint and without an extra effect pass).
+  const [prevUserData, setPrevUserData] = useState(null);
+  if (userData !== prevUserData) {
+    setPrevUserData(userData);
     if (userData) {
       const saved = userData.goals||{};
       const result = {};
       GOAL_CATEGORIES.forEach(cat=>cat.goals.forEach(g=>{result[g.id]=saved[g.id]||{current:g.default,history:[]}}));
       setGoalData(result);
     }
-  }, [userData]);
+  }
 
   const saveGoal = async (id, newVal) => {
     const prev = goalData[id]?.current;
@@ -109,7 +118,7 @@ export default function GoalsCard() {
                         {trend==='down'&&<ArrowDown className="w-3.5 h-3.5 text-red-400"/>}
                         {isEdit ? (
                           <div className="flex items-center gap-1">
-                            <Input value={editGoalVal} onChange={e=>setEditGoalVal(e.target.value)} className="w-20 h-7 text-xs bg-background border-border rounded-lg px-2" autoFocus/>
+                            <Input ref={editRef} value={editGoalVal} onChange={e=>setEditGoalVal(e.target.value)} className="w-20 h-7 text-xs bg-background border-border rounded-lg px-2"/>
                             <button onClick={()=>saveGoal(g.id,editGoalVal)} className="text-green-400 p-1"><Check className="w-3 h-3"/></button>
                             <button onClick={()=>setEditingGoal(null)} className="text-muted-foreground p-1"><X className="w-3 h-3"/></button>
                           </div>

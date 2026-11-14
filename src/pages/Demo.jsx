@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom'
 import { ArrowLeft, BarChart2, Check, Dumbbell, Home, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
@@ -181,6 +181,7 @@ export default function Demo() {
             <div
               role="tablist"
               aria-label="Demo screens"
+              tabIndex={-1}
               onKeyDown={handleTabKeyDown}
               className="mb-3 flex gap-1 rounded-2xl border border-border/50 bg-card/60 p-1 backdrop-blur-md"
             >

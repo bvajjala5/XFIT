@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { db } from '@/lib/firestore';
@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { localDateStr } from '@/lib/utils';
 import { toast } from 'sonner';
 import useFocusTrap from '@/hooks/useFocusTrap';
@@ -191,7 +191,11 @@ function HealthMetricCard({ metric, onClick }) {
 function HealthLogModal({ open, onClose, existing, onSave, saving }) {
   const [form, setForm] = useState({});
   const contentRef = useRef(null);
-  useEffect(() => { if (open) setForm(existing || {}); }, [open, existing]);
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setForm(existing || {});
+  }
   useEffect(() => {
     if (!open) return undefined;
     const onKey = event => {
@@ -207,12 +211,11 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
 
   // Portal to <body> so this sheet sits above the app nav instead of inside the page's stacking context.
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div ref={contentRef} role="dialog" aria-modal="true" aria-labelledby="health-log-title"
         className="w-full bg-card rounded-t-3xl border border-border focus:outline-none sm:max-w-md sm:rounded-2xl"
         style={{ maxHeight: '90dvh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}
-        tabIndex={-1}
-        onClick={event => event.stopPropagation()}>
+        tabIndex={-1}>
         
         {/* Sticky header */}
         <div className="sticky top-0 bg-card border-b border-border/50 px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
@@ -255,13 +258,13 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
             <TabsContent value="sleep" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Bedtime</label>
-                  <Input type="time" value={form.sleep_bedtime || ''} onChange={e => set('sleep_bedtime', e.target.value)}
+                  <label htmlFor="health-bedtime" className="text-xs font-medium text-muted-foreground">Bedtime</label>
+                  <Input id="health-bedtime" type="time" value={form.sleep_bedtime || ''} onChange={e => set('sleep_bedtime', e.target.value)}
                     className="bg-secondary/40 border-0 h-12" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Wake Time</label>
-                  <Input type="time" value={form.sleep_wake_time || ''} onChange={e => {
+                  <label htmlFor="health-wake-time" className="text-xs font-medium text-muted-foreground">Wake Time</label>
+                  <Input id="health-wake-time" type="time" value={form.sleep_wake_time || ''} onChange={e => {
                     const wake = e.target.value; set('sleep_wake_time', wake);
                     if (form.sleep_bedtime && wake) {
                       const [bH,bM] = form.sleep_bedtime.split(':').map(Number);
@@ -273,8 +276,8 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
                   }} className="bg-secondary/40 border-0 h-12" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Duration (hrs)</label>
-                  <Input type="number" step="0.5" value={num('sleep_duration_hours')} onChange={e => set('sleep_duration_hours', +e.target.value)}
+                  <label htmlFor="health-sleep-duration" className="text-xs font-medium text-muted-foreground">Duration (hrs)</label>
+                  <Input id="health-sleep-duration" type="number" step="0.5" value={num('sleep_duration_hours')} onChange={e => set('sleep_duration_hours', +e.target.value)}
                     placeholder="7.5" className="bg-secondary/40 border-0 h-12 text-base" />
                 </div>
               </div>
@@ -315,10 +318,12 @@ export default function HealthHub({ embedded = false } = {}) {
   const queryClient = useQueryClient();
 
   // Deep links such as /insights?tab=weight from Uttar AI (or a shared URL).
-  useEffect(() => {
+  const [prevParams, setPrevParams] = useState(searchParams);
+  if (searchParams !== prevParams) {
+    setPrevParams(searchParams);
     const next = searchParams.get('tab');
     setActiveTab(HEALTH_TABS.includes(next) ? next : 'overview');
-  }, [searchParams]);
+  }
 
   const selectTab = (key) => {
     setActiveTab(key);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Flame, MoreVertical, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ const label = (t = '') => t.replace(/_/g, ' ');
 export default function WorkoutCard({ workout, index = 0, isCustom = false, onDelete }) {
   const [showMenu, setShowMenu] = useState(false);
   let minutes = workout.duration;
-  try { const saved = localStorage.getItem('xfit_total_duration_' + workout.id); if (saved) minutes = saved; } catch (e) {}
+  try { const saved = localStorage.getItem('xfit_total_duration_' + workout.id); if (saved) minutes = saved; } catch {}
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.03, duration: 0.3 }} className="relative">
       <Link to={`/workouts/${workout.id}`}

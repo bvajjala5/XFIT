@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trophy, Flame, Clock, Dumbbell } from "lucide-react";
+import { X, Flame, Clock, Dumbbell } from "lucide-react";
 import useFocusTrap from '@/hooks/useFocusTrap';
 
 export default function WeeklyRecap({ logs = [], open, onDismiss }) {
@@ -9,13 +9,14 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
   const [show, setShow] = useState(controlled ? open : false);
   const contentRef = useRef(null);
 
-  // Controlled mode: sync with open prop
-  const dismiss = () => { setShow(false); onDismiss?.(); };
+  // Controlled mode: keep in sync with the open prop.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (controlled && open !== prevOpen) {
+    setPrevOpen(open);
+    setShow(open);
+  }
 
-  // Controlled mode: sync with open prop
-  useEffect(() => {
-    if (controlled) setShow(open);
-  }, [open, controlled]);
+  const dismiss = useCallback(() => { setShow(false); onDismiss?.(); }, [onDismiss]);
 
   useEffect(() => {
     if (!show) return undefined;
@@ -24,7 +25,7 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [show]);
+  }, [show, dismiss]);
 
   // Uncontrolled mode: self-manage (Sundays only, once per week)
   useEffect(() => {
@@ -39,10 +40,11 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
     }
   }, [controlled]);
 
+  const [now] = useState(() => Date.now());
   const weekLogs = logs.filter(l => {
     const d = l.completedAt?.toDate?.();
     if (!d) return false;
-    const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+    const diff = (now - d.getTime()) / (1000 * 60 * 60 * 24);
     return diff <= 7;
   });
 

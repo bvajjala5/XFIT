@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { db } from '@/lib/firestore';
 import { doc, getDoc } from 'firebase/firestore/lite';
@@ -62,7 +62,6 @@ export default function WorkoutDetail() {
   const isLockedIn = id === 'locked-in';
 
   const [customDurations, setCustomDurations] = useState({});
-  const [savedDurations, setSavedDurations] = useState({});
   const [justSaved, setJustSaved] = useState(false);
   const [formExercise, setFormExercise] = useState(null);
 
@@ -96,22 +95,24 @@ export default function WorkoutDetail() {
   });
   const isCustom = !!workout?.isCustom;
 
-  useEffect(() => {
-    if (!workout) return;
+  // Load the saved slider values once the workout resolves (and when navigating
+  // between workouts), adjusting state during render instead of in an effect.
+  const [loadedFor, setLoadedFor] = useState(null);
+  if (workout && loadedFor !== workout.id) {
+    setLoadedFor(workout.id);
+    let value = {};
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        const value = parsed && typeof parsed === 'object' ? parsed : {};
-        setCustomDurations(value);
-        setSavedDurations(value);
+        value = parsed && typeof parsed === 'object' ? parsed : {};
       } catch {
         localStorage.removeItem(storageKey);
-        setCustomDurations({});
-        setSavedDurations({});
+        value = {};
       }
     }
-  }, [workout?.id]);
+    setCustomDurations(value);
+  }
 
   const getDefaultDuration = (ex, i) =>
     isLockedIn ? getLockedInDefault(i) : getStandardDefault(ex);
@@ -119,7 +120,6 @@ export default function WorkoutDetail() {
   const getDuration = (ex, i) =>
     customDurations[i] !== undefined ? customDurations[i] : getDefaultDuration(ex, i);
 
-  const hasUnsavedChanges = JSON.stringify(customDurations) !== JSON.stringify(savedDurations);
 
   const handleSave = () => {
     localStorage.setItem(storageKey, JSON.stringify(customDurations));
@@ -129,7 +129,6 @@ export default function WorkoutDetail() {
       return s + d;
     }, 0) || 0;
     localStorage.setItem('xfit_total_duration_' + id, String(Math.round(totalSecs / 60)));
-    setSavedDurations({ ...customDurations });
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
   };
@@ -145,9 +144,6 @@ export default function WorkoutDetail() {
     setCustomDurations({});
     localStorage.removeItem(storageKey);
     localStorage.removeItem('xfit_total_duration_' + id);
-    // Set savedDurations to sentinel so hasUnsavedChanges becomes true
-    // and Save button appears so user can confirm the reset
-    setSavedDurations({ _reset: true });
   };
 
   const totalCustomMins = workout
@@ -241,13 +237,11 @@ export default function WorkoutDetail() {
                   </button>
                 )}
                 {/* Save button */}
-                {true && (
-                  <button onClick={handleSave}
-                    className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${justSaved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary hover:bg-primary/30'}`}>
-                    {justSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                    {justSaved ? 'Saved!' : 'Save'}
-                  </button>
-                )}
+                <button onClick={handleSave}
+                  className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${justSaved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary hover:bg-primary/30'}`}>
+                  {justSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+                  {justSaved ? 'Saved!' : 'Save'}
+                </button>
               </div>
             </div>
 

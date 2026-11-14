@@ -45,7 +45,7 @@ test('every override id exists in the dataset', () => {
   const src = fs.readFileSync(new URL('./exerciseLookup.js', import.meta.url), 'utf8');
   const have = new Set(data.exercises.map((e) => e[0]));
   const block = src.slice(src.indexOf('const OVERRIDES'), src.indexOf('const STOP'));
-  const ids = [...block.matchAll(/'([A-Za-z0-9_()\-]+)'/g)].map((x) => x[1]);
+  const ids = [...block.matchAll(/'([A-Za-z0-9_()-]+)'/g)].map((x) => x[1]);
   assert.ok(ids.length > 10);
   for (const id of ids) assert.ok(have.has(id), `override id missing from dataset: ${id}`);
 });

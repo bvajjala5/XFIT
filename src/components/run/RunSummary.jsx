@@ -1,9 +1,8 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
-import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, Share2, RotateCcw } from 'lucide-react'
+import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, RotateCcw } from 'lucide-react'
 import { db } from '@/lib/firestore'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore/lite'
 import { saveWorkoutLog } from '@/lib/workoutLogQueue'
@@ -16,7 +15,7 @@ function formatTime(s) {
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 }
 
-export default function RunSummary({ summary, userId, onClose }) {
+export default function RunSummary({ summary, userId }) {
   const navigate = useNavigate()
   const { distance = 0, elapsed = 0, steps = 0, calories = 0, pace = 0, splits = [] } = summary || {}
 

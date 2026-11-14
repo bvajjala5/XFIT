@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Check, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,14 +16,23 @@ export default function TermsModal({ userId, onDismiss }) {
   const contentRef = useRef(null);
   useFocusTrap(contentRef, show);
 
-  useEffect(() => {
-    if (!userId) return;
+  // Show the consent screen when neither this device nor the account has agreed.
+  // Adjust state during render so the first paint already has the right answer.
+  const [prevTermsKey, setPrevTermsKey] = useState(null);
+  const termsKey = `${userId || ''}:${userData?.terms_agreed_at ? 1 : 0}`;
+  if (userId && termsKey !== prevTermsKey) {
+    setPrevTermsKey(termsKey);
     const localAgreed = Boolean(localStorage.getItem("xfit_terms_agreed_" + userId));
     const accountAgreed = Boolean(userData?.terms_agreed_at);
     if (!localAgreed && !accountAgreed) setShow(true);
-    if (accountAgreed && localAgreed) return;
-    // Keep other devices in sync after acceptance.
-    if (accountAgreed) localStorage.setItem("xfit_terms_agreed_" + userId, String(accountAgreed));
+  }
+
+  // Keep other devices in sync after acceptance.
+  useEffect(() => {
+    if (!userId) return;
+    const accountAgreed = Boolean(userData?.terms_agreed_at);
+    const localAgreed = Boolean(localStorage.getItem("xfit_terms_agreed_" + userId));
+    if (accountAgreed && !localAgreed) localStorage.setItem("xfit_terms_agreed_" + userId, String(accountAgreed));
   }, [userId, userData?.terms_agreed_at]);
 
   const handleAgree = () => {

@@ -1,4 +1,3 @@
-import React from 'react';
 
 function getModelKey(name = '') {
   const n = name.toLowerCase();

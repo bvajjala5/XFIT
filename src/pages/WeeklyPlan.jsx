@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,6 +15,18 @@ import useFocusTrap from '@/hooks/useFocusTrap'
 const card = 'bg-card/75 backdrop-blur-md border border-border/50 rounded-3xl'
 const presetWeek = (p) => p.week.map((k) => (k ? TEMPLATES[k].label : 'Rest')).join(' · ')
 
+function PickerItem({ title, sub, onClick, icon }) {
+  return (
+    <button onClick={onClick} className="w-full flex items-center gap-3 px-1 py-3 min-h-[56px] text-left border-b border-border/30 last:border-0 active:bg-secondary/40">
+      {icon}
+      <div className="flex-1 min-w-0"><p className="font-medium truncate">{title}</p>{sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}</div>
+    </button>
+  )
+}
+function PickerHead({ children }) {
+  return <p className="text-xs uppercase tracking-widest text-muted-foreground mt-5 mb-1">{children}</p>
+}
+
 function PickerSheet({ day, custom, library, onPick, onClose }) {
   const contentRef = useRef(null);
   useEffect(() => {
@@ -26,13 +38,8 @@ function PickerSheet({ day, custom, library, onPick, onClose }) {
   }, [onClose]);
   useFocusTrap(contentRef, true, onClose);
 
-  const Item = ({ title, sub, onClick, icon }) => (
-    <button onClick={onClick} className="w-full flex items-center gap-3 px-1 py-3 min-h-[56px] text-left border-b border-border/30 last:border-0 active:bg-secondary/40">
-      {icon}
-      <div className="flex-1 min-w-0"><p className="font-medium truncate">{title}</p>{sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}</div>
-    </button>
-  )
-  const Head = ({ children }) => <p className="text-xs uppercase tracking-widest text-muted-foreground mt-5 mb-1">{children}</p>
+  const Item = PickerItem
+  const Head = PickerHead
   const mine = custom.filter((w) => !w.is_split_template)
   return createPortal(
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center" onClick={onClose}>
@@ -147,7 +154,7 @@ export default function WeeklyPlan() {
 
       <section aria-label="This week" className={`${card} overflow-hidden`}>
         <ul className="divide-y divide-border/40">
-          {DAYS.map(([key, short, full]) => {
+          {DAYS.map(([key, short]) => {
             const e = schedule[key]
             const isToday = key === today
             const rest = !e || e.is_rest_day

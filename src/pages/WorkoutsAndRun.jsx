@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import RunTracker from '@/components/run/RunTracker';
-import RunSummary from '@/components/run/RunSummary';
 import { db } from '@/lib/firestore';
 import { deleteDoc, doc } from 'firebase/firestore/lite';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Dumbbell, Footprints, Clock, Flame, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Dumbbell, Footprints, ChevronRight } from 'lucide-react';
 import WorkoutCard from '@/components/shared/WorkoutCard';
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache';
 import { Input } from '@/components/ui/input';
@@ -23,8 +20,6 @@ export default function WorkoutsAndRun() {
   const [type, setType] = useState('All');
   const [difficulty, setDifficulty] = useState('All')
   const [muscleGroup, setMuscleGroup] = useState('All');
-  const [runSummary, setRunSummary] = useState(null);
-  const [showingRun, setShowingRun] = useState(false);
 
   const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],

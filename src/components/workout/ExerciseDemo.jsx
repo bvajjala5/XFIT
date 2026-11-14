@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import MuscleMapModel from '@/components/workout/MuscleMapModel';
 import { createMatcher } from '@/lib/exerciseLookup';
@@ -18,11 +18,12 @@ const FRAME_MS = 900;   // time each pose is held before switching
 const prettyMuscle = (m) => m.replace(/\b\w/g, (c) => c.toUpperCase());
 
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(
+    () => window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false
+  );
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!mq) return;
-    setReduced(mq.matches);
     const on = (e) => setReduced(e.matches);
     mq.addEventListener?.('change', on);
     return () => mq.removeEventListener?.('change', on);
@@ -50,11 +51,21 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
   const current = matches?.[Math.min(alt, (matches?.length || 1) - 1)] || null;
 
   // New exercise → start from its first alternative and the demo tab.
-  useEffect(() => { setAlt(0); setImgFailed(false); }, [exerciseName]);
+  const [prevName, setPrevName] = useState(exerciseName);
+  if (exerciseName !== prevName) {
+    setPrevName(exerciseName);
+    setAlt(0);
+    setImgFailed(false);
+  }
 
   // Download both photos before animating, so we never flash a half-loaded frame.
+  const [prevCurrentId, setPrevCurrentId] = useState(current?.id);
+  if (current?.id !== prevCurrentId) {
+    setPrevCurrentId(current?.id);
+    setReady(false);
+    setFrame(0);
+  }
   useEffect(() => {
-    setReady(false); setFrame(0);
     if (!current) return;
     let cancelled = false;
     let loaded = 0;
@@ -65,7 +76,7 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
       img.onload = done; img.onerror = fail; img.src = url;
     });
     return () => { cancelled = true; };
-  }, [current?.id]);
+  }, [current]);
 
   // Flip between the two poses.
   useEffect(() => {
@@ -115,7 +126,18 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
         <Tabs.Content value="demo" className="outline-none">
           <div
             className="relative aspect-square rounded-2xl overflow-hidden bg-white/5"
-            onClick={() => reduced && setFrame((f) => 1 - f)}
+            {...(reduced ? {
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': 'Show next pose',
+              onClick: () => setFrame((f) => 1 - f),
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  setFrame((f) => 1 - f)
+                }
+              },
+            } : {})}
           >
             {!ready && <div className="absolute inset-0 animate-pulse bg-white/5" />}
             {current.frames.map((url, i) => (

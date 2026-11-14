@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/AuthContext'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore/lite'
 import { db } from '@/lib/firestore'
 import { calcStreak, localDateStr, getLocalWeekday } from '@/lib/utils'
@@ -8,7 +8,6 @@ import Onboarding from './Onboarding'
 import { Link } from 'react-router-dom'
 import { Sparkles, ChevronRight, Play, Circle, CheckCircle2, ClipboardCheck, Zap, Share2, ArrowUp, CalendarDays } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
 import TermsModal from '@/components/shared/TermsModal'
 import WeeklyRecap from '@/components/shared/WeeklyRecap'
 import NotificationSetup from '@/components/shared/NotificationSetup'
@@ -53,30 +52,25 @@ function computeNextPopup(after, uid) {
 export default function Home() {
   const { user, userDoc, refreshUserDoc } = useAuth()
   const openAI = useUttarAI()
-  const qc = useQueryClient()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [sharingId, setSharingId] = useState(null)
-  const [currentPopup, setCurrentPopup] = useState(null)
+  const [currentPopup, setCurrentPopup] = useState(() => (user?.uid ? computeNextPopup(null, user.uid) : null))
   const [manualCheckin, setManualCheckin] = useState(false)
   // Gentle one-time-per-day arrow pointing at the check-in button; fades after a few seconds.
-  const [showHint, setShowHint] = useState(false)
-  useEffect(() => {
-    if (!user?.uid) return
-    let t
+  const [showHint, setShowHint] = useState(() => {
+    if (!user?.uid) return false
     try {
       const today = localDateStr()
-      if (localStorage.getItem('xfit_checkin_date') === today || localStorage.getItem('xfit_checkin_hint_date') === today) return
-      localStorage.setItem('xfit_checkin_hint_date', today)
-      setShowHint(true)
-      t = setTimeout(() => setShowHint(false), 8000)
-    } catch (e) {}
-    return () => clearTimeout(t)
-  }, [user?.uid])
-
-  // Initialize state machine once user is known
+      return localStorage.getItem('xfit_checkin_date') !== today
+        && localStorage.getItem('xfit_checkin_hint_date') !== today
+    } catch { return false }
+  })
   useEffect(() => {
-    if (user?.uid) setCurrentPopup(computeNextPopup(null, user.uid));
-  }, [user?.uid]);
+    if (!showHint) return undefined
+    try { localStorage.setItem('xfit_checkin_hint_date', localDateStr()) } catch {}
+    const t = setTimeout(() => setShowHint(false), 8000)
+    return () => clearTimeout(t)
+  }, [showHint])
 
   const advancePopup = (from) => setCurrentPopup(computeNextPopup(from, user?.uid));
 
@@ -93,28 +87,36 @@ export default function Home() {
         await shareWorkout(user.uid, name, w)
         toast.success('Workout shared with the community')
       }
-    } catch (err) {
+    } catch {
       toast.error('Could not share workout')
     } finally {
       setSharingId(null)
     }
   }
 
-  useEffect(() => {
-    if (userDoc && userDoc.onboarding_complete === false) {
-      const agreed = localStorage.getItem('xfit_terms_agreed_' + user?.uid);
-      if (agreed) {
-        setShowOnboarding(true);
-      } else {
-        // Wait for terms to be agreed then show onboarding
-        const handler = () => setShowOnboarding(true);
-        window.addEventListener('terms_agreed', handler, { once: true });
-      }
+  // Show onboarding once the profile loads and the terms are agreed (either
+  // already, or when the user accepts them while this page is open).
+  const [prevUserDoc, setPrevUserDoc] = useState(null)
+  if (userDoc && userDoc !== prevUserDoc) {
+    setPrevUserDoc(userDoc)
+    if (userDoc.onboarding_complete === false && localStorage.getItem('xfit_terms_agreed_' + user?.uid)) {
+      setShowOnboarding(true)
     }
-    seedWorkouts(user?.uid)
-  }, [userDoc])
+  }
+  useEffect(() => {
+    if (!userDoc || userDoc.onboarding_complete !== false) return undefined
+    if (localStorage.getItem('xfit_terms_agreed_' + user?.uid)) return undefined
+    // Wait for terms to be agreed then show onboarding
+    const handler = () => setShowOnboarding(true)
+    window.addEventListener('terms_agreed', handler, { once: true })
+    return () => window.removeEventListener('terms_agreed', handler)
+  }, [userDoc, user?.uid])
 
-  const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
+  useEffect(() => {
+    seedWorkouts(user?.uid)
+  }, [user?.uid])
+
+  const { data: workouts = [] } = useQuery({
     queryKey: ['workouts'],
     queryFn: fetchWorkoutLibrary,
   })
@@ -132,11 +134,10 @@ export default function Home() {
 
   // Sessions completed offline stay visible here until they sync, so the
   // workout never appears to have vanished just because the write failed.
-  const [pendingLogs, setPendingLogs] = useState([])
+  const [pendingLogs, setPendingLogs] = useState(() => (user?.uid ? getPendingWorkoutLogs(user.uid) : []))
   useEffect(() => {
-    if (!user?.uid) { setPendingLogs([]); return }
+    if (!user?.uid) return undefined
     const refresh = () => setPendingLogs(getPendingWorkoutLogs(user.uid))
-    refresh()
     window.addEventListener(WORKOUT_LOGS_CHANGED, refresh)
     return () => window.removeEventListener(WORKOUT_LOGS_CHANGED, refresh)
   }, [user?.uid])
@@ -166,6 +167,8 @@ export default function Home() {
     enabled: !!user,
   })
 
+  const [now] = useState(() => Date.now())
+
   if (showOnboarding) {
     return <Onboarding onComplete={async () => { setShowOnboarding(false); await refreshUserDoc() }} />
   }
@@ -173,7 +176,7 @@ export default function Home() {
   const firstName = userDoc?.full_name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'there'
   const streak = calcStreak(logs)
 
-  const weekAgo = new Date(Date.now() - 7 * 86400000)
+  const weekAgo = new Date(now - 7 * 86400000)
   const weekLogs = logs.filter(l => {
     const d = new Date(l.completedAt?.toDate?.() || l.completedAt || 0)
     return d >= weekAgo
@@ -208,7 +211,7 @@ export default function Home() {
 
   const cardCls = 'bg-card/75 backdrop-blur-md border border-border/50 rounded-3xl'
   const fmt = (n) => n.toLocaleString()
-  const durationOf = (w) => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch (e) {} return w.duration }
+  const durationOf = (w) => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch {} return w.duration }
 
   return (
     <div className="relative z-10 max-w-2xl mx-auto pb-28 px-4">
@@ -303,7 +306,7 @@ export default function Home() {
                   <Link to={`/player/custom/${w.id}`} className="flex-1 min-w-0 flex items-center gap-3 pl-5 py-3 min-h-[56px]">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{w.name}</p>
-                      <p className="text-xs text-muted-foreground">Mine · {(() => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch (e) {} return w.duration || w.estimated_duration || '—' })()} min · {w.exercises?.length || 0} exercises</p>
+                      <p className="text-xs text-muted-foreground">Mine · {(() => { try { const v = localStorage.getItem('xfit_total_duration_' + w.id); if (v) return v } catch {} return w.duration || w.estimated_duration || '—' })()} min · {w.exercises?.length || 0} exercises</p>
                     </div>
                     <Play className="w-4 h-4 text-muted-foreground" />
                   </Link>

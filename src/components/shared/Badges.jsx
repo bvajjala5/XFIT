@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, Flame, Zap, Activity, Medal, Trophy, Footprints, Wrench, Moon, Sunrise } from 'lucide-react';
 
@@ -93,15 +93,14 @@ function storeBadges(set) {
 }
 
 export default function Badges({ logs = [], streak = 0 }) {
-  const ctx = { logs, streak };
-
   const { unlocked, newlyUnlocked } = useMemo(() => {
+    const ctx = { logs, streak };
     const prev = getStoredBadges();
     const unlocked = new Set();
     BADGE_DEFS.forEach(b => { if (b.check(ctx)) unlocked.add(b.id); });
     const newlyUnlocked = [...unlocked].filter(id => !prev.has(id));
     return { unlocked, newlyUnlocked };
-  }, [logs.length, streak]);
+  }, [logs, streak]);
 
   // Persist newly unlocked
   const persistedRef = useRef(false);

@@ -66,7 +66,7 @@ export async function isShared(workoutId) {
  * Import a shared workout into the current user's customWorkouts.
  */
 export async function importWorkout(userId, sharedWorkout) {
-  const { id, sharedBy, sharedByName, sharedAt, importCount, ...rest } = sharedWorkout;
+  const { id, sharedByName, ...rest } = sharedWorkout;
   const newRef = doc(db, 'users', userId, 'customWorkouts', `imported_${id}`);
   await setDoc(newRef, {
     ...rest,
@@ -78,5 +78,5 @@ export async function importWorkout(userId, sharedWorkout) {
   try {
     const { updateDoc, increment } = await import('firebase/firestore/lite');
     await updateDoc(doc(db, 'sharedWorkouts', id), { importCount: increment(1) });
-  } catch (_) {}
+  } catch {}
 }

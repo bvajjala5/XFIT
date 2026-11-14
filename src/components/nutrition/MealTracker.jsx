@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { db } from '@/lib/firestore'
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore/lite'
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore/lite'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/lib/AuthContext'
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,7 +15,7 @@ function getGoals() {
   try {
     const stored = localStorage.getItem('xfit_nutrition_goals');
     if (stored) return JSON.parse(stored);
-  } catch(e) {}
+  } catch {}
   return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 }
 
@@ -41,8 +40,6 @@ export default function MealTracker({ userId }) {
   useEffect(() => {
     const handler = () => setGOALS(getGoals())
     window.addEventListener('storage', handler)
-    // Also re-read on mount in case profile was updated
-    setGOALS(getGoals())
     return () => window.removeEventListener('storage', handler)
   }, [])
   const [modalOpen, setModalOpen] = useState(false)

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { useQueryClient } from '@tanstack/react-query'
@@ -234,6 +234,20 @@ function PlanCard({ message, saving, onApply, onOpen }) {
   )
 }
 
+function loadStoredMessages(storageKey) {
+  if (!storageKey) return []
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {
+    // Corrupt history should never block the coach.
+  }
+  return []
+}
+
 export default function UttarAI({ onClose }) {
   const { user, userData } = useAuth()
   const navigate = useNavigate()
@@ -242,8 +256,7 @@ export default function UttarAI({ onClose }) {
   const isSheet = typeof onClose === 'function'
 
   const storageKey = user ? `xfit_uttar_ai_v1_${user.uid}` : null
-  const [messages, setMessages] = useState([])
-  const [hydrated, setHydrated] = useState(false)
+  const [messages, setMessages] = useState(() => loadStoredMessages(storageKey))
   const [input, setInput] = useState('')
   const [mode, setMode] = useState('chat')
   const [busy, setBusy] = useState(false)
@@ -257,32 +270,16 @@ export default function UttarAI({ onClose }) {
     [location.pathname, location.search]
   )
 
-  // Load the conversation once per signed-in user, then persist changes. `hydrated` prevents the
-  // first (empty) render from overwriting stored history before it has been read back.
+  // Persist the conversation as it changes. The initial value was read
+  // synchronously above, so there is no empty-render clobber to guard against.
   useEffect(() => {
-    setHydrated(false)
-    setMessages([])
     if (!storageKey) return
-    try {
-      const raw = localStorage.getItem(storageKey)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) setMessages(parsed)
-      }
-    } catch {
-      // Corrupt history should never block the coach.
-    }
-    setHydrated(true)
-  }, [storageKey])
-
-  useEffect(() => {
-    if (!hydrated || !storageKey) return
     try {
       localStorage.setItem(storageKey, JSON.stringify(messages.slice(-40)))
     } catch {
       // Storage can be full or disabled; the chat still works for this session.
     }
-  }, [messages, hydrated, storageKey])
+  }, [messages, storageKey])
 
   useEffect(() => {
     const el = scrollRef.current
