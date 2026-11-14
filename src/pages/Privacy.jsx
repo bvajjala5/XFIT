@@ -8,7 +8,7 @@ export default function Privacy() {
         <button onClick={() => navigate(-1)} aria-label="Go back" className="p-2 rounded-xl hover:bg-secondary/50 transition-colors"><ArrowLeft className="w-5 h-5" aria-hidden="true" /></button>
         <h1 className="font-bold text-lg">Privacy Policy</h1>
       </div>
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-6 text-sm text-muted-foreground leading-relaxed">
+      <main className="max-w-2xl mx-auto px-6 py-8 space-y-6 text-sm text-muted-foreground leading-relaxed">
         <p className="text-xs">Last updated: June 2026</p>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">1. Introduction</h2><p>Welcome to Uttar Fitness, developed by Bhanu Vajjala. We are committed to protecting your personal information.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">2. Information We Collect</h2><ul className="list-disc pl-5 space-y-1"><li>Google account info (name, email, profile photo)</li><li>Workout logs, health metrics, nutrition data, fitness goals</li><li>Text you submit to the custom workout builder (sent to Google Gemini to generate your workout)</li><li>Leaderboard display name (if you opt in)</li></ul></section>
@@ -17,7 +17,7 @@ export default function Privacy() {
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">5. Third-Party Services</h2><ul className="list-disc pl-5 space-y-1"><li>Google Firebase</li><li>Google Gemini AI</li><li>Open Food Facts</li></ul></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">6. Data Deletion</h2><p>You can delete your account and all data at any time from the Profile tab.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">7. Contact</h2><p>Questions? Email us at xfit.support@gmail.com</p></section>
-      </div>
+      </main>
     </div>
   );
 }
