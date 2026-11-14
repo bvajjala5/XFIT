@@ -153,8 +153,8 @@ export default function Demo() {
             <span className="text-sm font-black tracking-tight">Uttar Fitness</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/" className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
-              <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Overview</span>
+            <Link to="/" aria-label="Back to the overview" className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">Overview</span>
             </Link>
             {user
               ? <Link to="/home" className="inline-flex h-10 items-center rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">Dashboard</Link>
