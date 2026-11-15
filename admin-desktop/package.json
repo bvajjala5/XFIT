@@ -1,0 +1,68 @@
+{
+  "name": "xfit-admin-desktop",
+  "productName": "Uttar Fitness Admin Control Hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone desktop admin console for the Uttar Fitness Firebase project.",
+  "author": "Bhanu Vajjala",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n vite,electron -c cyan,magenta \"vite\" \"wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "vite build",
+    "start": "npm run build && electron .",
+    "preview:web": "vite",
+    "dist": "npm run build && electron-builder",
+    "setup:app": "node scripts/install-credentials.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "build": {
+    "appId": "com.uttarfitness.admin",
+    "productName": "Uttar Fitness Admin Control Hub",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/.env",
+      "!**/.env.*",
+      "!**/*.map"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "target": [
+        "dmg",
+        "dir"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "firebase-admin": "^13.10.0",
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.5",
+    "cross-env": "^7.0.3",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.4.6",
+    "wait-on": "^8.0.5"
+  }
+}

@@ -20,6 +20,9 @@ export default [
       '.wrangler/**',
       'public/**',
       'coverage/**',
+      // The standalone Electron admin app is its own project with its own
+      // toolchain; it is linted (if at all) from inside admin-desktop.
+      'admin-desktop/**',
     ],
   },
 

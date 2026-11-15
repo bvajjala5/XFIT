@@ -1,0 +1,14 @@
+# dependencies & build output
+node_modules
+dist
+release
+
+# secrets — never commit these
+.env
+.env.*
+!.env.example
+service-account*.json
+*-adminsdk-*.json
+
+# OS junk
+.DS_Store
