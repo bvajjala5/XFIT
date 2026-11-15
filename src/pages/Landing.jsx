@@ -143,7 +143,7 @@ const FAQS = [
   },
   {
     q: 'Can I use it on my phone?',
-    a: 'Yes. XFIT is mobile-first and installs to your home screen, so it feels like a native app without an app-store download.',
+    a: 'Yes. Uttar Fitness is mobile-first and installs to your home screen, so it feels like a native app without an app-store download.',
   },
 ]
 
@@ -240,7 +240,7 @@ export default function Landing() {
 
           <nav aria-label="Landing navigation" className="flex items-center gap-1.5 sm:gap-2">
             <a href="#features" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 lg:inline-flex">
-              Why XFIT
+              Why Uttar Fitness
             </a>
             <a href="#screens" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 md:inline-flex">
               Inside the app
@@ -334,7 +334,7 @@ export default function Landing() {
         </section>
 
         {/* ── Trust strip ───────────────────────────────────────── */}
-        <section aria-label="Why start with XFIT" className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
+        <section aria-label="Why start with Uttar Fitness" className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
           <Reveal>
             <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border/50 bg-card/40 p-2 backdrop-blur-md sm:grid-cols-4 sm:divide-x sm:divide-border/40 sm:gap-0">
               {TRUST.map(({ icon: Icon, title, copy }) => (
@@ -392,7 +392,7 @@ export default function Landing() {
                   Plans bend. Streaks survive. You keep going.
                 </h2>
                 <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  Most fitness apps assume a perfect week. XFIT is built for the 6am session, the lunch-break workout, the travel week, and the days you&rsquo;d rather skip.
+                  Most fitness apps assume a perfect week. Uttar Fitness is built for the 6am session, the lunch-break workout, the travel week, and the days you&rsquo;d rather skip.
                 </p>
 
                 <div className="mt-7 space-y-3">
@@ -534,7 +534,7 @@ export default function Landing() {
                   Everything you might be wondering.
                 </h2>
                 <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  Still not sure? The demo is the fastest way to see whether XFIT fits the way you train.
+                  Still not sure? The demo is the fastest way to see whether Uttar Fitness fits the way you train.
                 </p>
                 <Link to="/demo" className="mt-5 inline-flex items-center gap-2 py-1.5 text-sm font-semibold text-[hsl(var(--accent-text))] transition-opacity hover:opacity-80">
                   Try the demo <ArrowRight className="h-4 w-4" />
@@ -641,7 +641,7 @@ export default function Landing() {
             </div>
           </div>
           <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
-            <a href="#features" className="py-1.5 transition-colors hover:text-foreground">Why XFIT</a>
+            <a href="#features" className="py-1.5 transition-colors hover:text-foreground">Why Uttar Fitness</a>
             <a href="#faq" className="py-1.5 transition-colors hover:text-foreground">FAQ</a>
             <Link to="/demo" className="py-1.5 transition-colors hover:text-foreground">Demo</Link>
             <Link to="/login" className="py-1.5 transition-colors hover:text-foreground">Sign in</Link>

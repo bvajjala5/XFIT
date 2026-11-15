@@ -1,4 +1,4 @@
-# Uttar Fitness (XFIT)
+# Uttar Fitness
 
 An AI-powered fitness tracker for workouts, weekly plans, nutrition, health
 metrics, and progress. The web app ships as an installable PWA and is built on

@@ -16,7 +16,7 @@ export default function Privacy() {
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">4. Data Storage</h2><p>Your data is stored securely using Google Firebase. We do not sell your personal data to third parties.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">5. Third-Party Services</h2><ul className="list-disc pl-5 space-y-1"><li>Google Firebase</li><li>Google Gemini AI</li><li>Open Food Facts</li></ul></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">6. Data Deletion</h2><p>You can delete your account and all data at any time from the Profile tab.</p></section>
-        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">7. Contact</h2><p>Questions? Email us at xfit.support@gmail.com</p></section>
+        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">7. Contact</h2><p>Questions? Email us at bhanu.charan.vajjala@gmail.com</p></section>
       </main>
     </div>
   );

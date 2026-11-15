@@ -15,7 +15,7 @@ export default function Terms() {
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">3. Health Disclaimer</h2><p>Uttar Fitness is not a medical application. Always consult a qualified healthcare professional before starting any fitness program.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">4. AI Features</h2><p>The custom workout builder uses Google Gemini AI to turn text you submit into a structured workout. Responses are AI-generated and should not replace professional medical or fitness advice.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">5. Support and Donations</h2><p>Donations are voluntary and non-refundable. All donations go directly to the developer to fund app improvements.</p></section>
-        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">6. Contact</h2><p>Questions? Email us at xfit.support@gmail.com</p></section>
+        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">6. Contact</h2><p>Questions? Email us at bhanu.charan.vajjala@gmail.com</p></section>
       </main>
     </div>
   );
