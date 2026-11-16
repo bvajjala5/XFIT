@@ -35,6 +35,12 @@ const SECONDARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rou
 
 const FEATURES = [
   {
+    icon: Dumbbell,
+    title: 'Workouts with a coach',
+    copy: 'Timers, sets, rest, and AI form cues stay on screen while you train — no counting reps in your head.',
+    detail: 'Guided player + form checks',
+  },
+  {
     icon: LayoutDashboard,
     title: 'Today, decided',
     copy: 'Your next workout, your streak, and your check-in on one calm screen. Open the app and know exactly what to do.',
@@ -45,12 +51,6 @@ const FEATURES = [
     title: 'Plans that bend',
     copy: 'Set a weekly split once, then move a day when life happens. The rest of the week reflows with you.',
     detail: 'Presets or build your own',
-  },
-  {
-    icon: Dumbbell,
-    title: 'Workouts with a coach',
-    copy: 'Timers, sets, rest, and AI form cues stay on screen while you train — no counting reps in your head.',
-    detail: 'Guided player + form checks',
   },
   {
     icon: Utensils,
@@ -275,7 +275,7 @@ export default function Landing() {
             </h1>
 
             <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Strength, cardio, food, sleep, and recovery live in one app. Uttar AI remembers your history, spots what&rsquo;s working, and keeps the next step obvious.
+              The reason to come back is the guided workout player — timers, sets, rest, and voice cues so you&rsquo;re not counting reps in your head. Food, sleep, recovery, and Uttar AI all feed into it.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -381,7 +381,7 @@ export default function Landing() {
                 Everything you need to keep going.
               </h2>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                Not another feed. Not another spreadsheet. A focused home for the work that actually moves you forward.
+                One core loop — train, recover, repeat. The guided workout player leads; everything else supports it instead of competing for attention.
               </p>
             </div>
           </Reveal>

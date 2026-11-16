@@ -396,6 +396,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
             open
             onClose={() => setScanOpen(false)}
             onFood={(food) => { setScanOpen(false); pick(food) }}
+            onSearchByName={() => { setView('search'); requestAnimationFrame(() => searchRef.current?.focus()) }}
           />
         </Suspense>
       )}

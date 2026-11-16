@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Check, Dumbbell, Home, RotateCcw, Sparkles, User } from 'lucide-react'
+import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Eye, Home, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
 import AnimatedBackground from '@/components/layout/AnimatedBackground'
 import BrandMark from '@/components/brand/BrandMark'
@@ -16,6 +16,7 @@ import {
   ProfileMock,
   WorkoutsMock,
 } from '@/components/landing/AppMocks'
+import { BarcodePreview, FormCheckPreview } from '@/components/landing/DemoPreviews'
 
 const TABS = [
   {
@@ -89,6 +90,7 @@ export default function Demo() {
   const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
   const [workoutMuscle, setWorkoutMuscle] = useState('All')
   const [theme, setTheme] = useState('midnight')
+  const [preview, setPreview] = useState(null) // null | 'barcode' | 'form-check'
   const tabRefs = useRef({})
 
   const active = TABS.find((item) => item.key === tab) ?? TABS[0]
@@ -139,6 +141,7 @@ export default function Demo() {
     setWorkoutDifficulty('All')
     setWorkoutMuscle('All')
     setTheme('midnight')
+    setPreview(null)
     toast.message('Demo reset. Nothing was saved.')
   }
 
@@ -176,6 +179,91 @@ export default function Demo() {
           </p>
         </div>
 
+        <section
+          aria-labelledby="demo-scope-title"
+          className="mt-10 rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md sm:p-6"
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What&rsquo;s interactive in this demo</p>
+          <h2 id="demo-scope-title" className="mt-2 text-lg font-black leading-tight sm:text-xl">Know what you can tap before you start</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            The one reason to come back is the guided workout player — timers, sets, rest, and optional voice cues so you&rsquo;re not counting reps in your head. Everything else feeds into it. Here&rsquo;s what this no-account demo covers.
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-4">
+              <p className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+                <Check className="h-4 w-4" /> Fully interactive
+              </p>
+              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                <li>Home — complete the sample workout</li>
+                <li>Insights — switch Health/Stats, log a day, change the range</li>
+                <li>Workouts — search and filter the library</li>
+                <li>Profile — switch the Midnight / Sunrise / Auto theme</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col rounded-2xl border border-border/50 bg-background/40 p-4">
+              <p className="flex items-center gap-2 text-sm font-bold">
+                <Eye className="h-4 w-4 text-primary" /> Read-only previews
+              </p>
+              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                <li>Barcode scanning — every state, including no match</li>
+                <li>Form check — what it can and can&rsquo;t detect</li>
+              </ul>
+              <div className="mt-3 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreview('barcode')}
+                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  Open barcode preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreview('form-check')}
+                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  Open form-check preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-background/40 p-4">
+              <p className="flex items-center gap-2 text-sm font-bold">
+                <Lock className="h-4 w-4 text-primary" /> Needs the signed-in app
+              </p>
+              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                <li>Real sessions and the guided player</li>
+                <li>GPS run tracking with maps</li>
+                <li>Uttar AI using your history</li>
+                <li>Saving your data, offline sync, and account persistence</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {preview ? (
+          <div className="mt-8">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Read-only preview</p>
+                <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">
+                  {preview === 'barcode' ? 'Barcode scanning' : 'Form check'}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to the demo
+              </button>
+            </div>
+            <div className="mt-5">
+              {preview === 'barcode' ? <BarcodePreview /> : <FormCheckPreview />}
+            </div>
+          </div>
+        ) : (
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
           <div>
             <div
@@ -296,6 +384,7 @@ export default function Demo() {
             </Link>
           </aside>
         </div>
+        )}
       </main>
 
       <footer className="relative z-10 border-t border-border/40 bg-background/50 backdrop-blur-md">

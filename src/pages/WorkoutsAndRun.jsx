@@ -4,7 +4,7 @@ import { db } from '@/lib/firestore';
 import { deleteDoc, doc } from 'firebase/firestore/lite';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, Dumbbell, Footprints, ChevronRight } from 'lucide-react';
+import { Search, Dumbbell, Footprints, ChevronRight, X } from 'lucide-react';
 import WorkoutCard from '@/components/shared/WorkoutCard';
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache';
 import { Input } from '@/components/ui/input';
@@ -59,6 +59,16 @@ export default function WorkoutsAndRun() {
     return matchSearch && matchType && matchDiff && matchMuscle;
   });
 
+  // Report matches rather than library size so the header and grid never
+  // disagree, and surface the active filters with a one-tap reset.
+  const activeFilters = [];
+  if (search.trim()) activeFilters.push({ key: 'search', label: `“${search.trim()}”`, clear: () => setSearch('') });
+  if (type !== 'All') activeFilters.push({ key: 'type', label: type, clear: () => setType('All') });
+  if (difficulty !== 'All') activeFilters.push({ key: 'difficulty', label: difficulty, clear: () => setDifficulty('All') });
+  if (muscleGroup !== 'All') activeFilters.push({ key: 'muscle', label: muscleGroup, clear: () => setMuscleGroup('All') });
+  const isFiltered = activeFilters.length > 0;
+  const resetFilters = () => { setSearch(''); setType('All'); setDifficulty('All'); setMuscleGroup('All'); };
+
   async function handleDeleteWorkout(workout) {
     if (!workout.isCustom) return;
 
@@ -84,7 +94,11 @@ export default function WorkoutsAndRun() {
             <Dumbbell className="w-6 h-6 text-primary"/> Workouts
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {isLoading ? 'Loading workouts…' : `${allWorkouts.length} workouts available`}
+            {isLoading
+              ? 'Loading workouts…'
+              : isFiltered
+                ? `${filtered.length} of ${allWorkouts.length} workouts match`
+                : `${allWorkouts.length} workouts available`}
           </p>
         </div>
         <div className="flex items-center">
@@ -100,6 +114,30 @@ export default function WorkoutsAndRun() {
         </Link>
         </div>
       </div>
+
+      {isFiltered && (
+        <div className="flex flex-wrap items-center gap-2">
+          {activeFilters.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={f.clear}
+              aria-label={`Remove filter ${f.label}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold capitalize text-primary transition-colors hover:bg-primary/20"
+            >
+              {f.label}
+              <X className="w-3 h-3" />
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Reset filters
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">

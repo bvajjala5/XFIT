@@ -317,6 +317,17 @@ export default function FormCheck({ open, onClose, exerciseName }) {
               <p className="text-center text-xs text-white/70">
                 Prop your phone up so your whole body stays in frame. The coach checks a few frames as you train.
               </p>
+
+              <div className="mx-auto w-full max-w-sm rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left">
+                <p className="text-[11px] font-semibold text-white/85">What the coach can and can&rsquo;t do</p>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-white/65">
+                  <span className="font-semibold text-white/80">It can flag</span> what the camera can see: body position, joint alignment, range of motion, stance, and obvious safety risks.
+                </p>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-white/65">
+                  <span className="font-semibold text-white/80">It can&rsquo;t</span> feel how heavy the weight is, judge tempo or effort, see through loose clothing or poor light, or diagnose pain or injury. Camera angle limits it, so treat each cue as a second pair of eyes — not a verdict. Not medical advice.
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={startLive}

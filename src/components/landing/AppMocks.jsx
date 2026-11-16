@@ -27,6 +27,7 @@ import {
   Trophy,
   User,
   Utensils,
+  X,
   Zap,
 } from 'lucide-react'
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark'
@@ -545,12 +546,18 @@ export function InsightsStatsMock({ view = 'stats', onView, range = '1M', onRang
 
 // ── Workouts ──────────────────────────────────────────────────────────────
 const WORKOUT_LIBRARY = [
-  { title: 'Core Crusher', type: 'strength', difficulty: 'intermediate', minutes: 12, calories: 220 },
-  { title: 'Athletic HIIT Cardio', type: 'hiit', difficulty: 'advanced', minutes: 30, calories: 420 },
-  { title: 'Full Body Strength', type: 'strength', difficulty: 'intermediate', minutes: 45, calories: 380 },
-  { title: 'Inferno HIIT Burn', type: 'hiit', difficulty: 'advanced', minutes: 25, calories: 360 },
-  { title: 'Mobility Reset', type: 'mobility', difficulty: 'beginner', minutes: 20, calories: 120 },
-  { title: 'Power Strength', type: 'strength', difficulty: 'advanced', minutes: 40, calories: 400 },
+  { title: 'Core Crusher', type: 'strength', difficulty: 'intermediate', minutes: 12, calories: 220, muscle: 'Core' },
+  { title: 'Athletic HIIT Cardio', type: 'hiit', difficulty: 'advanced', minutes: 30, calories: 420, muscle: 'Legs' },
+  { title: 'Full Body Strength', type: 'strength', difficulty: 'intermediate', minutes: 45, calories: 380, muscle: 'Chest' },
+  { title: 'Inferno HIIT Burn', type: 'hiit', difficulty: 'advanced', minutes: 25, calories: 360, muscle: 'Legs' },
+  { title: 'Mobility Reset', type: 'mobility', difficulty: 'beginner', minutes: 20, calories: 120, muscle: 'Back' },
+  { title: 'Power Strength', type: 'strength', difficulty: 'advanced', minutes: 40, calories: 400, muscle: 'Shoulders' },
+  { title: 'Sunrise Yoga Flow', type: 'yoga', difficulty: 'beginner', minutes: 18, calories: 110, muscle: 'Core' },
+  { title: 'Back & Biceps Builder', type: 'strength', difficulty: 'intermediate', minutes: 35, calories: 300, muscle: 'Back' },
+  { title: 'Sprint Interval Cardio', type: 'cardio', difficulty: 'advanced', minutes: 22, calories: 330, muscle: 'Legs' },
+  { title: 'Glute Activation', type: 'strength', difficulty: 'beginner', minutes: 15, calories: 140, muscle: 'Glutes' },
+  { title: 'Shoulder & Arm Sculpt', type: 'strength', difficulty: 'intermediate', minutes: 28, calories: 250, muscle: 'Arms' },
+  { title: 'Gentle Morning Stretch', type: 'mobility', difficulty: 'beginner', minutes: 12, calories: 70, muscle: 'Back' },
 ]
 
 const WORKOUT_TYPES = ['All', 'hiit', 'strength', 'cardio', 'yoga', 'mobility']
@@ -568,11 +575,24 @@ export function WorkoutsMock({
   onMuscle,
 }) {
   const filtered = WORKOUT_LIBRARY.filter((w) => {
-    const matchSearch = !search || w.title.toLowerCase().includes(search.toLowerCase())
+    const q = search.trim().toLowerCase()
+    const matchSearch = !q || w.title.toLowerCase().includes(q) || w.muscle.toLowerCase().includes(q)
     const matchType = type === 'All' || w.type === type
     const matchDiff = difficulty === 'All' || w.difficulty === difficulty
-    return matchSearch && matchType && matchDiff
+    const matchMuscle = muscle === 'All' || w.muscle === muscle
+    return matchSearch && matchType && matchDiff && matchMuscle
   })
+
+  const total = WORKOUT_LIBRARY.length
+  // The header reports matches, not library size, so the number always agrees
+  // with the grid. Active filters get their own chips and a one-tap reset.
+  const activeFilters = []
+  if (search.trim()) activeFilters.push({ key: 'search', label: `“${search.trim()}”`, clear: () => onSearch?.('') })
+  if (type !== 'All') activeFilters.push({ key: 'type', label: type, clear: () => onType?.('All') })
+  if (difficulty !== 'All') activeFilters.push({ key: 'difficulty', label: difficulty, clear: () => onDifficulty?.('All') })
+  if (muscle !== 'All') activeFilters.push({ key: 'muscle', label: muscle, clear: () => onMuscle?.('All') })
+  const isFiltered = activeFilters.length > 0
+  const resetFilters = () => { onSearch?.(''); onType?.('All'); onDifficulty?.('All'); onMuscle?.('All') }
 
   const chip = (label, active, onClick, key) => {
     const cls = `flex-shrink-0 rounded-full px-2.5 py-1 text-[9px] font-semibold capitalize transition-all ${
@@ -592,13 +612,39 @@ export function WorkoutsMock({
           <h1 className="flex items-center gap-1.5 text-lg font-black leading-tight">
             <Dumbbell className="h-4 w-4 text-primary" /> Workouts
           </h1>
-          <p className="text-[9px] text-muted-foreground">12 workouts available</p>
+          <p className="text-[9px] text-muted-foreground">
+            {isFiltered ? `${filtered.length} of ${total} workouts match` : `${total} workouts available`}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className="rounded-lg bg-secondary/60 px-2 py-1 text-[9px] font-semibold">Plan</span>
           <span className="rounded-lg bg-primary/10 px-2 py-1 text-[9px] font-semibold text-[hsl(var(--accent-text))]">+ Build</span>
         </div>
       </div>
+
+      {isFiltered && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {activeFilters.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={f.clear}
+              aria-label={`Remove filter ${f.label}`}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold capitalize text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/20"
+            >
+              {f.label}
+              <X className="h-2.5 w-2.5" />
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="rounded-full px-2 py-0.5 text-[9px] font-semibold text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            Reset
+          </button>
+        </div>
+      )}
 
       {onSearch ? (
         <label className="relative flex items-center">
