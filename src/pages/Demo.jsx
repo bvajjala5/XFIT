@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Eye, Home, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Eye, Home, Link2, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
 import AnimatedBackground from '@/components/layout/AnimatedBackground'
 import BrandMark from '@/components/brand/BrandMark'
@@ -90,8 +90,35 @@ export default function Demo() {
   const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
   const [workoutMuscle, setWorkoutMuscle] = useState('All')
   const [theme, setTheme] = useState('midnight')
-  const [preview, setPreview] = useState(null) // null | 'barcode' | 'form-check'
+  const [searchParams, setSearchParams] = useSearchParams()
   const tabRefs = useRef({})
+  const previewRef = useRef(null)
+
+  // The read-only previews are deep-linkable so a reviewer can be handed a
+  // direct URL: /demo?preview=barcode and /demo?preview=form-check open
+  // straight to that screen. The URL is the source of truth for this state.
+  const previewParam = searchParams.get('preview')
+  const preview = previewParam === 'barcode' || previewParam === 'form-check' ? previewParam : null
+  const setPreview = useCallback((next) => {
+    const params = new URLSearchParams(searchParams)
+    if (next) params.set('preview', next)
+    else params.delete('preview')
+    setSearchParams(params)
+  }, [searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (!preview) return
+    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [preview])
+
+  const copyPreviewLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success('Deep link copied.')
+    } catch {
+      toast.message(window.location.href)
+    }
+  }
 
   const active = TABS.find((item) => item.key === tab) ?? TABS[0]
   const ActiveIcon = active.icon
@@ -243,7 +270,7 @@ export default function Demo() {
         </section>
 
         {preview ? (
-          <div className="mt-8">
+          <div ref={previewRef} id="demo-preview" className="mt-8 scroll-mt-24">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Read-only preview</p>
@@ -251,13 +278,22 @@ export default function Demo() {
                   {preview === 'barcode' ? 'Barcode scanning' : 'Form check'}
                 </h2>
               </div>
-              <button
-                type="button"
-                onClick={() => setPreview(null)}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <ArrowLeft className="h-4 w-4" /> Back to the demo
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copyPreviewLink}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  <Link2 className="h-4 w-4" /> Copy link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to the demo
+                </button>
+              </div>
             </div>
             <div className="mt-5">
               {preview === 'barcode' ? <BarcodePreview /> : <FormCheckPreview />}
