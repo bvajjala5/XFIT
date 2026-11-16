@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, Users } from 'lucide-react'
+import emblemBlack from '../assets/emblem-black.png'
 
 const NAV = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -10,7 +11,7 @@ export default function Sidebar({ view, onView, projectId, configured }) {
     <aside className="sidebar">
       <div className="brand">
         <span className="brand-mark">
-          <ShieldCheck size={18} />
+          <img className="brand-emblem" src={emblemBlack} alt="" />
         </span>
         <div>
           <p className="brand-title">Uttar Fitness</p>

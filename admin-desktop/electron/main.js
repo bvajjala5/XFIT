@@ -6,6 +6,10 @@ import { registerIpc } from './ipc.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const devServerUrl = process.env.VITE_DEV_SERVER_URL
 
+// The admin app's icon is the inverted Uttar mark (black on white), so it is
+// easy to tell apart from the main app (white on black) in the dock/taskbar.
+const iconPath = path.join(__dirname, 'icon.png')
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1360,
@@ -13,6 +17,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 680,
     title: 'Uttar Fitness Admin Control Hub',
+    icon: iconPath,
     backgroundColor: '#0b0f17',
     show: false,
     webPreferences: {
@@ -41,6 +46,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // macOS ignores `BrowserWindow.icon`, so set the dock icon explicitly. This
+  // is what makes the inverted mark visible while running `npm start`.
+  if (process.platform === 'darwin' && app.dock) app.dock.setIcon(iconPath)
+
   registerIpc()
   createWindow()
 

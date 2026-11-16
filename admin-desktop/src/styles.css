@@ -107,9 +107,17 @@ code {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
-  box-shadow: 0 8px 18px -8px var(--accent);
+  /* Inverted on purpose: black mark on a white tile, the opposite of the
+     main app, so the two are easy to tell apart. */
+  color: #000;
+  background: #ffffff;
+  box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.55);
+}
+
+.brand-emblem {
+  display: block;
+  width: 24px;
+  height: auto;
 }
 
 .brand-title {

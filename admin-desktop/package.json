@@ -33,17 +33,20 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "identity": null,
+      "icon": "build/icon.png",
       "target": [
         "dmg",
         "dir"
       ]
     },
     "win": {
+      "icon": "build/icon.png",
       "target": [
         "nsis"
       ]
     },
     "linux": {
+      "icon": "build/icon.png",
       "target": [
         "AppImage"
       ]
