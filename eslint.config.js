@@ -63,6 +63,11 @@ export default [
       // Apostrophes in copy are fine.
       'react/no-unescaped-entities': 'off',
 
+      // React 18.3 predates `fetchPriority`, so the landing hero sets it in
+      // lowercase — React passes unknown lowercase attributes through verbatim
+      // (camelCase would emit a dev warning). Teach the rule about it.
+      'react/no-unknown-property': ['error', { ignore: ['fetchpriority'] }],
+
       // Allow intentionally-unused args/vars prefixed with an underscore.
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
 

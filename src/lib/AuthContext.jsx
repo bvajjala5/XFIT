@@ -1,8 +1,6 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import { auth, googleProvider } from './firebase';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { clearAppCaches } from './cache';
-import { clearSessionHint, markSessionHint } from './session';
+import { clearSessionHint, hasSessionHint, markSessionHint } from './session';
 
 // Load Firestore on demand. Anonymous visitors only need Auth to reach the login
 // screen, so the Firestore SDK stays out of the first-paint bundle.
@@ -14,14 +12,39 @@ async function getFirestoreApi() {
   return { db: firestore.db, ...sdk };
 }
 
+// Load the Auth SDK on demand too. A visitor reading the landing page never
+// downloads it, so `firebase/auth` stays off the critical path; it is fetched
+// the moment a session is restored, a protected route opens, or sign-in starts.
+let authApiPromise = null;
+function getAuthApi() {
+  if (!authApiPromise) {
+    authApiPromise = Promise.all([
+      import('./firebase'),
+      import('firebase/auth'),
+    ]).then(([firebase, sdk]) => ({
+      auth: firebase.auth,
+      googleProvider: firebase.googleProvider,
+      ...sdk,
+    }));
+  }
+  return authApiPromise;
+}
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Only block the first render on a session restore when this device may
+  // actually have a session. Anonymous visitors get `loading: false` right
+  // away, so the public landing page paints without waiting on Firebase.
+  const [loading, setLoading] = useState(() => hasSessionHint());
 
-  const fetchUserData = async (uid, firebaseUser = null) => {
+  const unsubRef = useRef(null);
+  const startedRef = useRef(false);
+  const cancelledRef = useRef(false);
+
+  const fetchUserData = useCallback(async (uid, firebaseUser = null) => {
     try {
       const { db, doc, getDoc, setDoc } = await getFirestoreApi();
       const ref = doc(db, 'users', uid);
@@ -39,25 +62,55 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('fetchUserData error:', err);
     }
-  };
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        markSessionHint();
-        setUser(firebaseUser);
-        await fetchUserData(firebaseUser.uid, firebaseUser);
-      } else {
-        clearSessionHint();
-        setUser(null);
-        setUserData(null);
-      }
-      setLoading(false);
-    });
-    return unsub;
   }, []);
 
+  // Attach the Firebase auth listener. Idempotent, and deliberately lazy:
+  // returning visitors (a session hint exists) restore immediately, while
+  // anonymous visitors only pay for the Auth SDK's network round trips when
+  // they sign in or open a protected route. This keeps the auth iframe and
+  // getProjectConfig calls off the landing page's critical path.
+  const ensureAuth = useCallback(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    setLoading(true);
+    getAuthApi()
+      .then(({ auth, onAuthStateChanged }) => {
+        if (cancelledRef.current || unsubRef.current) return;
+        unsubRef.current = onAuthStateChanged(auth, async (firebaseUser) => {
+          if (firebaseUser) {
+            markSessionHint();
+            setUser(firebaseUser);
+            await fetchUserData(firebaseUser.uid, firebaseUser);
+          } else {
+            clearSessionHint();
+            setUser(null);
+            setUserData(null);
+          }
+          setLoading(false);
+        });
+      })
+      .catch((err) => {
+        console.error('auth init error:', err);
+        setLoading(false);
+      });
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    if (hasSessionHint()) ensureAuth();
+    return () => {
+      cancelledRef.current = true;
+      unsubRef.current?.();
+      unsubRef.current = null;
+      startedRef.current = false;
+    };
+  }, [ensureAuth]);
+
   const signInWithGoogle = async () => {
+    const { auth, googleProvider, signInWithPopup } = await getAuthApi();
+    // Start tracking auth before the popup so the resolved session lands in
+    // context (and localStorage gets the hint) even on a first-time visit.
+    ensureAuth();
     const result = await signInWithPopup(auth, googleProvider);
     const { user: u } = result;
     markSessionHint();
@@ -84,6 +137,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    const { auth, signOut } = await getAuthApi();
     await clearAppCaches();
     await signOut(auth);
     clearSessionHint();
@@ -103,7 +157,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, signInWithGoogle, logout, updateUserData, refreshUserData,
+    <AuthContext.Provider value={{ user, userData, loading, ensureAuth, signInWithGoogle, logout, updateUserData, refreshUserData,
       // Aliases used by pages
       userDoc: userData, updateUserDoc: updateUserData, refreshUserDoc: refreshUserData,
     }}>

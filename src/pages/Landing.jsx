@@ -216,7 +216,7 @@ function MobileCta() {
 }
 
 export default function Landing() {
-  useAutoTheme()
+  const heroTheme = useAutoTheme()
   usePageMeta({
     title: 'Uttar Fitness — The all-in-one fitness app',
     description: 'The all-in-one fitness app for workouts, weekly plans, nutrition, sleep, health metrics, and AI coaching. Try the interactive demo free — no account needed.',
@@ -308,26 +308,46 @@ export default function Landing() {
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
               <figure className="relative overflow-hidden rounded-[2rem] border border-border/50 shadow-[0_35px_90px_-35px_rgba(0,0,0,0.75)]">
-                {/* Matched light/dark posters, shown at their full uncropped aspect
-                    ratio. The warm artwork shows on the sunrise theme and the dark
-                    artwork on the midnight theme; only the visible one loads. */}
-                <img
-                  src="/hero-sunrise.jpg"
-                  alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
-                  width={820}
-                  height={1099}
-                  decoding="async"
-                  className="hero-art hero-art--sunrise block h-auto w-full"
-                />
-                <img
-                  src="/hero-midnight.jpg"
-                  alt="Uttar Fitness in midnight mode on a phone held in one hand."
-                  width={820}
-                  height={794}
-                  loading="lazy"
-                  decoding="async"
-                  className="hero-art hero-art--midnight h-auto w-full"
-                />
+                {/* Matched light/dark posters at their full uncropped aspect ratio.
+                    Only the poster for the active theme is mounted, so the other
+                    artwork is never requested. Each is a responsive WebP (with the
+                    JPEG fallback) and is the landing LCP, so it loads eagerly at
+                    high priority — matching the theme-aware preload in index.html. */}
+                {heroTheme === 'midnight' ? (
+                  <picture className="block">
+                    <source
+                      type="image/webp"
+                      srcSet="/hero-midnight-480.webp 480w, /hero-midnight-640.webp 640w, /hero-midnight-820.webp 820w"
+                      sizes="(max-width: 380px) 88vw, 340px"
+                    />
+                    <img
+                      src="/hero-midnight.jpg"
+                      alt="Uttar Fitness in midnight mode on a phone held in one hand."
+                      width={820}
+                      height={794}
+                      decoding="async"
+                      fetchpriority="high"
+                      className="block h-auto w-full"
+                    />
+                  </picture>
+                ) : (
+                  <picture className="block">
+                    <source
+                      type="image/webp"
+                      srcSet="/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w"
+                      sizes="(max-width: 380px) 88vw, 340px"
+                    />
+                    <img
+                      src="/hero-sunrise.jpg"
+                      alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
+                      width={820}
+                      height={1099}
+                      decoding="async"
+                      fetchpriority="high"
+                      className="block h-auto w-full"
+                    />
+                  </picture>
+                )}
               </figure>
             </motion.div>
           </div>

@@ -20,10 +20,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/inter-latin-var.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preconnect" href="https://xfit-723dd.firebaseapp.com" crossorigin />
-    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
     <link rel="ard" href="/.well-known/ard.json" />
 
     <meta name="apple-mobile-web-app-title" content="Uttar Fitness" />
@@ -54,6 +50,23 @@
   root.setAttribute('data-theme-mode', mode);
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', resolved === 'sunrise' ? '#fbf6ef' : '#20212d');
+
+  // Start the default-theme hero poster before React mounts. It is the likely
+  // LCP element, and without this hint the browser would not discover it until
+  // the app has rendered — a wasted round trip on slow connections. The hint
+  // matches the <picture> srcset in the landing hero exactly, and is only added
+  // on the landing route so other pages don't preload an image they never use.
+  if (location.pathname === '/') {
+    var hero = resolved === 'midnight' ? 'midnight' : 'sunrise';
+    var preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = 'image';
+    preload.type = 'image/webp';
+    preload.setAttribute('fetchpriority', 'high');
+    preload.setAttribute('imagesrcset', '/hero-' + hero + '-480.webp 480w, /hero-' + hero + '-640.webp 640w, /hero-' + hero + '-820.webp 820w');
+    preload.setAttribute('imagesizes', '(max-width: 380px) 88vw, 340px');
+    document.head.appendChild(preload);
+  }
 })();
     </script>
 

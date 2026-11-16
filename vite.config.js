@@ -85,6 +85,14 @@ export default defineConfig({
           if (/\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) {
             return 'vendor-react';
           }
+          // clsx/tailwind-merge are shared by the app shell (via `cn()`) and by
+          // recharts (which depends on clsx). Left in the default chunk Rollup
+          // merges them into vendor-charts, which then becomes a static import
+          // of the entry and drags the whole ~380 KB charts bundle onto the
+          // landing page. Give them their own tiny eager chunk instead.
+          if (id.includes('/node_modules/clsx/') || id.includes('/node_modules/tailwind-merge/')) {
+            return 'vendor-utils';
+          }
           if (id.includes('/node_modules/recharts/') || id.includes('/node_modules/d3-') || id.includes('/node_modules/victory-vendor/')) {
             return 'vendor-charts';
           }

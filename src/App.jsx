@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import AppLayout from '@/components/layout/AppLayout'
@@ -36,7 +36,10 @@ function LoadingScreen() {
 }
 
 function AuthGuard({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, ensureAuth } = useAuth()
+  // A protected route is the first auth-needing screen for a visitor without a
+  // session hint; start the restore here rather than on the landing page.
+  useEffect(() => { ensureAuth() }, [ensureAuth])
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   return children
