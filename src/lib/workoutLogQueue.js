@@ -100,10 +100,6 @@ export function getPendingWorkoutLogs(uid) {
   return readQueue().filter((entry) => entry.uid === uid)
 }
 
-export function getPendingWorkoutLogCount(uid) {
-  return getPendingWorkoutLogs(uid).length
-}
-
 /**
  * Save a finished workout. If the network is down (or the write fails/times
  * out), the session is queued locally instead of being lost.

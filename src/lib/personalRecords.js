@@ -1,5 +1,5 @@
 import { db } from '@/lib/firestore';
-import { doc, getDoc, runTransaction } from 'firebase/firestore/lite';
+import { doc, runTransaction } from 'firebase/firestore/lite';
 
 export async function savePR(uid, exercise, value, unit, notes = '') {
   const ref = doc(db, 'users', uid, 'personalRecords', 'records');
@@ -23,10 +23,4 @@ export async function savePR(uid, exercise, value, unit, notes = '') {
       [exercise]: [newRecord, ...existing].slice(0, 10),
     });
   });
-}
-
-export async function getPRs(uid) {
-  const ref = doc(db, 'users', uid, 'personalRecords', 'records');
-  const snap = await getDoc(ref);
-  return snap.exists() ? snap.data() : {};
 }

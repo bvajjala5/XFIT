@@ -56,8 +56,3 @@ export function setThemeMode(mode) {
   }
   return applyResolvedTheme(resolveTheme(mode))
 }
-
-/** @deprecated Use setThemeMode. Kept for older call sites. */
-export function applyTheme(mode) {
-  return setThemeMode(mode)
-}

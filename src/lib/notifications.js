@@ -92,27 +92,3 @@ export async function registerPushNotifications(userId) {
     return null;
   }
 }
-
-/**
- * Subscribe to foreground messages. Returns an unsubscribe function.
- * Caller is responsible for displaying the notification (browsers suppress
- * service-worker notifications when the page is in the foreground).
- */
-export function onForegroundMessage(callback) {
-  let unsub = () => {};
-  let cancelled = false;
-
-  import('firebase/messaging')
-    .then(async ({ getMessaging, isSupported, onMessage }) => {
-      if (cancelled) return;
-      const supported = await isSupported().catch(() => false);
-      if (!supported || cancelled) return;
-      unsub = onMessage(getMessaging(app), callback) || (() => {});
-    })
-    .catch(() => {});
-
-  return () => {
-    cancelled = true;
-    unsub();
-  };
-}
