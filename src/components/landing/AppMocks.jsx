@@ -307,7 +307,7 @@ const INSIGHTS_VIEWS = [
 function InsightsHeader({ view, onView }) {
   return (
     <div className="px-3.5 pt-3">
-      <h1 className="text-lg font-bold leading-tight">Insights</h1>
+      <div className="text-lg font-bold leading-tight">Insights</div>
       <p className="text-[10px] text-muted-foreground">Your health and training, in one place.</p>
 
       <div
@@ -609,9 +609,9 @@ export function WorkoutsMock({
     <div className="space-y-3 p-3.5">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h1 className="flex items-center gap-1.5 text-lg font-black leading-tight">
+          <div className="flex items-center gap-1.5 text-lg font-black leading-tight">
             <Dumbbell className="h-4 w-4 text-primary" /> Workouts
-          </h1>
+          </div>
           <p className="text-[9px] text-muted-foreground">
             {isFiltered ? `${filtered.length} of ${total} workouts match` : `${total} workouts available`}
           </p>
