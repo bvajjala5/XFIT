@@ -209,7 +209,7 @@ export function BarcodePreview() {
       <div className="mt-5 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
         <BarcodeScreen state={state} />
         <div className="rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">State preview</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">State preview</p>
           <h3 className="mt-2 text-lg font-black leading-tight">{active.title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{active.body}</p>
           <p className="mt-4 flex items-start gap-2 rounded-2xl border border-border/50 bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
@@ -258,7 +258,7 @@ export function FormCheckPreview() {
 
       <div className="space-y-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What it checks</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What it checks</p>
           <h3 className="mt-2 text-lg font-black leading-tight">A second pair of eyes — not a verdict</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             The form checker looks at one camera frame at a time and calls out the single most useful correction. It is deliberately honest about its limits so its feedback is never taken as definitive.
@@ -267,7 +267,7 @@ export function FormCheckPreview() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-3xl border border-emerald-400/25 bg-emerald-400/5 p-4">
-            <p className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+            <p className="flex items-center gap-2 text-sm font-bold text-[hsl(var(--success-text))]">
               <Check className="h-4 w-4" /> It can reliably flag
             </p>
             <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">

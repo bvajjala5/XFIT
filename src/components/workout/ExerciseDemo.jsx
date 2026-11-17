@@ -183,7 +183,7 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
         ))}
       </div>
 
-      <p className="text-[10px] text-center text-muted-foreground/60">
+      <p className="text-[10px] text-center text-muted-foreground">
         Showing: {current.name} · Photos:{' '}
         <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener noreferrer" className="underline">Free Exercise DB</a>
       </p>

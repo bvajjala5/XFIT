@@ -51,6 +51,8 @@
     --accent-text: 217 91% 72%;
     --accent-solid: 217 91% 48%;
     --warn-text: 38 95% 65%;
+    /* Positive/success text (light on dark). */
+    --success-text: 158 64% 70%;
     /* Brand mark: white barbell on a pitch-black tile. */
     --brand-tile: 0 0% 0%;
     --brand-mark: 0 0% 100%;
@@ -90,6 +92,9 @@
     --accent-text: 22 90% 36%;
     --accent-solid: 22 90% 38%;
     --warn-text: 26 90% 30%;
+    /* Sunrise needs a deep emerald for positive text; emerald-300 only
+       reaches ~1.4:1 on the light success card. */
+    --success-text: 160 84% 26%;
     /* Invert the brand mark on light backgrounds: black barbell on white. */
     --brand-tile: 0 0% 100%;
     --brand-mark: 0 0% 0%;

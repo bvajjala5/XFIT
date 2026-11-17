@@ -229,7 +229,7 @@ export default function Home() {
         </div>
         <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mb-1">
           <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote.text}”</blockquote>
-          {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground/70 mt-1">{quote.author}</figcaption>}
+          {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground mt-1">{quote.author}</figcaption>}
         </figure>
       </motion.header>
 

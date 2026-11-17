@@ -786,7 +786,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             </div>
             <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
             <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
-            {currentExercise?.instructions && <p className="text-xs text-muted-foreground/70 max-w-xs mx-auto">{currentExercise.instructions}</p>}
+            {currentExercise?.instructions && <p className="text-xs text-muted-foreground max-w-xs mx-auto">{currentExercise.instructions}</p>}
             <WorkoutDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
             <button
               type="button"

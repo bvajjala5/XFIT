@@ -144,7 +144,7 @@ export default function TermsModal({ userId, onDismiss }) {
               {canAgree ? "Agree & continue" : "Agree to continue"}
             </button>
 
-            <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5" /> Your data stays private and secure.
             </p>
           </motion.div>

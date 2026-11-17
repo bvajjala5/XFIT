@@ -171,7 +171,7 @@ function WorkoutCard({ message, saving, onSave, onStart }) {
                 {ex.duration_seconds ? ` · ${ex.duration_seconds}s` : ''}
                 {` · rest ${ex.rest_seconds}s`}
               </p>
-              {ex.notes && <p className="mt-0.5 text-[11px] text-muted-foreground/80">{ex.notes}</p>}
+              {ex.notes && <p className="mt-0.5 text-[11px] text-muted-foreground">{ex.notes}</p>}
             </div>
           </li>
         ))}

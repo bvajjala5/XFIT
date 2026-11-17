@@ -42,7 +42,7 @@ const CARD = 'rounded-2xl border border-border/50 bg-card/80'
 function StatusBar() {
   return (
     <div
-      className="flex items-center justify-between px-4 pb-0.5 pt-2.5 text-[9px] font-semibold tracking-wide text-muted-foreground/80"
+      className="flex items-center justify-between px-4 pb-0.5 pt-2.5 text-[9px] font-semibold tracking-wide text-muted-foreground"
       aria-hidden="true"
     >
       <span>10:41</span>
@@ -192,7 +192,7 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
           <blockquote className="text-[8px] italic leading-snug text-muted-foreground">
             &ldquo;Take care of your body. It&rsquo;s the only place you have to live.&rdquo;
           </blockquote>
-          <figcaption className="mt-0.5 text-[8px] text-muted-foreground/70">Jim Rohn</figcaption>
+          <figcaption className="mt-0.5 text-[8px] text-muted-foreground">Jim Rohn</figcaption>
         </figure>
       </div>
 

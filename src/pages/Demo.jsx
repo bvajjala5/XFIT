@@ -210,7 +210,7 @@ export default function Demo() {
           aria-labelledby="demo-scope-title"
           className="mt-10 rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md sm:p-6"
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What&rsquo;s interactive in this demo</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What&rsquo;s interactive in this demo</p>
           <h2 id="demo-scope-title" className="mt-2 text-lg font-black leading-tight sm:text-xl">Know what you can tap before you start</h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
             The one reason to come back is the guided workout player — timers, sets, rest, and optional voice cues so you&rsquo;re not counting reps in your head. Everything else feeds into it. Here&rsquo;s what this no-account demo covers.
@@ -218,7 +218,7 @@ export default function Demo() {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+              <p className="flex items-center gap-2 text-sm font-bold text-[hsl(var(--success-text))]">
                 <Check className="h-4 w-4" /> Fully interactive
               </p>
               <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -273,7 +273,7 @@ export default function Demo() {
           <div ref={previewRef} id="demo-preview" className="mt-8 scroll-mt-24">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Read-only preview</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Read-only preview</p>
                 <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">
                   {preview === 'barcode' ? 'Barcode scanning' : 'Form check'}
                 </h2>
@@ -386,7 +386,7 @@ export default function Demo() {
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <ActiveIcon className="h-5 w-5" />
             </span>
-            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">What you&rsquo;re seeing</p>
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What you&rsquo;re seeing</p>
             <h2 className="mt-2 text-lg font-black leading-tight">{active.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{active.copy}</p>
 
