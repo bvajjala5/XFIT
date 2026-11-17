@@ -138,10 +138,13 @@ function StarField() {
     resize();
     initStars();
     draw();
-    window.addEventListener('resize', () => { resize(); initStars(); });
+    // Keep a stable reference so the listener can actually be removed on
+    // unmount (removing `resize` here never matched the anonymous handler).
+    const onResize = () => { resize(); initStars(); };
+    window.addEventListener('resize', onResize);
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 

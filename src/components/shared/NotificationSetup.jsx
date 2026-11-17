@@ -23,11 +23,13 @@ export default function NotificationSetup({ userId, open, onDismiss }) {
 
   // Uncontrolled mode: self-manage with 3 s delay
   useEffect(() => {
-    if (controlled || !userId) return;
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'default') return;
+    if (controlled || !userId) return undefined;
+    if (!('Notification' in window)) return undefined;
+    if (Notification.permission !== 'default') return undefined;
     const dismissed = localStorage.getItem('xfit_notif_dismissed_' + userId);
-    if (!dismissed) setTimeout(() => setShow(true), 3000);
+    if (dismissed) return undefined;
+    const t = setTimeout(() => setShow(true), 3000);
+    return () => clearTimeout(t);
   }, [userId, controlled]);
 
   async function handleEnable() {

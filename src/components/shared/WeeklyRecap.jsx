@@ -29,15 +29,15 @@ export default function WeeklyRecap({ logs = [], open, onDismiss }) {
 
   // Uncontrolled mode: self-manage (Sundays only, once per week)
   useEffect(() => {
-    if (controlled) return;
+    if (controlled) return undefined;
     const today = new Date();
-    if (today.getDay() !== 0) return;
+    if (today.getDay() !== 0) return undefined;
     const lastShown = localStorage.getItem("xfit_recap_shown");
     const thisWeek = `${today.getFullYear()}-W${Math.ceil(today.getDate()/7)}`;
-    if (lastShown !== thisWeek) {
-      setTimeout(() => setShow(true), 2000);
-      localStorage.setItem("xfit_recap_shown", thisWeek);
-    }
+    if (lastShown === thisWeek) return undefined;
+    localStorage.setItem("xfit_recap_shown", thisWeek);
+    const t = setTimeout(() => setShow(true), 2000);
+    return () => clearTimeout(t);
   }, [controlled]);
 
   const [now] = useState(() => Date.now());
