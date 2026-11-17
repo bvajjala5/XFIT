@@ -35,7 +35,9 @@
     --secondary: 222 20% 16%;
     --secondary-foreground: 210 15% 80%;
     --muted: 222 20% 16%;
-    --muted-foreground: 210 12% 52%;
+    /* 58% clears 4.5:1 on the card and on the lighter secondary-tinted
+       surfaces the demo mock uses; 52% only reached ~4.4:1. */
+    --muted-foreground: 210 12% 58%;
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 58%;
@@ -101,12 +103,6 @@
     /* Sunrise wallpaper is warm orange, so the AI glow matches the sun. */
     --brand-glow: 22 95% 52%;
     --radius: 0.875rem;
-  }
-
-  /* On the night wallpaper the landing's small secondary labels sit on tinted
-     cards, so lift them slightly above the app-wide grey. */
-  .theme-midnight .landing-surface {
-    --muted-foreground: 210 12% 58%;
   }
 
   /* The landing hero ships as a matched light/dark poster pair. Only the poster
