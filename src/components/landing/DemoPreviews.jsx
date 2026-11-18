@@ -1,24 +1,38 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+  Activity,
   AlertTriangle,
+  ArrowUpRight,
+  CalendarDays,
   Camera,
   CameraOff,
   Check,
   CheckCircle2,
+  Clock,
+  Compass,
+  Dumbbell,
+  Flame,
   Keyboard,
+  Loader2,
+  MessageCircle,
   Play,
   RotateCcw,
   ScanBarcode,
   Search,
+  Send,
   ShieldCheck,
+  Sparkles,
+  Utensils,
   X,
 } from 'lucide-react'
 
 /**
- * Read-only previews of the two camera features. Neither can run in the
- * no-account demo (they need a signed-in session and a camera), so these show
- * exactly what each screen looks like and what it does — including the states
- * people asked to see and the limits of form-check feedback.
+ * Read-only previews of the app's premium features: barcode scanning, form
+ * check, and Uttar AI. None of them can run in the no-account demo — the
+ * camera features need a signed-in session and a camera, and Uttar AI needs an
+ * API key — so these show exactly what each screen looks like and what it does.
+ * The AI preview answers a fixed set of preloaded questions offline and never
+ * calls the AI proxy.
  */
 
 function PreviewPhone({ children, label }) {
@@ -293,6 +307,372 @@ export function FormCheckPreview() {
         <p className="flex items-start gap-2 rounded-2xl border border-border/50 bg-card/60 p-3.5 text-xs leading-relaxed text-muted-foreground backdrop-blur-md">
           <Camera className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           The form checker needs a signed-in session and camera access, so it is outside the no-account demo. Treat every cue as guidance and stop if something hurts.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Uttar AI ──────────────────────────────────────────────────────────────
+// The demo has no account and no API key, so this preview answers a fixed set
+// of preloaded questions with canned replies. Nothing here calls the AI proxy.
+const AI_QUESTIONS = [
+  {
+    id: 'workout',
+    icon: Dumbbell,
+    title: 'Build a workout',
+    prompt: '20-minute full-body workout, no equipment, beginner friendly',
+    answer: {
+      kind: 'workout',
+      workout: {
+        name: '20-Minute Full-Body',
+        estimated_duration: 20,
+        estimated_calories: 190,
+        difficulty: 'beginner',
+        exercises: [
+          { name: 'Bodyweight squat', sets: 3, reps: '12', rest_seconds: 45, notes: 'Chest up, sit back' },
+          { name: 'Incline push-up', sets: 3, reps: '10', rest_seconds: 45, notes: 'Hands on a bench' },
+          { name: 'Reverse lunge', sets: 3, reps: '10 per leg', rest_seconds: 45, notes: 'Step back, tall torso' },
+          { name: 'Glute bridge', sets: 3, reps: '15', rest_seconds: 40, notes: 'Squeeze at the top' },
+          { name: 'Dead bug', sets: 3, reps: '10 per side', rest_seconds: 40, notes: 'Ribs down, slow' },
+          { name: 'Plank', sets: 3, reps: '30s', rest_seconds: 40, notes: 'Straight line, breathe' },
+        ],
+      },
+    },
+  },
+  {
+    id: 'plan',
+    icon: CalendarDays,
+    title: 'Make a weekly plan',
+    prompt: '4-day upper/lower plan for fat loss, 45 minutes per session',
+    answer: {
+      kind: 'plan',
+      days: [
+        { day: 'Mon', title: 'Upper body A', minutes: 45 },
+        { day: 'Tue', title: 'Lower body A', minutes: 45 },
+        { day: 'Wed', title: 'Rest', isRest: true },
+        { day: 'Thu', title: 'Upper body B', minutes: 45 },
+        { day: 'Fri', title: 'Lower body B', minutes: 45 },
+        { day: 'Sat', title: 'Rest', isRest: true },
+        { day: 'Sun', title: 'Rest', isRest: true },
+      ],
+    },
+  },
+  {
+    id: 'nutrition',
+    icon: Utensils,
+    title: 'Nutrition help',
+    prompt: 'High-protein breakfast ideas under 400 calories',
+    answer: {
+      kind: 'text',
+      intro: 'Four high-protein breakfasts, each under 400 calories:',
+      bullets: [
+        'Greek yogurt bowl — 200 g yogurt, berries, 1 tbsp chia · ~24 g protein, 320 cal',
+        'Veggie omelette — 3 eggs, spinach, tomato, feta · ~22 g protein, 350 cal',
+        'Overnight oats — 40 g oats, 150 g yogurt, a scoop of whey · ~30 g protein, 390 cal',
+        'Cottage cheese on toast — 150 g cottage cheese, one slice · ~20 g protein, 300 cal',
+      ],
+      outro: 'Log any of them from Insights → Nutrition to track the macros automatically.',
+    },
+  },
+  {
+    id: 'recovery',
+    icon: Activity,
+    title: 'Ask about recovery',
+    prompt: 'How should I train when my legs are still sore?',
+    answer: {
+      kind: 'text',
+      intro: 'Sore legs mean back off the intensity, not stop moving:',
+      bullets: [
+        'Keep moving — a 20–30 minute walk or easy cycle boosts blood flow and eases soreness',
+        'Train around it — upper body or core work is fine while your legs recover',
+        'If you do train legs, cut the load by about half and stop 3–4 reps short of failure',
+        'Recover on purpose — sleep, 1.6–2.2 g of protein per kg, and plenty of water',
+      ],
+      outro: 'Sharp pain, swelling, or dark urine is different — stop and see a clinician.',
+    },
+  },
+  {
+    id: 'theme',
+    icon: Compass,
+    title: 'Find a feature',
+    prompt: 'How do I change my app theme?',
+    answer: {
+      kind: 'text',
+      intro: 'You can change it in two taps:',
+      bullets: [
+        'Open Profile from the bottom bar',
+        'Tap the theme control and pick Midnight, Sunrise, or Auto',
+      ],
+      outro: 'Auto follows the clock — Sunrise through the day, Midnight at night.',
+      actions: [{ label: 'Change app theme' }],
+    },
+  },
+  {
+    id: 'history',
+    icon: Activity,
+    title: 'Where is my history?',
+    prompt: 'Where can I see my workout history?',
+    answer: {
+      kind: 'text',
+      intro: 'Your finished sessions live in two places:',
+      bullets: [
+        'Workout history — every completed session, with duration and volume',
+        'Insights → Stats — trends for volume, sets, and streaks over time',
+      ],
+      outro: 'Personal records get their own page too.',
+      actions: [{ label: 'Open workout history' }],
+    },
+  },
+]
+
+function AIWorkoutCard({ workout }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-primary/25 bg-card/70">
+      <div className="flex items-start justify-between gap-3 border-b border-border/40 p-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold">{workout.name}</p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><Dumbbell className="h-3 w-3" />{workout.exercises.length} exercises</span>
+            <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{workout.estimated_duration} min</span>
+            <span className="inline-flex items-center gap-1"><Flame className="h-3 w-3" />~{workout.estimated_calories} cal</span>
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold capitalize text-muted-foreground">{workout.difficulty}</span>
+      </div>
+      <ol className="max-h-48 divide-y divide-border/30 overflow-y-auto">
+        {workout.exercises.map((ex, i) => (
+          <li key={`${ex.name}-${i}`} className="flex gap-2.5 px-3 py-2 text-xs">
+            <span className="mt-0.5 w-3 shrink-0 font-semibold text-[hsl(var(--accent-text))]">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{ex.name}</p>
+              <p className="text-[10px] text-muted-foreground">{ex.sets} × {ex.reps} · rest {ex.rest_seconds}s</p>
+              {ex.notes ? <p className="mt-0.5 text-[10px] text-muted-foreground">{ex.notes}</p> : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="border-t border-border/40 p-2.5">
+        <span className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[hsl(var(--accent-solid))] px-3 py-2 text-xs font-semibold text-primary-foreground">
+          <Play className="h-3.5 w-3.5" fill="currentColor" /> Save workout
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AIPlanCard({ days }) {
+  const training = days.filter((day) => !day.isRest).length
+  return (
+    <div className="overflow-hidden rounded-2xl border border-primary/25 bg-card/70">
+      <div className="flex items-start justify-between gap-3 border-b border-border/40 p-3">
+        <div>
+          <p className="text-sm font-bold">Your weekly plan</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">{training} training days · {7 - training} rest days</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">AI plan</span>
+      </div>
+      <div className="divide-y divide-border/30">
+        {days.map((day) => (
+          <div key={day.day} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+            <span className="w-9 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{day.day}</span>
+            <span className={`min-w-0 flex-1 truncate ${day.isRest ? 'text-muted-foreground' : 'font-medium'}`}>{day.title}</span>
+            {day.isRest
+              ? <span className="text-[10px] text-muted-foreground">Rest</span>
+              : <span className="shrink-0 text-[10px] text-muted-foreground">{day.minutes} min</span>}
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-border/40 p-2.5">
+        <span className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[hsl(var(--accent-solid))] px-3 py-2 text-xs font-semibold text-primary-foreground">
+          <Check className="h-3.5 w-3.5" /> Apply to my Plan
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AITextAnswer({ answer }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm leading-relaxed">{answer.intro}</p>
+      {answer.bullets?.length ? (
+        <ul className="space-y-1.5">
+          {answer.bullets.map((bullet) => (
+            <li key={bullet} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+              <Check className="mt-0.5 h-3 w-3 shrink-0 text-[hsl(var(--accent-text))]" />
+              <span>{bullet}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {answer.outro ? <p className="text-xs leading-relaxed text-muted-foreground">{answer.outro}</p> : null}
+      {answer.actions?.length ? (
+        <div className="flex flex-wrap gap-2 pt-0.5">
+          {answer.actions.map((action) => (
+            <span key={action.label} className="inline-flex items-center gap-1.5 rounded-xl border border-primary/35 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-[hsl(var(--accent-text))]">
+              <ArrowUpRight className="h-3 w-3" /> {action.label}
+              <span className="sr-only"> (opens in the app)</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function AIPreview() {
+  const [thread, setThread] = useState([])
+  const [busy, setBusy] = useState(false)
+  const scrollRef = useRef(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => () => clearTimeout(timerRef.current), [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [thread, busy])
+
+  const ask = (question) => {
+    if (busy || thread.some((message) => message.qid === question.id)) return
+    setThread((prev) => [...prev, { id: `q-${question.id}`, role: 'user', qid: question.id, content: question.prompt }])
+    setBusy(true)
+    timerRef.current = setTimeout(() => {
+      setThread((prev) => [...prev, { id: `a-${question.id}`, role: 'assistant', qid: question.id, answer: question.answer }])
+      setBusy(false)
+    }, 550)
+  }
+
+  const reset = () => {
+    clearTimeout(timerRef.current)
+    setBusy(false)
+    setThread([])
+  }
+
+  const remaining = AI_QUESTIONS.filter((question) => !thread.some((message) => message.qid === question.id))
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div className="overflow-hidden rounded-3xl border border-border/50 bg-card/60 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 p-3.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-black">Uttar AI</p>
+              <p className="truncate text-[10px] text-muted-foreground">Your coach for training, nutrition, and recovery</p>
+            </div>
+          </div>
+          {thread.length ? (
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Start over
+            </button>
+          ) : null}
+        </div>
+
+        <div ref={scrollRef} className="h-[380px] space-y-3.5 overflow-y-auto p-3.5">
+          <div className="rounded-2xl border border-border/50 bg-background/50 p-3 text-sm leading-relaxed">
+            Hey — I can answer health and nutrition questions, build a single workout, or set up your whole week. Pick a question below to see how I reply.
+          </div>
+
+          {thread.map((message) => (
+            message.role === 'user' ? (
+              <div key={message.id} className="flex justify-end">
+                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[hsl(var(--accent-solid))] px-3 py-2 text-xs text-primary-foreground">{message.content}</div>
+              </div>
+            ) : (
+              <div key={message.id} className="space-y-1.5">
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Sparkles className="h-3 w-3 text-primary" /> Uttar AI
+                </p>
+                {message.answer.kind === 'workout' ? <AIWorkoutCard workout={message.answer.workout} />
+                  : message.answer.kind === 'plan' ? <AIPlanCard days={message.answer.days} />
+                    : <AITextAnswer answer={message.answer} />}
+              </div>
+            )
+          ))}
+
+          {busy ? (
+            <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-background/50 px-3 py-2.5 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Thinking…
+            </div>
+          ) : null}
+
+          {remaining.length ? (
+            <div className="space-y-2 pt-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Try asking</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {remaining.map((question) => {
+                  const Icon = question.icon
+                  return (
+                    <button
+                      key={question.id}
+                      type="button"
+                      onClick={() => ask(question)}
+                      disabled={busy}
+                      className="rounded-2xl border border-border/50 bg-card/50 p-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-60"
+                    >
+                      <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary" /> {question.title}
+                      </span>
+                      <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground">{question.prompt}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="border-t border-border/40 bg-background/40 p-3" aria-hidden="true">
+          <div className="flex gap-1 rounded-xl bg-secondary/50 p-1">
+            {[['Chat', MessageCircle, true], ['Workout', Dumbbell, false], ['Weekly plan', CalendarDays, false]].map(([label, Icon, active]) => (
+              <span key={label} className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] font-semibold ${active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                <Icon className={`h-3 w-3 shrink-0 ${active ? 'text-primary' : ''}`} /> {label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="min-h-[40px] flex-1 rounded-xl border border-border/50 px-3 py-2.5 text-[11px] text-muted-foreground">Ask about training, nutrition, recovery, or form…</span>
+            <span className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[hsl(var(--accent-solid))] px-3 text-[11px] font-semibold text-primary-foreground"><Send className="h-3.5 w-3.5" /> Send</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What it does</p>
+          <h3 className="mt-2 text-lg font-black leading-tight">Ask in plain language, get a plan back</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Uttar AI is the coach built into the app. It reads your profile, training history, and nutrition log, then answers in plain language — or builds something you can save.
+          </p>
+        </div>
+
+        <ul className="space-y-2">
+          {[
+            'Chat — training, nutrition, recovery, and where things live in the app',
+            'Build a workout — one session you can save and start',
+            'Weekly plan — a full week you can apply to your Plan page',
+          ].map((item) => (
+            <li key={item} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="flex items-start gap-2 rounded-2xl border border-border/50 bg-card/60 p-3.5 text-xs leading-relaxed text-muted-foreground backdrop-blur-md">
+          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+          This preview answers a fixed set of questions offline so you can see the shape of it. The real coach uses your own history and needs a signed-in account.
+        </p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          AI can make mistakes — check form and safety, and talk to a clinician about injuries or medical conditions.
         </p>
       </div>
     </div>

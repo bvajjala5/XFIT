@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Eye, Home, Link2, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
+import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Home, Link2, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
 import AnimatedBackground from '@/components/layout/AnimatedBackground'
 import BrandMark from '@/components/brand/BrandMark'
@@ -16,7 +16,7 @@ import {
   ProfileMock,
   WorkoutsMock,
 } from '@/components/landing/AppMocks'
-import { BarcodePreview, FormCheckPreview } from '@/components/landing/DemoPreviews'
+import { AIPreview, BarcodePreview, FormCheckPreview } from '@/components/landing/DemoPreviews'
 
 const TABS = [
   {
@@ -72,6 +72,14 @@ const TABS = [
 // Keys the in-phone bottom bar can send, mapped to demo tabs.
 const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
 
+// Premium-feature previews, deep-linkable by key. The title is used for the
+// preview heading.
+const PREVIEWS = {
+  barcode: { title: 'Barcode scanning' },
+  'form-check': { title: 'Form check' },
+  ai: { title: 'Uttar AI' },
+}
+
 export default function Demo() {
   useAutoTheme()
   usePageMeta({
@@ -94,11 +102,11 @@ export default function Demo() {
   const tabRefs = useRef({})
   const previewRef = useRef(null)
 
-  // The read-only previews are deep-linkable so a reviewer can be handed a
-  // direct URL: /demo?preview=barcode and /demo?preview=form-check open
-  // straight to that screen. The URL is the source of truth for this state.
+  // The premium-feature previews are deep-linkable so a reviewer can be handed
+  // a direct URL: /demo?preview=barcode, /demo?preview=form-check, and
+  // /demo?preview=ai open straight to that screen. The URL is the source of truth.
   const previewParam = searchParams.get('preview')
-  const preview = previewParam === 'barcode' || previewParam === 'form-check' ? previewParam : null
+  const preview = PREVIEWS[previewParam] ? previewParam : null
   const setPreview = useCallback((next) => {
     const params = new URLSearchParams(searchParams)
     if (next) params.set('preview', next)
@@ -231,13 +239,21 @@ export default function Demo() {
 
             <div className="flex flex-col rounded-2xl border border-border/50 bg-background/40 p-4">
               <p className="flex items-center gap-2 text-sm font-bold">
-                <Eye className="h-4 w-4 text-primary" /> Read-only previews
+                <Sparkles className="h-4 w-4 text-primary" /> Premium Features
               </p>
               <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                <li>Uttar AI — ask it preloaded questions</li>
                 <li>Barcode scanning — every state, including no match</li>
                 <li>Form check — what it can and can&rsquo;t detect</li>
               </ul>
               <div className="mt-3 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreview('ai')}
+                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  Open Uttar AI preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                </button>
                 <button
                   type="button"
                   onClick={() => setPreview('barcode')}
@@ -253,6 +269,9 @@ export default function Demo() {
                   Open form-check preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                 </button>
               </div>
+              <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+                Free for everyone while we&rsquo;re in beta.
+              </p>
             </div>
 
             <div className="rounded-2xl border border-border/50 bg-background/40 p-4">
@@ -273,10 +292,8 @@ export default function Demo() {
           <div ref={previewRef} id="demo-preview" className="mt-8 scroll-mt-24">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Read-only preview</p>
-                <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">
-                  {preview === 'barcode' ? 'Barcode scanning' : 'Form check'}
-                </h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Premium feature preview</p>
+                <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">{PREVIEWS[preview].title}</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -296,7 +313,9 @@ export default function Demo() {
               </div>
             </div>
             <div className="mt-5">
-              {preview === 'barcode' ? <BarcodePreview /> : <FormCheckPreview />}
+              {preview === 'barcode' && <BarcodePreview />}
+              {preview === 'form-check' && <FormCheckPreview />}
+              {preview === 'ai' && <AIPreview />}
             </div>
           </div>
         ) : (
