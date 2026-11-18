@@ -754,14 +754,14 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   // ── ACTIVE WORKOUT ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-dvh flex flex-col overflow-hidden bg-background">
       <AnimatePresence>
         {flash && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-primary pointer-events-none" />
         )}
       </AnimatePresence>
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between px-4 py-2">
         <button onClick={() => navigate(-1)} className="glass rounded-full p-2" aria-label="Back"><X className="w-5 h-5" /></button>
         <div className="text-sm font-medium text-muted-foreground">{currentEx+1} / {exercises.length}</div>
         <div className="flex items-center gap-2">
@@ -774,59 +774,69 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         </div>
       </div>
       <Progress value={overallProgress} className="h-1 mx-4 rounded-full" />
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8">
-        <AnimatePresence mode="wait">
-          <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-3 w-full">
-            <div className="flex justify-center gap-2 mb-2">
-              {exercises[currentEx]?.sets > 1 && (
-                <Badge variant="outline" className="text-[10px] uppercase tracking-widest">
-                  Set {currentSet} of {exercises[currentEx].sets}
-                </Badge>
-              )}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col">
+        <div className="my-auto w-full flex flex-col items-center text-center space-y-3 sm:space-y-5">
+          <AnimatePresence mode="wait">
+            <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-1.5 w-full">
+              <div className="flex justify-center gap-2">
+                {exercises[currentEx]?.sets > 1 && (
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest">
+                    Set {currentSet} of {exercises[currentEx].sets}
+                  </Badge>
+                )}
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black leading-tight">{currentExercise?.name}</h2>
+              <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
+              {currentExercise?.instructions && <p className="text-xs text-muted-foreground max-w-md mx-auto line-clamp-2">{currentExercise.instructions}</p>}
+            </motion.div>
+          </AnimatePresence>
+          <div className="flex w-full items-center justify-center gap-4 sm:gap-12">
+            <div className="w-[150px] sm:w-[260px] shrink-0">
+              <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black leading-tight">{currentExercise?.name}</h2>
-            <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
-            {currentExercise?.instructions && <p className="text-xs text-muted-foreground max-w-xs mx-auto">{currentExercise.instructions}</p>}
-            <WorkoutDemo exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
-            <button
-              type="button"
-              onClick={openFormCheck}
-              className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
-            >
-              <ScanFace className="h-4 w-4" /> Check Form
-            </button>
-          </motion.div>
-        </AnimatePresence>
-        <div className="relative w-48 h-48">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
-            <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : exerciseDurationSeconds(exercises[currentEx])))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-5xl font-black tabular-nums ${isResting ? 'text-green-400' : ''}`}>{formatTime(timeLeft)}</span>
-            {isResting && <span className="text-xs font-bold uppercase tracking-widest text-green-400">Resting</span>}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative w-28 h-28 sm:w-40 sm:h-40">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
+                  <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : exerciseDurationSeconds(exercises[currentEx])))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={`text-3xl sm:text-5xl font-black tabular-nums ${isResting ? 'text-green-400' : ''}`}>{formatTime(timeLeft)}</span>
+                  {isResting && <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-green-400">Resting</span>}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openFormCheck}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
+              >
+                <ScanFace className="h-4 w-4" /> Check Form
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <AnimatePresence>
+              {motivation && <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="text-primary font-semibold sm:text-lg">{motivation}</motion.div>}
+            </AnimatePresence>
+            {currentEx < exercises.length-1 && (
+              <div className="text-sm text-muted-foreground">
+                <span className="text-xs uppercase tracking-wider">Next up:</span>
+                <span className="ml-2 font-medium text-foreground">{exercises[currentEx+1]?.name}</span>
+              </div>
+            )}
           </div>
         </div>
-        <AnimatePresence>
-          {motivation && <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="text-primary font-semibold text-lg">{motivation}</motion.div>}
-        </AnimatePresence>
-        {currentEx < exercises.length-1 && (
-          <div className="text-sm text-muted-foreground">
-            <span className="text-xs uppercase tracking-wider">Next up:</span>
-            <span className="ml-2 font-medium text-foreground">{exercises[currentEx+1]?.name}</span>
-          </div>
-        )}
       </div>
-      <div className="flex items-center justify-center gap-4 p-8">
-        <Button variant="secondary" size="icon" className="w-14 h-14 rounded-full" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume workout' : 'Pause workout'}>
+      <div className="flex items-center justify-center gap-3 px-4 py-3 sm:gap-4">
+        <Button variant="secondary" size="icon" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume workout' : 'Pause workout'}>
           {isPaused?<Play className="w-6 h-6" fill="currentColor"/>:<Pause className="w-6 h-6"/>}
         </Button>
         {!isPaused && !isComplete && (
-          <Button className="flex-1 max-w-[160px] h-14 rounded-full font-bold" onClick={completeSet}>
+          <Button className="flex-1 max-w-[160px] h-12 sm:h-14 rounded-full font-bold" onClick={completeSet}>
             {isResting ? 'Skip Rest' : 'Complete Set'}
           </Button>
         )}
-        <Button variant="secondary" size="icon" className="w-12 h-12 rounded-full" onClick={skipExercise} aria-label="Skip exercise">
+        <Button variant="secondary" size="icon" className="w-11 h-11 sm:w-12 sm:h-12 rounded-full" onClick={skipExercise} aria-label="Skip exercise">
           <SkipForward className="w-5 h-5" />
         </Button>
       </div>

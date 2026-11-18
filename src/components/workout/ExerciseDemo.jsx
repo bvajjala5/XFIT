@@ -35,7 +35,7 @@ function usePrefersReducedMotion() {
  * Shows an animated demo (start pose ⇄ end pose) of the current exercise plus the muscles it works.
  * Falls back to the original body-diagram when we have no demo for the exercise or the photos can't load.
  */
-export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' }) {
+export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '', compact = false }) {
   const [matcher, setMatcher] = useState(null);
   const [indexFailed, setIndexFailed] = useState(false);  // the exercise list couldn't load
   const [imgFailed, setImgFailed] = useState(false);      // this exercise's photos couldn't load
@@ -97,27 +97,27 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
 
   // No demo available (or it failed to load) → the original muscle diagram, exactly as before.
   if (indexFailed || imgFailed || (matches && matches.length === 0)) {
-    return <MuscleMapModel exerciseName={exerciseName} />;
+    return <MuscleMapModel exerciseName={exerciseName} scale={compact ? 0.72 : 1} />;
   }
 
   // Still loading the index: reserve the space so the layout doesn't jump.
   if (!matches || !current) {
-    return <div className="w-full max-w-sm mx-auto aspect-[3/2] rounded-2xl bg-white/5 animate-pulse" aria-hidden="true" />;
+    return <div className={`w-full mx-auto rounded-2xl bg-white/5 animate-pulse ${compact ? 'aspect-square' : 'max-w-sm aspect-[3/2]'}`} aria-hidden="true" />;
   }
 
   return (
-    <div className="w-full max-w-sm mx-auto space-y-4">
+    <div className={`w-full mx-auto ${compact ? 'space-y-2' : 'max-w-sm space-y-4'}`}>
       <Tabs.Root defaultValue="demo" className="w-full">
-        <Tabs.List className="flex p-1 bg-black/30 rounded-xl mb-4">
+        <Tabs.List className={`flex p-1 bg-black/30 rounded-xl ${compact ? 'mb-2' : 'mb-4'}`}>
           <Tabs.Trigger
             value="demo"
-            className="flex-1 py-1.5 text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground"
+            className={`flex-1 ${compact ? 'py-1' : 'py-1.5'} text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground`}
           >
             Demo
           </Tabs.Trigger>
           <Tabs.Trigger
             value="map"
-            className="flex-1 py-1.5 text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground"
+            className={`flex-1 ${compact ? 'py-1' : 'py-1.5'} text-xs font-medium rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white text-muted-foreground`}
           >
             Body Map
           </Tabs.Trigger>
@@ -164,29 +164,34 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '' 
       {reduced && ready && <p className="text-[10px] text-center text-muted-foreground">Tap the photo to switch between start and end position</p>}
 
       {matches.length > 1 && (
-        <div className="flex flex-wrap justify-center gap-1.5">
+        <div className={`flex gap-1.5 ${compact ? 'justify-start overflow-x-auto scrollbar-none' : 'flex-wrap justify-center'}`}>
           {matches.map((m, i) => (
             <button
               key={m.id} onClick={() => setAlt(i)}
-              className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${i === alt ? 'border-primary/50 bg-primary/15 text-primary' : 'border-white/10 text-muted-foreground'}`}
+              className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border transition-colors ${i === alt ? 'border-primary/50 bg-primary/15 text-primary' : 'border-white/10 text-muted-foreground'}`}
             >{m.name}</button>
           ))}
         </div>
       )}
 
-      <div className="flex flex-wrap justify-center gap-1.5">
-        {current.primary.map((m) => (
-          <span key={`p-${m}`} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">{prettyMuscle(m)}</span>
-        ))}
-        {current.secondary.map((m) => (
-          <span key={`s-${m}`} className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-muted-foreground">{prettyMuscle(m)}</span>
-        ))}
-      </div>
+      {/* The compact player hides the chip list: the Body Map tab already shows muscles and cues. */}
+      {!compact && (
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {current.primary.map((m) => (
+            <span key={`p-${m}`} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">{prettyMuscle(m)}</span>
+          ))}
+          {current.secondary.map((m) => (
+            <span key={`s-${m}`} className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-muted-foreground">{prettyMuscle(m)}</span>
+          ))}
+        </div>
+      )}
 
-      <p className="text-[10px] text-center text-muted-foreground">
-        Showing: {current.name} · Photos:{' '}
-        <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener noreferrer" className="underline">Free Exercise DB</a>
-      </p>
+      {!compact && (
+        <p className="text-[10px] text-center text-muted-foreground">
+          Showing: {current.name} · Photos:{' '}
+          <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noopener noreferrer" className="underline">Free Exercise DB</a>
+        </p>
+      )}
     </div>
   );
 }
