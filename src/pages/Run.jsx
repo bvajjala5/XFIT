@@ -6,8 +6,9 @@ import RunSummary from '@/components/run/RunSummary'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Run() {
-  const { user } = useAuth()
+  const { user, userData } = useAuth()
   const [summary, setSummary] = useState(null)
+  const distanceUnit = userData?.distance_unit || 'miles'
 
   function handleComplete(runSummary) {
     setSummary(runSummary)
@@ -32,12 +33,12 @@ export default function Run() {
         {summary ? (
           <motion.div key="summary" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30 flex items-center justify-center p-4 md:p-8 bg-background/90 backdrop-blur-md">
             <div className="w-full max-w-md">
-              <RunSummary summary={summary} userId={user?.uid} onClose={handleClose} />
+              <RunSummary summary={summary} userId={user?.uid} unit={distanceUnit} onClose={handleClose} />
             </div>
           </motion.div>
         ) : (
           <motion.div key="tracker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 w-full h-full relative">
-            <RunTracker onComplete={handleComplete} fullScreen={true} />
+            <RunTracker onComplete={handleComplete} fullScreen={true} unit={distanceUnit} />
           </motion.div>
         )}
       </AnimatePresence>

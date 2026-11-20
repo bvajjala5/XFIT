@@ -99,8 +99,11 @@ export default function Login() {
           Explore the demo first
         </Link>
 
-        <p className="text-center text-xs" style={{ color: isDark ? '#475569' : '#a8a29e' }}>
-          By continuing you agree to our Terms &amp; Privacy Policy
+        <p className="text-center text-xs" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>
+          By continuing you agree to our{' '}
+          <Link to="/terms" className="underline underline-offset-2 rounded hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Terms</Link>
+          {' & '}
+          <Link to="/privacy" className="underline underline-offset-2 rounded hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">Privacy Policy</Link>
         </p>
       </motion.div>
     </main>

@@ -9,16 +9,19 @@ import { AuthProvider } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
+import { registerSW } from 'virtual:pwa-register'
 
 // Apply the saved theme before the first React paint so the boot shell, the
 // logo, and the app background never flash the wrong mode.
 applyResolvedTheme(resolveTheme(getThemeMode()))
 
 // Register the PWA worker after the page has loaded so it never competes with
-// the critical rendering path. VitePWA's auto-update worker handles activation.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+// the critical rendering path. registerSW() is the plugin's own entry point:
+// with registerType 'autoUpdate' it reloads the page once a new worker takes
+// over, so returning visitors never keep a stale shell from the previous build.
+if (import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
+    registerSW({ immediate: true })
   }, { once: true })
 }
 

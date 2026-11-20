@@ -6,6 +6,7 @@ import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, RotateCcw } f
 import { db } from '@/lib/firestore'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore/lite'
 import { saveWorkoutLog } from '@/lib/workoutLogQueue'
+import { formatDistance, formatPace, normalizeDistanceUnit, unitConfig } from '@/lib/distanceUnits'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
@@ -15,18 +16,18 @@ function formatTime(s) {
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 }
 
-export default function RunSummary({ summary, userId }) {
+export default function RunSummary({ summary, userId, unit = 'miles' }) {
   const navigate = useNavigate()
-  const { distance = 0, elapsed = 0, steps = 0, calories = 0, pace = 0, splits = [] } = summary || {}
+  const { distance = 0, elapsed = 0, steps = 0, calories = 0, pace = 0, splits = [], distanceUnit: savedUnit } = summary || {}
+  const distanceUnit = normalizeDistanceUnit(savedUnit || unit)
+  const config = unitConfig(distanceUnit)
 
-  const distKm = (distance / 1000).toFixed(2)
-  const paceStr = pace > 0
-    ? `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')}`
-    : '--:--'
+  const distText = formatDistance(distance, distanceUnit)
+  const paceStr = formatPace(elapsed, distance, distanceUnit)
 
   // Build split chart data
   const splitData = splits.map((sp, i) => ({
-    km: `KM ${sp.km}`,
+    label: sp.label,
     time: i === 0 ? sp.time : sp.time - splits[i - 1].time,
   }))
 
@@ -38,8 +39,9 @@ export default function RunSummary({ summary, userId }) {
         elapsed,
         steps,
         calories,
-        pace,
-        splits: splits.map(s => ({ km: s.km, time: s.time })),
+        pace, // kept as min/km for existing history
+        distance_unit: distanceUnit,
+        splits: splits.map(s => ({ ...s })),
         completedAt: serverTimestamp(),
         type: 'run',
       }
@@ -47,7 +49,7 @@ export default function RunSummary({ summary, userId }) {
       // Streak, so save it through the durable queue first. A failed write is
       // kept on the device instead of losing the run.
       const { queued } = await saveWorkoutLog(userId, {
-        workout_title: `Run — ${(distance / 1000).toFixed(2)} km`,
+        workout_title: `Run — ${distText} ${config.short}`,
         workout_type: 'cardio',
         duration_seconds: elapsed,
         calories_burned: calories,
@@ -55,6 +57,7 @@ export default function RunSummary({ summary, userId }) {
         type: 'run',
         distance,
         pace,
+        distance_unit: distanceUnit,
       })
       if (!queued) {
         try {
@@ -90,8 +93,8 @@ export default function RunSummary({ summary, userId }) {
 
       {/* Primary stat */}
       <GlassCard className="text-center py-6">
-        <div className="text-5xl font-black text-primary">{distKm}</div>
-        <div className="text-muted-foreground mt-1">Kilometers</div>
+        <div className="text-5xl font-black text-primary">{distText}</div>
+        <div className="text-muted-foreground mt-1">{config.label}</div>
       </GlassCard>
 
       {/* Stats grid */}
@@ -138,7 +141,7 @@ export default function RunSummary({ summary, userId }) {
                   <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="km" tick={{ fill: '#64748b', fontSize: 10 }} />
+              <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} />
               <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
               <Tooltip contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="time" stroke="#60a5fa" fill="url(#splitGrad)" strokeWidth={2} name="Split (s)" />

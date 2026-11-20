@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Polyline, Circle, useMap } from 'react-leaflet'
 import { Button } from '@/components/ui/button'
+import { formatDistance, formatPace, normalizeDistanceUnit, paceLabel, splitLabel, splitMeters, unitConfig } from '@/lib/distanceUnits'
 import { Play, Pause, Square, Navigation, Footprints, Flame } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 
@@ -33,16 +34,17 @@ function getPaceColor(pace) {
   return '#60a5fa'                              // fast - blue
 }
 
-const SPLIT_DIST = 1000 // 1km splits
+export default function RunTracker({ onComplete, fullScreen = false, unit = 'miles' }) {
+  const distanceUnit = normalizeDistanceUnit(unit)
+  const splitDist = splitMeters(distanceUnit)
 
-export default function RunTracker({ onComplete, fullScreen = false }) {
   const [status, setStatus] = useState('idle') // idle | running | paused | done
   const [positions, setPositions] = useState([]) // [{lat, lng, timestamp, pace}]
   const [currentPos, setCurrentPos] = useState(null)
   const [elapsed, setElapsed] = useState(0) // seconds
   const [distance, setDistance] = useState(0) // meters
   const [steps, setSteps] = useState(0)
-  const [splits, setSplits] = useState([]) // [{km, time}]
+  const [splits, setSplits] = useState([]) // [{index, meters, label, time}]
   const [calories, setCalories] = useState(0)
   const [gpsError, setGpsError] = useState(null)
 
@@ -66,9 +68,8 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
     return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
   }
 
-  const distKm = (distance / 1000).toFixed(2)
-  const pace = distance > 0 && elapsed > 0 ? (elapsed / 60) / (distance / 1000) : 0 // min/km
-  const paceStr = pace > 0 ? `${Math.floor(pace)}:${String(Math.round((pace % 1) * 60)).padStart(2, '0')}` : '--:--'
+  const distText = formatDistance(distance, distanceUnit)
+  const paceStr = formatPace(elapsed, distance, distanceUnit)
 
   // Step detection via DeviceMotion
   const handleMotion = useCallback((e) => {
@@ -82,7 +83,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
       stepCountRef.current += 1
       setSteps(stepCountRef.current)
     }
-  }, [status])
+  }, [status, setSteps])
 
   useEffect(() => {
     window.addEventListener('devicemotion', handleMotion)
@@ -130,11 +131,14 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
           setDistance(newDist)
           setCalories(newCalories)
 
-          // Splits
+          // Splits, measured in the user's preferred distance unit.
           const totalSplitDistance = splitDistRef.current + d
-          if (totalSplitDistance >= SPLIT_DIST) {
-            splitDistRef.current = totalSplitDistance - SPLIT_DIST
-            setSplits((sp) => [...sp, { km: sp.length + 1, time: elapsedRef.current }])
+          if (totalSplitDistance >= splitDist) {
+            splitDistRef.current = totalSplitDistance - splitDist
+            setSplits((sp) => {
+              const index = sp.length + 1
+              return [...sp, { index, meters: splitDist, label: splitLabel(index, distanceUnit), time: elapsedRef.current }]
+            })
           } else {
             splitDistRef.current = totalSplitDistance
           }
@@ -162,7 +166,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
     return () => {
       if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current)
     }
-  }, [status])
+  }, [status, distanceUnit, splitDist])
 
   // Wake Lock
   useEffect(() => {
@@ -208,7 +212,8 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
       elapsed: finalElapsed,
       steps: stepCountRef.current,
       calories: caloriesRef.current,
-      pace: finalDistance > 0 && finalElapsed > 0 ? (finalElapsed / 60) / (finalDistance / 1000) : 0,
+      pace: finalDistance > 0 && finalElapsed > 0 ? (finalElapsed / 60) / (finalDistance / 1000) : 0, // stored as min/km
+      distanceUnit,
       splits,
       route: positionsRef.current.map((p) => p.pos),
       startTime: startTimeRef.current,
@@ -282,8 +287,8 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
         {/* Primary stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center">
-            <div className="text-2xl font-black">{distKm}</div>
-            <div className="text-[10px] text-muted-foreground">KM</div>
+            <div className="text-2xl font-black">{distText}</div>
+            <div className="text-[10px] text-muted-foreground">{unitConfig(distanceUnit).short}</div>
           </div>
           <div className="glass rounded-2xl p-3 text-center">
             <div className="text-2xl font-black">{formatTime(elapsed)}</div>
@@ -291,7 +296,7 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
           </div>
           <div className="glass rounded-2xl p-3 text-center">
             <div className="text-2xl font-black">{paceStr}</div>
-            <div className="text-[10px] text-muted-foreground">MIN/KM</div>
+            <div className="text-[10px] text-muted-foreground">{paceLabel(distanceUnit)}</div>
           </div>
         </div>
 
@@ -312,8 +317,8 @@ export default function RunTracker({ onComplete, fullScreen = false }) {
           <div className="glass rounded-2xl p-3 space-y-1 max-h-32 overflow-y-auto">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Splits</p>
             {splits.map((sp) => (
-              <div key={sp.km} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">KM {sp.km}</span>
+              <div key={sp.index} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{sp.label}</span>
                 <span className="font-mono font-semibold">{formatTime(sp.time)}</span>
               </div>
             ))}
