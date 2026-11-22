@@ -107,11 +107,15 @@ test('evaluateGoal: calories rule', () => {
   assert.equal(evaluateGoal(item, { ...emptyCtx, weekCalories: 2000 }), true)
 })
 
-test('evaluateGoal: auto rules ignore item.done', () => {
-  // Auto goals should NOT count as done from manual toggling, only from data.
-  assert.equal(evaluateGoal({ id: '7', text: 'finish a workout', done: true }, emptyCtx), false)
-  const noNumber = { id: '8', text: 'workout this week', done: true }
-  assert.equal(evaluateGoal(noNumber, richCtx), true)
+test('evaluateGoal: auto rules count manual check OR matching activity', () => {
+  // Auto goals complete from activity, but a manual tap must also stick.
+  assert.equal(evaluateGoal({ id: '7', text: 'finish a workout', done: true }, emptyCtx), true)
+  assert.equal(evaluateGoal({ id: '7b', text: 'finish a workout', done: false }, emptyCtx), false)
+  assert.equal(evaluateGoal({ id: '8', text: 'workout this week', done: false }, richCtx), true)
+  // Unchecking a manual check still works when the activity hasn't happened.
+  const checked = { id: '9', text: 'daily check-in', done: true }
+  assert.equal(evaluateGoal(checked, { ...emptyCtx, todayLogged: false }), true)
+  assert.equal(evaluateGoal({ ...checked, done: false }, { ...emptyCtx, todayLogged: false }), false)
 })
 
 test('evaluateGoal: manual items use !!item.done', () => {

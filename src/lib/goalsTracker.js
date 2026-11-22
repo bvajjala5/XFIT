@@ -56,25 +56,33 @@ function targetNumber(text, fallback = 1) {
 }
 
 // Returns true if the goal should currently count as done.
-// Auto rules ignore item.done entirely; manual items use !!item.done.
+// Auto rules are satisfied by the matching activity OR by a manual check
+// (so users can always tick a goal they've completed themselves).
 export function evaluateGoal(item, ctx) {
   if (!item) return false
   const rule = inferRule(item.text)
   if (!rule) return !!item.done
+  let auto = false
   switch (rule) {
     case 'workout':
-      return (ctx.weekWorkouts || 0) >= targetNumber(item.text, 1)
+      auto = (ctx.weekWorkouts || 0) >= targetNumber(item.text, 1)
+      break
     case 'checkin':
-      return !!ctx.todayLogged
+      auto = !!ctx.todayLogged
+      break
     case 'streak':
-      return (ctx.streak || 0) >= targetNumber(item.text, 1)
+      auto = (ctx.streak || 0) >= targetNumber(item.text, 1)
+      break
     case 'minutes':
-      return (ctx.weekMinutes || 0) >= targetNumber(item.text, 150)
+      auto = (ctx.weekMinutes || 0) >= targetNumber(item.text, 150)
+      break
     case 'calories':
-      return (ctx.weekCalories || 0) >= targetNumber(item.text, 500)
+      auto = (ctx.weekCalories || 0) >= targetNumber(item.text, 500)
+      break
     default:
       return !!item.done
   }
+  return auto || !!item.done
 }
 
 // Derive the data context (today, streak, weekly totals) from workout logs.
@@ -177,16 +185,21 @@ export async function loadGoals(uid) {
 export async function saveGoals(uid, items) {
   const list = Array.isArray(items) ? items : []
   saveLocal(list)
-  broadcast()
-  if (!uid) return
   try {
-    const [{ doc, setDoc }, { db }] = await Promise.all([
-      import('firebase/firestore/lite'),
-      import('./firestore'),
-    ])
-    await setDoc(doc(db, 'users', uid, 'goals', 'checklist'), { items: list, updatedAt: Date.now() }, { merge: true })
+    if (uid) {
+      const [{ doc, setDoc }, { db }] = await Promise.all([
+        import('firebase/firestore/lite'),
+        import('./firestore'),
+      ])
+      await setDoc(doc(db, 'users', uid, 'goals', 'checklist'), { items: list, updatedAt: Date.now() }, { merge: true })
+    }
   } catch {
     /* local copy already saved; sync can retry later */
+  } finally {
+    // Broadcast only after the (attempted) Firestore write so listeners that
+    // re-read the doc can't fetch the PRE-write snapshot and revert this save.
+    // Cross-tab listeners still update instantly via the 'storage' event.
+    broadcast()
   }
 }
 

@@ -29,25 +29,19 @@ const LEVEL_STYLES = {
 }
 
 function GoalRow({ item, ctx, onToggle, onDelete }) {
-  const auto = !!inferRule(item.text)
+  const rule = inferRule(item.text)
+  const auto = !!rule
   const done = evaluateGoal(item, ctx)
   return (
     <div className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 min-h-[44px] transition-colors ${done ? 'bg-green-500/5' : 'bg-secondary/40'}`}>
-      {auto ? (
-        <span className="w-5 h-5 shrink-0 flex items-center justify-center" title="Auto-checked from your activity">
-          {done
-            ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-            : <Circle className="w-5 h-5 text-muted-foreground/60" />}
-        </span>
-      ) : (
-        <button type="button" role="checkbox" aria-checked={done}
-          onClick={() => onToggle(item.id)} aria-label={done ? `Mark "${item.text}" not done` : `Mark "${item.text}" done`}
-          className="w-11 h-11 -my-2 -ml-1 shrink-0 flex items-center justify-center text-left">
-          {done
-            ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-            : <Circle className="w-5 h-5 text-muted-foreground" />}
-        </button>
-      )}
+      <button type="button" role="checkbox" aria-checked={done}
+        onClick={() => onToggle(item.id)} aria-label={done ? `Mark "${item.text}" not done` : `Mark "${item.text}" done`}
+        title={auto ? 'Auto-checks from your activity — tap to check it yourself' : undefined}
+        className="w-11 h-11 -my-2 -ml-1 shrink-0 flex items-center justify-center text-left rounded-lg hover:bg-foreground/5 active:scale-95 transition-all">
+        {done
+          ? <CheckCircle2 className="w-5 h-5 text-green-500" />
+          : <Circle className={`w-5 h-5 ${auto ? 'text-muted-foreground/60' : 'text-muted-foreground'}`} />}
+      </button>
       <div className="flex-1 min-w-0">
         <p className={`text-sm leading-snug break-words ${done ? 'line-through text-muted-foreground' : ''}`}>{item.text}</p>
         {auto && (
@@ -81,20 +75,28 @@ export default function GoalsTrackerButton({ logs }) {
   // snapshot and overwrite each other (lost-update between persist calls).
   const itemsRef = useRef(items)
   useEffect(() => { itemsRef.current = items }, [items])
+  // A reload triggered by one of our own saves must never clobber state with
+  // the pre-write Firestore snapshot (it made added goals vanish and checks
+  // revert). savingRef suppresses those reloads; reqIdRef invalidates any
+  // load that was already in flight when a save started.
+  const savingRef = useRef(false)
+  const reqIdRef = useRef(0)
   const progress = useMemo(() => computeProgress(items, ctx), [items, ctx])
   const level = LEVEL_STYLES[progress.level] || LEVEL_STYLES.empty
   const liveRule = inferRule(text)
   const animating = progress.level === 'red' || progress.level === 'orange' || progress.level === 'green'
 
   const reload = useCallback(() => {
-    let alive = true
-    loadGoals(uid).then((next) => { if (alive) setItems(Array.isArray(next) ? next : []) })
-    return () => { alive = false }
+    const reqId = ++reqIdRef.current
+    loadGoals(uid).then((next) => {
+      // Only apply the newest load: anything older is stale by definition.
+      if (reqId === reqIdRef.current) setItems(Array.isArray(next) ? next : [])
+    })
   }, [uid])
 
-  useEffect(() => reload(), [uid, reload])
+  useEffect(() => { reload() }, [uid, reload])
   useEffect(() => {
-    const onChange = () => reload()
+    const onChange = () => { if (!savingRef.current) reload() }
     window.addEventListener(GOALS_CHANGED, onChange)
     window.addEventListener('storage', onChange)
     return () => {
@@ -104,6 +106,8 @@ export default function GoalsTrackerButton({ logs }) {
   }, [reload])
 
   const persist = async (next, okMsg) => {
+    reqIdRef.current += 1 // drop any in-flight load so it can't revert this save
+    savingRef.current = true
     setItems(next)
     setSaving(true)
     try {
@@ -112,6 +116,7 @@ export default function GoalsTrackerButton({ logs }) {
     } catch {
       toast.error('Could not save goals')
     } finally {
+      savingRef.current = false
       setSaving(false)
     }
   }
