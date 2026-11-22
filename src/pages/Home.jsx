@@ -16,6 +16,7 @@ import { seedWorkouts } from '@/lib/seedWorkouts'
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache'
 import { getPendingWorkoutLogs, WORKOUT_LOGS_CHANGED } from '@/lib/workoutLogQueue'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
+import GoalsTrackerButton from '@/components/home/GoalsTrackerButton'
 import { getDailyQuote } from '@/components/home/DailyQuote'
 import { useUttarAI } from '@/components/ai/UttarAIContext'
 import { toast } from 'sonner'
@@ -227,10 +228,13 @@ export default function Home() {
           <p className="text-muted-foreground text-sm">{getGreeting()}</p>
           <h1 className="text-3xl font-extrabold tracking-tight truncate">{firstName}</h1>
         </div>
-        <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mb-1">
-          <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote.text}”</blockquote>
-          {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground mt-1">{quote.author}</figcaption>}
-        </figure>
+        <div className="flex items-start justify-end gap-2 min-w-0">
+          <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mt-1">
+            <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote.text}”</blockquote>
+            {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground mt-1">{quote.author}</figcaption>}
+          </figure>
+          <GoalsTrackerButton logs={logs} />
+        </div>
       </motion.header>
 
       <div className="space-y-4">
