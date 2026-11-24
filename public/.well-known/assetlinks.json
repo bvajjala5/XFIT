@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.uttar.fitness",
+      "sha256_cert_fingerprint": "EF:55:7A:27:23:51:A4:1C:B3:F2:D6:A9:E1:CD:EC:E6:B8:C1:53:BB:04:B9:44:6B:56:C1:11:95:7E:9C:00:F6"
+    }
+  }
+]

@@ -93,6 +93,13 @@ Before creating the Play app, decide whether to keep this upload key. Enrolling 
 Play App Signing means Google replaces it with the app-signing key after the first
 upload, but the upload key must still be kept safe.
 
+`public/.well-known/assetlinks.json` uses the local release certificate above so
+App Links and a TWA verify during local/device testing. After the first Play
+upload, copy the **app signing key certificate** SHA-256 fingerprint from Play
+Console → App integrity and add a second entry to that file. Play signs updates
+with that key, not the upload key, so both entries are needed once App Signing is
+active.
+
 ## Play Console listing
 
 - Support email: the account you want users to contact.

@@ -20,6 +20,7 @@ const RELEASES = [
       'The small input button now says “Apply” so it is clear it changes the typed reps or time without ending the set.',
       'Share buttons now open the device share sheet with a real link; on desktop they copy the link instead of failing. Custom workouts can also be shared from the three-dot menu in Workouts.',
       'Shared workout links open a preview anyone can add to their own workouts. The link carries the workout itself, so nothing is published to the community list without your say-so.',
+      'Removed an invalid metadata link and added a real Android asset-links file so app links and a TWA can verify.',
     ],
   },
   {
