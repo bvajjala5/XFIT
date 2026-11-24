@@ -4,10 +4,21 @@ import { Download, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDistance, formatPace, normalizeDistanceUnit } from '@/lib/distanceUnits'
 import { SAMPLE_CSV } from '@/lib/csvImport'
-import { parseActivityFile } from '@/lib/activityFiles'
+import {
+  MAX_IMPORT_FILES,
+  SAMPLE_GPX,
+  SAMPLE_TCX,
+  parseActivityFiles,
+} from '@/lib/activityFiles'
 import { saveRun } from '@/lib/runSave'
 import useFocusTrap from '@/hooks/useFocusTrap'
 import { toast } from 'sonner'
+
+const SAMPLES = [
+  { label: 'CSV', name: 'uttar-runs-sample.csv', type: 'text/csv', text: SAMPLE_CSV },
+  { label: 'GPX', name: 'uttar-run-sample.gpx', type: 'application/gpx+xml', text: SAMPLE_GPX },
+  { label: 'TCX', name: 'uttar-run-sample.tcx', type: 'application/tcx+xml', text: SAMPLE_TCX },
+]
 
 function formatClock(seconds) {
   const mins = Math.floor(seconds / 60)
@@ -26,19 +37,19 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
   const contentRef = useRef(null)
   useFocusTrap(contentRef, open, onClose)
 
-  const [raw, setRaw] = useState('')
-  const [fileName, setFileName] = useState('')
+  const [files, setFiles] = useState([])
   const [selectedUnit, setSelectedUnit] = useState(() => normalizeDistanceUnit(unit))
+  const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const result = useMemo(
-    () => (raw ? parseActivityFile(raw, fileName, { unit: selectedUnit }) : null),
-    [raw, fileName, selectedUnit],
+    () => (files.length ? parseActivityFiles(files, { unit: selectedUnit }) : null),
+    [files, selectedUnit],
   )
 
   function reset() {
-    setRaw('')
-    setFileName('')
+    setFiles([])
+    setDragging(false)
     setBusy(false)
   }
 
@@ -48,16 +59,36 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
     onClose()
   }
 
-  async function handleFile(event) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    try {
-      setRaw(await file.text())
-      setFileName(file.name)
-    } catch {
-      toast.error('Could not read that file. Try again.')
+  async function readFiles(fileList) {
+    const supported = Array.from(fileList || []).filter((file) => /\.(csv|gpx|tcx)$/i.test(file.name))
+    if (supported.length === 0) {
+      toast.error('Choose a CSV, GPX, or TCX file.')
+      return
     }
+    try {
+      const loaded = await Promise.all(supported.map(async (file) => ({
+        name: file.name,
+        text: await file.text(),
+      })))
+      setFiles((previous) => [...previous, ...loaded])
+    } catch {
+      toast.error('Could not read those files. Try again.')
+    }
+  }
+
+  async function handleFiles(event) {
+    await readFiles(event.target.files)
     event.target.value = ''
+  }
+
+  function handleDrop(event) {
+    event.preventDefault()
+    setDragging(false)
+    if (!busy) readFiles(event.dataTransfer?.files)
+  }
+
+  function removeFile(index) {
+    setFiles((previous) => previous.filter((_, position) => position !== index))
   }
 
   async function handleImport() {
@@ -89,11 +120,11 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
     }
   }
 
-  function downloadSample() {
-    const url = URL.createObjectURL(new Blob([SAMPLE_CSV], { type: 'text/csv' }))
+  function downloadSample(sample) {
+    const url = URL.createObjectURL(new Blob([sample.text], { type: sample.type }))
     const link = document.createElement('a')
     link.href = url
-    link.download = 'uttar-runs-sample.csv'
+    link.download = sample.name
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -126,7 +157,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
                 <FileSpreadsheet className="w-5 h-5 text-primary" /> Import runs
               </h2>
               <p className="text-xs text-muted-foreground mt-1">
-                Runs are checked here on your device, then saved to your workout history.
+                Drop one or more files. They are checked here on your device, then saved to your workout history.
               </p>
             </div>
             <button
@@ -140,30 +171,82 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
           </div>
 
           <div className="mt-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <label
-                htmlFor="csv-run-file"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2 text-xs font-semibold transition-colors hover:bg-secondary"
-              >
-                <Upload className="w-3.5 h-3.5" /> Choose file
-              </label>
-              <input
-                id="csv-run-file"
-                type="file"
-                accept=".csv,.gpx,.tcx,text/csv,application/gpx+xml,application/tcx+xml"
-                onChange={handleFile}
-                className="sr-only"
-              />
-              <button
-                type="button"
-                onClick={downloadSample}
-                className="inline-flex items-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Download className="w-3.5 h-3.5" /> Sample
-              </button>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Choose or drop run files; press Enter to browse"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  document.getElementById('csv-run-file')?.click()
+                }
+              }}
+              onDragEnter={(event) => { event.preventDefault(); setDragging(true) }}
+              onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
+              onDragLeave={(event) => {
+                event.preventDefault()
+                if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false)
+              }}
+              onDrop={handleDrop}
+              className={`rounded-2xl border border-dashed p-2 transition-colors ${
+                dragging ? 'border-primary bg-primary/10' : 'border-border/60'
+              }`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <label
+                  htmlFor="csv-run-file"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2 text-xs font-semibold transition-colors hover:bg-secondary"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Choose files
+                </label>
+                <input
+                  id="csv-run-file"
+                  type="file"
+                  multiple
+                  accept=".csv,.gpx,.tcx,text/csv,application/gpx+xml,application/tcx+xml"
+                  onChange={handleFiles}
+                  className="sr-only"
+                />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Samples</span>
+                {SAMPLES.map((sample) => (
+                  <button
+                    key={sample.label}
+                    type="button"
+                    onClick={() => downloadSample(sample)}
+                    className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Download className="w-3 h-3" /> {sample.label}
+                  </button>
+                ))}
+              </div>
+              {dragging && (
+                <p className="pt-2 text-center text-[11px] font-semibold text-primary">Drop CSV, GPX, or TCX files here</p>
+              )}
             </div>
 
-            {(!result || result.format === 'csv') && (
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {files.map((file, index) => (
+                  <span
+                    key={`${file.name}-${index}`}
+                    className="inline-flex max-w-full items-center gap-1 rounded-lg bg-secondary/50 py-1 pl-2 pr-1 text-[10px] font-semibold"
+                  >
+                    <span className="max-w-[10rem] truncate">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      disabled={busy}
+                      aria-label={`Remove ${file.name}`}
+                      className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {(!result || result.formats.includes('csv')) && (
               <div>
                 <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Distances in CSV are</p>
                 <div className="flex gap-1.5 rounded-xl bg-secondary/50 p-1">
@@ -186,9 +269,11 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
 
             {result && (
               <div className="space-y-2">
-                <p className="truncate text-xs font-semibold">
-                  {fileName} <span className="text-[10px] uppercase text-muted-foreground">{result.format}</span>
-                </p>
+                {result.formats.length > 0 && (
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {result.formats.map((format) => format.toUpperCase()).join(' + ')}
+                  </p>
+                )}
                 {result.rows.length > 0 && (
                   <div className="max-h-44 overflow-auto rounded-xl border border-border/60">
                     <table className="w-full text-left text-[11px]">
@@ -224,7 +309,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
 
             {!result && (
               <p className="rounded-xl bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-                Strava and device exports work: <span className="font-semibold text-foreground">CSV, GPX, or TCX</span>. For CSV use columns <span className="font-semibold text-foreground">date, distance, duration</span>, plus optional calories, steps, and name. Duration accepts <span className="font-semibold text-foreground">hh:mm:ss</span> or minutes. Re-importing the same activity will not create duplicates.
+                Strava and device exports work: <span className="font-semibold text-foreground">CSV, GPX, or TCX</span>. You can drop up to {MAX_IMPORT_FILES} files at once. For CSV use columns <span className="font-semibold text-foreground">date, distance, duration</span>, plus optional calories, steps, and name. Duration accepts <span className="font-semibold text-foreground">hh:mm:ss</span> or minutes. Re-importing the same activity will not create duplicates.
               </p>
             )}
 

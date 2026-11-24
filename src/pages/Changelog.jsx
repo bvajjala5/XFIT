@@ -11,7 +11,7 @@ const RELEASES = [
       'You can export your Uttar Fitness data as a JSON file from Profile.',
       'Added this changelog and a status page with links to the services Uttar relies on.',
       'Workout controls moved into one gear menu; the set counter is centered and the demo/body map fits small screens properly.',
-      'Past runs can be imported from CSV, GPX, or TCX files, including Strava exports. The file is previewed on your device, and re-importing the same activity will not create duplicates.',
+      'Past runs can be imported from CSV, GPX, or TCX files, including Strava exports. Drop several files at once, download samples, and preview everything on your device before saving. Re-importing the same activity will not create duplicates.',
     ],
   },
   {

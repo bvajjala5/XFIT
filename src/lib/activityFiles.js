@@ -171,6 +171,8 @@ function parseTcx(text, unit) {
   return { rows, errors, skipped: activities.length - rows.length, format: 'tcx' }
 }
 
+export const MAX_IMPORT_FILES = 10
+
 /** Parse a Strava/device export by file type into the shared run shape. */
 export function parseActivityFile(text, filename = '', { unit = 'miles' } = {}) {
   const extension = String(filename).toLowerCase().split('.').pop()
@@ -178,3 +180,69 @@ export function parseActivityFile(text, filename = '', { unit = 'miles' } = {}) 
   if (extension === 'tcx') return parseTcx(String(text ?? ''), unit)
   return { ...mapRunRows(text, { unit }), format: 'csv' }
 }
+
+/** Parse several selected files into one preview, deduplicated across files. */
+export function parseActivityFiles(files, { unit = 'miles' } = {}) {
+  const selected = files.slice(0, MAX_IMPORT_FILES)
+  const rows = []
+  const errors = []
+  const formats = new Set()
+  const seen = new Set()
+  let skipped = files.length - selected.length
+
+  if (skipped > 0) errors.push(`Only the first ${MAX_IMPORT_FILES} files were checked.`)
+
+  selected.forEach((file) => {
+    const parsed = parseActivityFile(file.text, file.name, { unit })
+    formats.add(parsed.format)
+    const label = (message) => (selected.length > 1 ? `${file.name}: ${message}` : message)
+    parsed.errors.forEach((error) => errors.push(label(error)))
+    skipped += parsed.skipped
+
+    parsed.rows.forEach((row) => {
+      if (seen.has(row.id)) {
+        skipped += 1
+        errors.push(label('duplicate of a run in another file'))
+        return
+      }
+      if (rows.length >= MAX_IMPORT_ROWS) {
+        skipped += 1
+        return
+      }
+      seen.add(row.id)
+      rows.push(row)
+    })
+  })
+
+  const list = [...formats]
+  return {
+    rows,
+    errors,
+    skipped,
+    formats: list,
+    format: list.length === 1 ? list[0] : 'mixed',
+  }
+}
+
+export const SAMPLE_GPX = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<gpx version="1.1" creator="Uttar Fitness">',
+  '  <trk><name>Morning Run</name><trkseg>',
+  '    <trkpt lat="37.7749" lon="-122.4194"><time>2026-11-20T07:00:00Z</time></trkpt>',
+  '    <trkpt lat="37.7759" lon="-122.4194"><time>2026-11-20T07:05:00Z</time></trkpt>',
+  '    <trkpt lat="37.7769" lon="-122.4194"><time>2026-11-20T07:10:00Z</time></trkpt>',
+  '  </trkseg></trk>',
+  '</gpx>',
+].join('\n')
+
+export const SAMPLE_TCX = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<TrainingCenterDatabase><Activities><Activity Sport="Running">',
+  '  <Id>2026-11-22T08:00:00Z</Id>',
+  '  <Lap StartTime="2026-11-22T08:00:00Z">',
+  '    <TotalTimeSeconds>900</TotalTimeSeconds>',
+  '    <DistanceMeters>3000</DistanceMeters>',
+  '    <Calories>280</Calories>',
+  '  </Lap>',
+  '</Activity></Activities></TrainingCenterDatabase>',
+].join('\n')
