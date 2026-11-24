@@ -22,86 +22,77 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── THEME: Cosmic (deep dark, blue-indigo accent) ── */
+  /* ── THEME: Dark mode (pure black, neutral grays, no colour cast) ──
+     The stored key stays `cosmic` for backwards compatibility; only the
+     wallpaper name shown to people changes. Mid-gray accents keep white
+     button labels readable while `text-primary` stays legible on black. */
   :root, .theme-cosmic, .theme-gradient {
-    --background: 222 25% 5%;
-    --foreground: 210 20% 94%;
-    --card: 222 22% 11%;
-    --card-foreground: 210 20% 94%;
-    --popover: 222 22% 11%;
-    --popover-foreground: 210 20% 94%;
-    --primary: 217 91% 60%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 20% 16%;
-    --secondary-foreground: 210 15% 80%;
-    --muted: 222 20% 16%;
-    /* 58% clears 4.5:1 on the card and on the lighter secondary-tinted
-       surfaces the demo mock uses; 52% only reached ~4.4:1. */
-    --muted-foreground: 210 12% 58%;
-    --accent: 217 91% 60%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 82%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 0 0% 45%;
     --accent-foreground: 0 0% 100%;
+    /* Destructive stays red: it is a state, not a decorative accent. */
     --destructive: 0 72% 58%;
     --destructive-foreground: 0 0% 98%;
-    --border: 222 18% 18%;
-    --input: 222 18% 18%;
-    --ring: 217 91% 60%;
-    --gradient-start: 222 25% 7%;
-    --gradient-end: 230 30% 10%;
-    --card-glow: 217 91% 60%;
-    /* Readable accent text (lighter on dark) and a solid fill that keeps
-       white labels above 4.5:1. */
-    --accent-text: 217 91% 72%;
-    --accent-solid: 217 91% 48%;
-    --warn-text: 38 95% 65%;
-    /* Positive/success text (light on dark). */
-    --success-text: 158 64% 70%;
-    /* Brand mark: white barbell on a pitch-black tile. */
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 60%;
+    --gradient-start: 0 0% 0%;
+    --gradient-end: 0 0% 10%;
+    --card-glow: 0 0% 45%;
+    --accent-text: 0 0% 82%;
+    --accent-solid: 0 0% 45%;
+    --warn-text: 0 0% 82%;
+    --success-text: 0 0% 82%;
+    /* Brand mark: white barbell on a black tile. */
     --brand-tile: 0 0% 0%;
     --brand-mark: 0 0% 100%;
-    /* Cosmic wallpaper uses muted neon depth, so the AI glow is blue. */
-    --brand-glow: 217 91% 60%;
+    --brand-glow: 0 0% 45%;
     --radius: 0.875rem;
   }
 
-    /* ── THEME: Alabaster (crisp warm light, high contrast) ── */
+  /* ── THEME: Alabaster (pure white, neutral grays, no colour cast) ── */
   .theme-alabaster {
-    --background: 30 25% 97%;
-    --foreground: 20 15% 12%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
     --card: 0 0% 100%;
-    --card-foreground: 20 15% 12%;
+    --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 15% 12%;
-    --primary: 22 95% 52%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 32%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 20% 92%;
-    --secondary-foreground: 20 12% 25%;
-    --muted: 30 20% 92%;
-    /* Deep enough to clear 4.5:1 on both the cream background and white
-       cards; the previous 50% only reached ~3.8:1. */
-    --muted-foreground: 20 10% 40%;
-    --accent: 22 95% 52%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 22%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 32%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 98%;
-    --border: 30 18% 86%;
-    --input: 30 18% 86%;
-    --ring: 22 95% 52%;
-    --gradient-start: 30 25% 97%;
-    --gradient-end: 35 30% 94%;
-    --card-glow: 22 95% 52%;
-    /* Alabaster needs a deeper orange for text and small fills: the bright
-       brand orange only reaches ~2.9:1 on cream. */
-    --accent-text: 22 90% 36%;
-    --accent-solid: 22 90% 38%;
-    --warn-text: 26 90% 30%;
-    /* Alabaster needs a deep emerald for positive text; emerald-300 only
-       reaches ~1.4:1 on the light success card. */
-    --success-text: 160 84% 26%;
-    /* Invert the brand mark on light backgrounds: black barbell on white. */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 32%;
+    --gradient-start: 0 0% 100%;
+    --gradient-end: 0 0% 96%;
+    --card-glow: 0 0% 32%;
+    --accent-text: 0 0% 24%;
+    --accent-solid: 0 0% 30%;
+    --warn-text: 0 0% 30%;
+    --success-text: 0 0% 26%;
+    /* Black barbell on a white tile. */
     --brand-tile: 0 0% 100%;
     --brand-mark: 0 0% 0%;
-    /* Alabaster wallpaper is warm off-white, so the AI glow stays amber. */
-    --brand-glow: 22 95% 52%;
+    --brand-glow: 0 0% 32%;
     --radius: 0.875rem;
   }
 
@@ -147,8 +138,8 @@
 
 /* ── Brand mark ───────────────────────────────────────────────────────────
    The emblem is a white-on-transparent PNG used as a mask, so its colour can
-   follow the active wallpaper. Cosmic renders white-on-black, Alabaster inverts
-   it to black-on-white. */
+   follow the active wallpaper. Dark mode renders white-on-black, Alabaster
+   inverts it to black-on-white. */
 .brand-emblem {
   display: block;
   aspect-ratio: 384 / 136;
@@ -248,66 +239,22 @@
 .wallpaper-layer { position: absolute; pointer-events: none; }
 .wallpaper-layer-base { inset: 0; }
 
-/* Cosmic: deep slate with soft ambient depth and muted neon accents. */
+/* Dark mode: exactly black. No gradients, glows, or colored ambience. */
 .wallpaper-cosmic .wallpaper-layer-base {
-  background: linear-gradient(155deg, #0a0b12 0%, #161a28 55%, #070810 100%);
+  background: #000;
 }
-.wallpaper-cosmic .wallpaper-layer-shape-one {
-  top: -18vh;
-  left: -12vw;
-  width: 70vw;
-  height: 70vh;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.16), transparent 68%);
-  filter: blur(70px);
-  transform: rotate(-18deg);
-}
-.wallpaper-cosmic .wallpaper-layer-shape-two {
-  right: -16vw;
-  bottom: -24vh;
-  width: 68vw;
-  height: 72vh;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.12), transparent 70%);
-  filter: blur(90px);
-  transform: rotate(24deg);
-}
+.wallpaper-cosmic .wallpaper-layer-shape,
 .wallpaper-cosmic .wallpaper-layer-glow {
-  top: 18%;
-  left: 38%;
-  width: 42vw;
-  height: 42vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.08), transparent 65%);
-  filter: blur(80px);
+  display: none;
 }
 
-/* Alabaster: crisp off-white with warm gray depth and high text contrast. */
+/* Alabaster: exactly white. No cream tint or amber highlights. */
 .wallpaper-alabaster .wallpaper-layer-base {
-  background: linear-gradient(160deg, #fbf6ef 0%, #f4f0ea 52%, #e8e4de 100%);
+  background: #fff;
 }
-.wallpaper-alabaster .wallpaper-layer-shape-one {
-  top: -20vh;
-  right: -10vw;
-  width: 65vw;
-  height: 65vh;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.85), transparent 70%);
-  filter: blur(80px);
-}
-.wallpaper-alabaster .wallpaper-layer-shape-two {
-  bottom: -22vh;
-  left: -12vw;
-  width: 60vw;
-  height: 60vh;
-  background: radial-gradient(circle, rgba(214, 205, 194, 0.35), transparent 70%);
-  filter: blur(90px);
-}
+.wallpaper-alabaster .wallpaper-layer-shape,
 .wallpaper-alabaster .wallpaper-layer-glow {
-  top: 30%;
-  left: 30%;
-  width: 45vw;
-  height: 45vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.05), transparent 68%);
-  filter: blur(90px);
+  display: none;
 }
 
 /* Gradient: the two chosen colors come from CSS variables set inline by

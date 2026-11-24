@@ -8,7 +8,8 @@ import {
   applyResolvedTheme,
   getGradientColors,
   getThemeMode,
-  gradientMidpoint,
+  gradientChromeColor,
+  gradientNavColors,
   migrateThemeMode,
   normalizeGradientColors,
   resolveTheme,
@@ -72,7 +73,14 @@ test('gradient colors validate hex values and default sensibly', () => {
   for (const invalid of [null, undefined, '#1e1b4b', ['#1e1b4b'], ['#1e1b4b', '#0ea5e9', '#fff'], ['#zzzzzz', '#0ea5e9'], ['#12345', '#0ea5e9'], ['red', 'blue']]) {
     assert.deepEqual(normalizeGradientColors(invalid), DEFAULT_GRADIENT_COLORS)
   }
-  assert.equal(gradientMidpoint(['#000000', '#ffffff']), '#808080')
+  // The browser bar and the nav use the chosen start color, never a blend.
+  assert.equal(gradientChromeColor(['#123456', '#abcdef']), '#123456')
+  assert.deepEqual(gradientNavColors(['#101010', '#ffffff']), {
+    primary: '0 0% 100%', muted: '0 0% 72%', tile: '0 0% 100%', mark: '0 0% 0%',
+  })
+  assert.deepEqual(gradientNavColors(['#fafafa', '#101010']), {
+    primary: '0 0% 0%', muted: '0 0% 28%', tile: '0 0% 0%', mark: '0 0% 100%',
+  })
 })
 
 test('setGradientColors/getGradientColors store a validated two-color pair', () => {

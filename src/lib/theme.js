@@ -1,6 +1,7 @@
 // Wallpaper helpers shared by the boot shell, the app layout, the public pages,
-// and the Profile picker. The stored value is the user's wallpaper: "cosmic",
-// "alabaster", or "gradient". It is static — there is no clock-driven mode.
+// and the Profile picker. Stored values stay "cosmic" (shown as Dark mode),
+// "alabaster", or "gradient" so existing preferences keep working. There is no
+// clock-driven mode.
 // This module is also imported by Node tests, so never touch the DOM at load
 // time and guard every browser API.
 
@@ -85,15 +86,23 @@ export function setGradientColors(colors, second) {
   return normalized
 }
 
-/** A static theme-color for the browser chrome: midpoint of the two colors. */
-export function gradientMidpoint(colors) {
-  const [from, to] = normalizeGradientColors(colors)
-  const channels = [0, 2, 4].map((index) => {
-    const a = parseInt(from.slice(1 + index, 3 + index), 16)
-    const b = parseInt(to.slice(1 + index, 3 + index), 16)
-    return Math.round((a + b) / 2).toString(16).padStart(2, '0')
-  })
-  return `#${channels.join('')}`
+/** The browser status bar follows the gradient's start color, not a blend. */
+export function gradientChromeColor(colors) {
+  return normalizeGradientColors(colors)[0]
+}
+
+/**
+ * Foreground tokens for the in-app nav when it wears the gradient. The bottom
+ * bar runs start→end upward and the desktop sidebar runs start→end rightward;
+ * whichever text color contrasts with the start color keeps the icons legible.
+ */
+export function gradientNavColors(colors) {
+  const start = gradientChromeColor(colors)
+  const channels = [1, 3, 5].map((index) => parseInt(start.slice(index, index + 2), 16))
+  const brightness = (0.299 * channels[0] + 0.587 * channels[1] + 0.114 * channels[2]) / 255
+  return brightness > 0.6
+    ? { primary: '0 0% 0%', muted: '0 0% 28%', tile: '0 0% 0%', mark: '0 0% 100%' }
+    : { primary: '0 0% 100%', muted: '0 0% 72%', tile: '0 0% 100%', mark: '0 0% 0%' }
 }
 
 export function applyResolvedTheme(resolved) {
@@ -111,18 +120,21 @@ export function applyResolvedTheme(resolved) {
   if (wallpaper === 'gradient') {
     root.style.setProperty('--wallpaper-from', colors[0])
     root.style.setProperty('--wallpaper-to', colors[1])
+    // The boot shell uses the start color too, so there is no flash before React.
+    root.style.setProperty('--boot-page', colors[0])
   } else {
     root.style.removeProperty('--wallpaper-from')
     root.style.removeProperty('--wallpaper-to')
+    root.style.removeProperty('--boot-page')
   }
 
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) {
     const chromeColor = wallpaper === 'alabaster'
-      ? '#fbf6ef'
+      ? '#ffffff'
       : wallpaper === 'gradient'
-        ? gradientMidpoint(colors)
-        : '#1a1c23'
+        ? gradientChromeColor(colors)
+        : '#000000'
     meta.setAttribute('content', chromeColor)
   }
   return wallpaper

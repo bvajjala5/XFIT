@@ -64,7 +64,7 @@ const TABS = [
     bullets: [
       'See your all-time totals at a glance',
       'Review your goal, level, and preferences',
-      'Tap Cosmic, Alabaster, or Gradient to change the wallpaper',
+      'Tap Dark mode, Alabaster, or Gradient to change the wallpaper',
     ],
   },
 ]
@@ -234,7 +234,7 @@ export default function Demo() {
                 <li>Home — complete the sample workout</li>
                 <li>Insights — switch Health/Stats, log a day, change the range</li>
                 <li>Workouts — search and filter the library</li>
-                <li>Profile — preview Cosmic, Alabaster, and Gradient wallpapers</li>
+                <li>Profile — preview Dark mode, Alabaster, and Gradient wallpapers</li>
               </ul>
             </div>
 

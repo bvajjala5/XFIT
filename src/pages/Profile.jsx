@@ -18,8 +18,8 @@ import { toast } from 'sonner';
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 const THEME_OPTIONS = [
-  { key: 'cosmic',    label: 'Cosmic',    desc: 'Deep dark',   icon: Moon },
-  { key: 'alabaster', label: 'Alabaster', desc: 'Crisp light', icon: Sun },
+  { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black',  icon: Moon },
+  { key: 'alabaster', label: 'Alabaster', desc: 'Pure white',  icon: Sun },
   { key: 'gradient',  label: 'Gradient',  desc: 'Your colors', icon: Palette },
 ];
 
@@ -27,9 +27,7 @@ const THEME_OPTIONS = [
 function ThemePreview({ mode, colors }) {
   if (mode === 'cosmic') {
     return (
-      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-white/10" style={{ background: 'linear-gradient(135deg, #0a0b12 0%, #161a28 60%, #080910 100%)' }}>
-        <span className="absolute -left-3 -top-4 h-10 w-14 rounded-full bg-indigo-500/25 blur-lg" />
-        <span className="absolute -bottom-5 -right-2 h-10 w-16 rounded-full bg-sky-500/20 blur-lg" />
+      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-white/10 bg-black">
         <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-white/30" />
         <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-white/15" />
       </div>
@@ -38,7 +36,7 @@ function ThemePreview({ mode, colors }) {
 
   if (mode === 'alabaster') {
     return (
-      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/5" style={{ background: 'linear-gradient(135deg, #fbf6ef 0%, #f4f0ea 60%, #e8e4de 100%)' }}>
+      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10 bg-white">
         <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-black/20" />
         <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-black/10" />
       </div>
@@ -162,8 +160,8 @@ export default function Profile() {
       </div>
       <div className="grid grid-cols-3 gap-3">
         <GlassCard className="text-center"><Dumbbell className="w-4 h-4 text-primary mx-auto mb-1"/><div className="text-xl font-bold">{logs.length}</div><div className="text-[10px] text-muted-foreground">Workouts</div></GlassCard>
-        <GlassCard className="text-center"><Clock className="w-4 h-4 text-green-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
-        <GlassCard className="text-center"><Flame className="w-4 h-4 text-orange-400 mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
+        <GlassCard className="text-center"><Clock className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
+        <GlassCard className="text-center"><Flame className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
       </div>
       <GlassCard id="profile-settings" className={`scroll-mt-24 transition-shadow ${location.hash === '#profile-settings' ? 'ring-2 ring-primary/60' : ''}`}>
         <div className="flex items-center justify-between mb-4">

@@ -32,8 +32,7 @@ export default function Login() {
   };
 
   return (
-    <main className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}
-      style={{ background: isDark ? 'linear-gradient(160deg,#080818 0%,#0f0f28 50%,#080818 100%)' : 'linear-gradient(160deg,#fbf6ef 0%,#f4f0ea 55%,#e8e4de 100%)' }}>
+    <main className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}>
 
       {/* Static, fixed-position wallpaper */}
       <Wallpaper />

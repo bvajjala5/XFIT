@@ -26,7 +26,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#20212d" />
+    <meta name="theme-color" content="#000000" />
 
     <!-- Resolve the saved wallpaper before the first paint. Kept inline so the
          page never flashes and the browser does not wait on an extra script
@@ -86,20 +86,13 @@
   if (mode === 'gradient') {
     root.style.setProperty('--wallpaper-from', colors[0]);
     root.style.setProperty('--wallpaper-to', colors[1]);
+    root.style.setProperty('--boot-page', colors[0]);
   }
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    var chrome = '#1a1c23';
-    if (mode === 'alabaster') chrome = '#fbf6ef';
-    if (mode === 'gradient') {
-      var midpoint = '';
-      for (var i = 0; i < 3; i++) {
-        var from = parseInt(colors[0].slice(1 + i * 2, 3 + i * 2), 16);
-        var to = parseInt(colors[1].slice(1 + i * 2, 3 + i * 2), 16);
-        midpoint += ('0' + Math.round((from + to) / 2).toString(16)).slice(-2);
-      }
-      chrome = '#' + midpoint;
-    }
+    var chrome = '#000000';
+    if (mode === 'alabaster') chrome = '#ffffff';
+    if (mode === 'gradient') chrome = colors[0];
     meta.setAttribute('content', chrome);
   }
 
@@ -123,16 +116,16 @@
     <!-- Critical boot styles: keep the first paint branded even before the CSS bundle loads. -->
     <style>
       :root {
-        --boot-page: #20212d;
-        --boot-text: #a0a8b8;
-        --boot-heading: #f8fafc;
+        --boot-page: #000;
+        --boot-text: #9e9e9e;
+        --boot-heading: #fff;
         --boot-tile: #000;
         --boot-mark: #fff;
       }
       html.theme-alabaster {
-        --boot-page: #fbf6ef;
-        --boot-text: #6b6560;
-        --boot-heading: #1c1917;
+        --boot-page: #fff;
+        --boot-text: #666;
+        --boot-heading: #000;
         --boot-tile: #fff;
         --boot-mark: #000;
       }

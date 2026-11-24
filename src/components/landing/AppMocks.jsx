@@ -704,8 +704,8 @@ export function WorkoutsMock({
 
 // ── Profile ───────────────────────────────────────────────────────────────
 const THEME_OPTIONS = [
-  { key: 'cosmic', label: 'Cosmic', desc: 'Deep dark', icon: Moon },
-  { key: 'alabaster', label: 'Alabaster', desc: 'Crisp light', icon: Sun },
+  { key: 'cosmic', label: 'Dark mode', desc: 'Pure black', icon: Moon },
+  { key: 'alabaster', label: 'Alabaster', desc: 'Pure white', icon: Sun },
   { key: 'gradient', label: 'Gradient', desc: 'Your colors', icon: Palette },
 ]
 
@@ -722,14 +722,9 @@ function ThemeSwatch({ mode }) {
   }
   const dark = mode === 'cosmic'
   return (
-    <div className={`relative h-8 w-full overflow-hidden rounded-lg border ${dark ? 'border-white/10 bg-[#0b1020]' : 'border-black/5 bg-[#fff7ed]'}`}>
+    <div className={`relative h-8 w-full overflow-hidden rounded-lg border ${dark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
       <span className={`absolute left-1.5 top-1.5 h-0.5 w-6 rounded-full ${dark ? 'bg-white/30' : 'bg-black/15'}`} />
       <span className={`absolute left-1.5 top-3 h-0.5 w-4 rounded-full ${dark ? 'bg-white/15' : 'bg-black/10'}`} />
-      <span
-        className={`absolute bottom-1 right-1.5 h-2.5 w-2.5 rounded-full ${dark
-          ? 'bg-blue-500 shadow-[0_0_8px_1px_rgba(59,130,246,0.55)]'
-          : 'bg-orange-500 shadow-[0_0_8px_1px_rgba(249,115,22,0.45)]'}`}
-      />
     </div>
   )
 }
@@ -754,8 +749,8 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: 'Workouts', value: 48, icon: Dumbbell, tone: 'text-primary' },
-          { label: 'Minutes', value: 10, icon: Clock, tone: 'text-green-400' },
-          { label: 'Calories', value: 93, icon: Flame, tone: 'text-orange-400' },
+          { label: 'Minutes', value: 10, icon: Clock, tone: 'text-muted-foreground' },
+          { label: 'Calories', value: 93, icon: Flame, tone: 'text-muted-foreground' },
         ].map(({ label, value, icon: Icon, tone }) => (
           <div key={label} className={`${CARD} p-2 text-center`}>
             <Icon className={`mx-auto h-3.5 w-3.5 ${tone}`} />
