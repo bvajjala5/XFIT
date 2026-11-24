@@ -3,8 +3,9 @@
 The browser app and installable PWA remain the primary product. This folder adds a
 Capacitor shell so the same app can be offered in Google Play later.
 
-**Current state:** wrapper source/config is ready, but no Android SDK is installed
-here, so no APK/AAB has been built and nothing has been uploaded to Play Console.
+**Current state:** a signed release AAB has been built on this machine and is ready
+to upload. Nothing has been submitted to Play Console. The AAB is generated output
+(git-ignored), so rebuild it from source if you move to another machine.
 
 Everything below is editable before the first release. The package ID is the one
 thing that becomes effectively permanent once the app is published.
@@ -22,8 +23,9 @@ thing that becomes effectively permanent once the app is published.
 | Target API | 36 (Android 16), required for new Play submissions since Aug 31, 2026 |
 
 The Gradle plugin is 8.9.1 and the wrapper is Gradle 8.11.1, which support API 36.
-Those values are set in `android/build.gradle` and `android/variables.gradle`;
-they have not been compiled here because no Android SDK is installed in this repo.
+Those values are set in `android/build.gradle` and `android/variables.gradle` and
+were compiled successfully. Capacitor 7 requires **JDK 21** (JDK 17 fails with
+`invalid source release: 21`).
 
 The wrapper loads the live PWA URL instead of a bundled copy of `dist`. That keeps
 Google sign-in on the Firebase-authorized domain. It also means the app needs a
@@ -56,31 +58,40 @@ always open that popup. If Google sign-in does not work in the wrapper, switch
 that call to `signInWithRedirect` (or use `@capacitor/browser`) before release.
 The OAuth domains are already in the `capacitor.config.json` allowlist.
 
-## Before building a release
+## Release build (already done on this machine)
 
-1. Install Android Studio (Meerkat 2024.3.1 Patch 1 or newer) with the Android
-   16 / API 36 SDK and accept its licenses. The project is already set to
-   compile and target API 36.
-2. Create a Play Console account and a new app using `com.uttar.fitness`.
-3. Generate an upload key (keep this file safe; you cannot update the app without it):
+The local toolchain was installed with Homebrew: `openjdk@21`, the
+`android-commandlinetools` cask, and SDK platform 36, build-tools 36.0.0 and
+platform-tools under `$HOME/Android/Sdk`. SDK licenses were accepted.
 
-   ```bash
-   keytool -genkeypair -v \
-     -keystore "$HOME/keys/uttar-fitness-release.jks" \
-     -alias uttar-fitness -keyalg RSA -keysize 2048 -validity 10000
-   ```
+An upload key and local signing config were created:
 
-4. Copy the signing template and fill in real values locally:
+- Keystore: `$HOME/keys/uttar-fitness-release.jks` (git-ignored)
+- Alias: `uttar-fitness`, SHA-256 fingerprint
+  `EF:55:7A:27:23:51:A4:1C:B3:F2:D6:A9:E1:CD:EC:E6:B8:C1:53:BB:04:B9:44:6B:56:C1:11:95:7E:9C:00:F6`
+  (valid until 2054; **back this file up** — it is required for every future update)
+- Passwords: in `android/keystore.properties` (git-ignored)
 
-   ```bash
-   cp android/keystore.properties.example android/keystore.properties
-   ```
+The signed bundle was built with:
 
-   Set `storeFile` to the absolute path of the `.jks` file. Both
-   `android/keystore.properties` and the keystore are git-ignored.
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME="$HOME/Android/Sdk" ANDROID_SDK_ROOT="$ANDROID_HOME"
+cd android && ./gradlew bundleRelease --no-daemon
+```
 
-5. In Android Studio: **Build → Generate Signed Bundle / APK → Android App Bundle**,
-   select the release signing config, and build the `.aab` from `android/app/release/`.
+Result: `android/app/build/outputs/bundle/release/app-release.aab`
+(4.0 MB, SHA-256
+`bae067e9782d444a6ef1bc6b14105aafd9ee82552cb6d536f9c1c469b0d15d4a`).
+Signature verified with `jarsigner -verify`. Android Studio is **not** required
+for this command.
+
+To upload from Android Studio instead, use **Build → Generate Signed Bundle /
+APK → Android App Bundle** and select the release signing config.
+
+Before creating the Play app, decide whether to keep this upload key. Enrolling in
+Play App Signing means Google replaces it with the app-signing key after the first
+upload, but the upload key must still be kept safe.
 
 ## Play Console listing
 
