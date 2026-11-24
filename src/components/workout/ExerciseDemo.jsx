@@ -164,7 +164,7 @@ export default function ExerciseDemo({ exerciseName = '', nextExerciseName = '',
       {reduced && ready && <p className="text-[10px] text-center text-muted-foreground">Tap the photo to switch between start and end position</p>}
 
       {matches.length > 1 && (
-        <div className={`flex gap-1.5 ${compact ? 'justify-start overflow-x-auto scrollbar-none' : 'flex-wrap justify-center'}`}>
+        <div className="flex flex-wrap justify-center gap-1.5">
           {matches.map((m, i) => (
             <button
               key={m.id} onClick={() => setAlt(i)}

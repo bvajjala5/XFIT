@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { Trophy, X, ArrowRight, Star, Share2, Loader2, ChevronRight, AlertTriangle, Eye, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -21,6 +21,7 @@ import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 import { cacheWorkout, findCachedWorkout } from '@/lib/workoutCache';
 import { saveWorkoutLog } from '@/lib/workoutLogQueue';
 import HybridTracker from '@/components/workout/HybridTracker';
+import PlayerSettingsMenu from '@/components/workout/PlayerSettingsMenu';
 import { movementFromExercise } from '@/lib/poseCounter';
 import {
   MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
@@ -53,6 +54,9 @@ function pickVoice() {
   const list = englishVoices();
   const saved = localStorage.getItem('xfit_voice_name');
   return list.find(v => v.name === saved) || list[0] || null;
+}
+function shortVoiceName(name) {
+  return name?.replace(/^(Microsoft|Google)\s+/i, '').replace(/\s*\(.*\)|\s*Online.*/i, '').trim() || 'Voice';
 }
 
 function playBeep(freq = 440, duration = 0.1) {
@@ -237,14 +241,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   });
   const [isComplete, setIsComplete] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const formWasPausedRef = useRef(false);
   const [totalTime, setTotalTime] = useState(0);
   const [motivation, setMotivation] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(() => localStorage.getItem('xfit_voice_enabled') !== 'false');
   const announcedRef = useRef({ exIndex:-1, countdown:false });
   const [voiceName, setVoiceName] = useState(() => pickVoice()?.name || '');
-
-
 
   const [showLogModal, setShowLogModal] = useState(false);
   const [rating, setRating] = useState(0);
@@ -285,16 +288,20 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     return () => { window.removeEventListener('pointerdown', on); window.speechSynthesis?.cancel(); };
   }, []);
 
-  // Tap to try the next available voice (saved for next time)
   useEffect(() => { whenVoicesReady().then(() => setVoiceName(pickVoice()?.name || '')); }, []);
-  const cycleVoice = () => {
-    const list = englishVoices().slice(0, 6);
-    if (!list.length) return;
-    const i = list.findIndex(v => v.name === voiceName);
-    const next = list[(i + 1) % list.length];
-    localStorage.setItem('xfit_voice_name', next.name);
-    setVoiceName(next.name);
-    speakText('Let’s get after it.', true);
+  const voiceOptions = (() => {
+    const list = englishVoices();
+    const preferred = list.slice(0, 6);
+    const saved = list.find(v => v.name === voiceName);
+    if (saved && !preferred.some(v => v.name === saved.name)) preferred.unshift(saved);
+    return preferred.map(v => ({ name: v.name, label: shortVoiceName(v.name) }));
+  })();
+  const selectVoice = (name) => {
+    const voice = englishVoices().find(v => v.name === name);
+    if (!voice) return;
+    localStorage.setItem('xfit_voice_name', voice.name);
+    setVoiceName(voice.name);
+    speakText('Let’s get after it.', voiceEnabled);
   };
 
   const toggleVoice = () => {
@@ -722,6 +729,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   // Checking form pauses the session so the timer resumes exactly where it
   // stopped when the camera sheet closes.
   const openFormCheck = () => {
+    setSettingsOpen(false);
     formWasPausedRef.current = isPaused;
     setIsPaused(true);
     // Form Check needs the camera too; release the rep-counter stream first so
@@ -732,6 +740,10 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const closeFormCheck = () => {
     setFormOpen(false);
     if (!formWasPausedRef.current) setIsPaused(false);
+  };
+  const restartFromSettings = () => {
+    setSettingsOpen(false);
+    if (window.confirm('Restart this workout from the first set? Your saved progress will be cleared.')) restartWorkout();
   };
 
   const currentExercise = exercises[exIndex] || exercises[0] || {};
@@ -936,103 +948,112 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             className="fixed inset-0 z-50 bg-primary pointer-events-none" />
         )}
       </AnimatePresence>
-      <div className="flex items-center justify-between gap-2 px-4 py-2">
-        <button onClick={() => navigate(-1)} className="glass rounded-full p-2" aria-label="Back"><X className="w-5 h-5" /></button>
-        <div className="min-w-0 text-center">
-          <div className="text-sm font-medium text-muted-foreground">{exIndex + 1} / {exercises.length}</div>
-          {exState && <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Set {setIndex + 1} of {exState.setCount}</div>}
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('Restart this workout from the first set? Your saved progress will be cleared.')) restartWorkout();
-            }}
-            title="Restart workout from the first set"
-            className="mx-auto mt-0.5 flex min-h-[24px] items-center gap-1 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            <RotateCcw className="h-3 w-3" /> Restart
-          </button>
+      <div className="relative z-30 flex items-center justify-center px-4 py-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="glass absolute left-4 flex h-11 w-11 items-center justify-center rounded-full"
+          aria-label="Back"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="flex min-w-0 flex-col items-center px-12 text-center">
+          <div className="w-full truncate text-sm font-semibold text-foreground">
+            {exState ? `Set ${setIndex + 1} of ${exState.setCount}` : 'Preparing workout'}
+          </div>
+          <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {exIndex + 1} / {exercises.length} exercises
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={openFormCheck} className="glass rounded-full w-11 h-11 flex items-center justify-center" aria-label="Check form" title="Check form">
-            <ScanFace className="w-5 h-5 text-primary" />
-          </button>
-          <button
-            onClick={toggleMedia}
-            className="glass rounded-full w-11 h-11 flex items-center justify-center"
-            aria-label={showMedia ? 'Hide exercise demo and body map' : 'Show exercise demo and body map'}
-            aria-pressed={showMedia}
-            title={showMedia ? 'Hide exercise demo and body map' : 'Show exercise demo and body map'}
-          >
-            {showMedia ? <Eye className="w-5 h-5 text-primary" /> : <EyeOff className="w-5 h-5 text-muted-foreground" />}
-          </button>
-          {voiceEnabled && englishVoices().length > 1 && (
-            <button onClick={cycleVoice} className="glass rounded-full px-3 min-h-[44px] text-[11px] text-muted-foreground max-w-[90px] truncate" title="Try another voice">
-              {voiceName.replace(/^(Microsoft|Google)\s+/i, '').replace(/\s*\(.*\)|\s*Online.*/i, '') || 'Voice'}
-            </button>
-          )}
-          <button onClick={toggleVoice} aria-label="Toggle voice" className="glass rounded-full w-11 h-11 flex items-center justify-center">{voiceEnabled?<Volume2 className="w-5 h-5 text-primary"/>:<VolumeX className="w-5 h-5 text-muted-foreground"/>}</button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((open) => !open)}
+          className="glass absolute right-4 flex h-11 w-11 items-center justify-center rounded-full"
+          aria-label="Workout settings"
+          title="Workout settings"
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+        >
+          <Settings2 className="h-5 w-5 text-primary" />
+        </button>
+        <PlayerSettingsMenu
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onFormCheck={openFormCheck}
+          showMedia={showMedia}
+          onToggleMedia={toggleMedia}
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={toggleVoice}
+          voiceOptions={voiceOptions}
+          voiceName={voiceName}
+          onVoiceChange={selectVoice}
+          onRestart={restartFromSettings}
+        />
       </div>
       <Progress value={overallProgress} className="h-1 mx-4 rounded-full" />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
-        <AnimatePresence>
-          {motivation && (
-            <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="py-1 text-center text-sm font-semibold text-primary">
-              {motivation}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
+        <div className="mx-auto w-full max-w-md">
+          <AnimatePresence>
+            {motivation && (
+              <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="pb-1 text-center text-sm font-semibold text-primary">
+                {motivation}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div key={exIndex} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} className="mb-3 text-center">
+              <h2 className="text-xl font-black leading-tight sm:text-2xl">{currentExercise?.name}</h2>
+              {currentExercise?.instructions && <p className="mx-auto mt-1 max-w-md text-[11px] leading-relaxed text-muted-foreground line-clamp-2">{currentExercise.instructions}</p>}
             </motion.div>
+          </AnimatePresence>
+
+          {exState ? (
+            <HybridTracker
+              exercise={exState}
+              phase={phase}
+              restLeft={restLeft}
+              elapsed={elapsed}
+              actual={actual}
+              weight={weight}
+              paused={isPaused}
+              poseEnabled={poseEnabled}
+              movement={movement}
+              tempoEnabled={tempoEnabled}
+              onPoseToggle={() => setPoseEnabled((value) => !value)}
+              onTempoToggle={() => setTempoEnabled((value) => !value)}
+              onAdjust={handleAdjust}
+              onQuickInput={setPrimaryValue}
+              onWeightChange={handleWeight}
+              onModeChange={handleModeChange}
+              onCompleteSet={() => (phase === 'rest' ? skipRest() : finishSet('manual'))}
+              onSkipRest={skipRest}
+              onCameraReps={handleCameraReps}
+              onRestAdjust={handleRestAdjust}
+              onRestInput={handleRestInput}
+              onPauseToggle={() => setIsPaused((value) => !value)}
+              onSkip={skipExercise}
+            />
+          ) : (
+            <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
           )}
-        </AnimatePresence>
-        <AnimatePresence mode="wait">
-          <motion.div key={exIndex} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} className="mb-2 text-center">
-            <h2 className="text-xl font-black leading-tight sm:text-2xl">{currentExercise?.name}</h2>
-            {currentExercise?.instructions && <p className="mx-auto mt-0.5 max-w-md text-[11px] text-muted-foreground line-clamp-2">{currentExercise.instructions}</p>}
-          </motion.div>
-        </AnimatePresence>
 
-        {exState ? (
-          <HybridTracker
-            exercise={exState}
-            phase={phase}
-            restLeft={restLeft}
-            elapsed={elapsed}
-            actual={actual}
-            weight={weight}
-            paused={isPaused}
-            poseEnabled={poseEnabled}
-            movement={movement}
-            tempoEnabled={tempoEnabled}
-            onPoseToggle={() => setPoseEnabled((value) => !value)}
-            onTempoToggle={() => setTempoEnabled((value) => !value)}
-            onAdjust={handleAdjust}
-            onQuickInput={setPrimaryValue}
-            onWeightChange={handleWeight}
-            onModeChange={handleModeChange}
-            onCompleteSet={() => (phase === 'rest' ? skipRest() : finishSet('manual'))}
-            onSkipRest={skipRest}
-            onCameraReps={handleCameraReps}
-            onRestAdjust={handleRestAdjust}
-            onRestInput={handleRestInput}
-            onPauseToggle={() => setIsPaused((value) => !value)}
-            onSkip={skipExercise}
-          />
-        ) : (
-          <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
-        )}
-
-        {showMedia ? (
-          <div className="mx-auto mt-3 w-[140px] sm:w-[200px]">
-            <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={toggleMedia}
-            className="mx-auto mt-3 flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            <EyeOff className="h-3.5 w-3.5" /> Show exercise demo
-          </button>
-        )}
+          {showMedia ? (
+            <div className="mx-auto mt-3 w-full max-w-[260px] sm:max-w-[300px]">
+              <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
+            </div>
+          ) : (
+            <div className="mx-auto mt-3 flex w-full max-w-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-card/30 px-3 py-3 text-center sm:max-w-[300px]">
+              <p className="text-[11px] font-medium text-muted-foreground">Exercise demo is hidden</p>
+              <button
+                type="button"
+                onClick={toggleMedia}
+                className="mt-1.5 flex min-h-[36px] items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 text-[11px] font-semibold text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                <Eye className="h-3.5 w-3.5" /> Show exercise demo
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <FormCheck open={formOpen} exerciseName={currentExercise?.name} onClose={closeFormCheck} />
