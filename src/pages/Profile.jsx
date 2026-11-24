@@ -7,7 +7,7 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy, where } from 'fire
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { clearAppCaches } from '@/lib/cache';
-import { getThemeMode, setThemeMode } from '@/lib/theme';
+import { getGradientColors, getThemeMode, setThemeMode } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
@@ -18,36 +18,37 @@ import { toast } from 'sonner';
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 const THEME_OPTIONS = [
-  { key: 'midnight', label: 'Midnight', desc: 'Always dark',  icon: Moon },
-  { key: 'sunrise',  label: 'Sunrise',  desc: 'Always light', icon: Sun },
-  { key: 'auto',     label: 'Auto',     desc: 'By time',      icon: Clock },
+  { key: 'cosmic',    label: 'Cosmic',    desc: 'Deep dark',   icon: Moon },
+  { key: 'alabaster', label: 'Alabaster', desc: 'Crisp light', icon: Sun },
+  { key: 'gradient',  label: 'Gradient',  desc: 'Your colors', icon: Palette },
 ];
 
-function ThemePreview({ mode }) {
-  if (mode === 'auto') {
+// Tiny static swatches — no animation and no theme-dependent hero artwork.
+function ThemePreview({ mode, colors }) {
+  if (mode === 'cosmic') {
     return (
-      <div
-        className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10"
-        style={{ background: 'linear-gradient(135deg, #0b1020 0%, #111a33 49.5%, #fff1de 50.5%, #fff7ed 100%)' }}
-      >
-        <Moon className="absolute left-2 top-1.5 h-3.5 w-3.5 text-slate-200" />
-        <span className="absolute left-7 top-2 h-0.5 w-0.5 rounded-full bg-white/80" />
-        <span className="absolute left-6 top-4 h-px w-px rounded-full bg-white/60" />
-        <Sun className="absolute bottom-1.5 right-2 h-4 w-4 text-orange-500" />
+      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-white/10" style={{ background: 'linear-gradient(135deg, #0a0b12 0%, #161a28 60%, #080910 100%)' }}>
+        <span className="absolute -left-3 -top-4 h-10 w-14 rounded-full bg-indigo-500/25 blur-lg" />
+        <span className="absolute -bottom-5 -right-2 h-10 w-16 rounded-full bg-sky-500/20 blur-lg" />
+        <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-white/30" />
+        <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-white/15" />
       </div>
     )
   }
 
-  const dark = mode === 'midnight'
+  if (mode === 'alabaster') {
+    return (
+      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/5" style={{ background: 'linear-gradient(135deg, #fbf6ef 0%, #f4f0ea 60%, #e8e4de 100%)' }}>
+        <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-black/20" />
+        <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-black/10" />
+      </div>
+    )
+  }
+
   return (
-    <div className={`relative h-11 w-full overflow-hidden rounded-xl border ${dark ? 'border-white/10 bg-[#0b1020]' : 'border-black/5 bg-[#fff7ed]'}`}>
-      <span className={`absolute left-2 top-2 h-1 w-9 rounded-full ${dark ? 'bg-white/30' : 'bg-black/15'}`} />
-      <span className={`absolute left-2 top-4 h-1 w-6 rounded-full ${dark ? 'bg-white/15' : 'bg-black/10'}`} />
-      <span
-        className={`absolute bottom-2 right-2 h-3.5 w-3.5 rounded-full ${dark
-          ? 'bg-blue-500 shadow-[0_0_12px_2px_rgba(59,130,246,0.55)]'
-          : 'bg-orange-500 shadow-[0_0_12px_2px_rgba(249,115,22,0.45)]'}`}
-      />
+    <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10" style={{ background: `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)` }}>
+      <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-white/60" />
+      <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-white/35" />
     </div>
   )
 }
@@ -60,6 +61,21 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
+  const [gradientColors, setColors] = useState(() => getGradientColors());
+
+  const handleWallpaper = (key) => {
+    setThemeMode(key);
+    setTheme(key);
+  };
+
+  const updateGradientColor = (index, value) => {
+    const next = [...gradientColors];
+    next[index] = value;
+    setColors(next);
+    // Save and apply immediately so the preview and the page change together.
+    setThemeMode('gradient', next);
+    setTheme('gradient');
+  };
 
   // Uttar AI can deep-link to a Profile card, e.g. /profile#profile-settings.
   useEffect(() => {
@@ -173,7 +189,7 @@ export default function Profile() {
       <GlassCard id="app-theme" className={`space-y-3 scroll-mt-24 transition-shadow ${location.hash === '#app-theme' ? 'ring-2 ring-primary/60' : ''}`}>
         <div className="flex items-center gap-2 mb-1">
           <Palette className="w-4 h-4 text-primary" />
-          <div className="text-sm font-semibold">App Theme</div>
+          <div className="text-sm font-semibold">Wallpaper</div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
@@ -182,7 +198,7 @@ export default function Profile() {
               <button
                 key={key}
                 type="button"
-                onClick={() => { setThemeMode(key); setTheme(key) }}
+                onClick={() => handleWallpaper(key)}
                 aria-pressed={selected}
                 className={`relative rounded-2xl border p-2 text-left transition-all duration-200 ${
                   selected
@@ -195,7 +211,7 @@ export default function Profile() {
                     <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
                 )}
-                <ThemePreview mode={key} />
+                <ThemePreview mode={key} colors={gradientColors} />
                 <div className="mt-2 flex items-center gap-1.5 px-0.5">
                   <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className="truncate text-xs font-semibold">{label}</span>
@@ -205,8 +221,32 @@ export default function Profile() {
             )
           })}
         </div>
+        {theme === 'gradient' && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border/40 bg-secondary/30 p-3">
+            <label className="flex items-center gap-2 text-xs font-medium">
+              <input
+                type="color"
+                value={gradientColors[0]}
+                onChange={(event) => updateGradientColor(0, event.target.value)}
+                aria-label="Gradient start color"
+                className="h-8 w-8 cursor-pointer rounded-md border-0 bg-transparent p-0"
+              />
+              Start <span className="font-mono text-[10px] text-muted-foreground">{gradientColors[0]}</span>
+            </label>
+            <label className="flex items-center gap-2 text-xs font-medium">
+              <input
+                type="color"
+                value={gradientColors[1]}
+                onChange={(event) => updateGradientColor(1, event.target.value)}
+                aria-label="Gradient end color"
+                className="h-8 w-8 cursor-pointer rounded-md border-0 bg-transparent p-0"
+              />
+              End <span className="font-mono text-[10px] text-muted-foreground">{gradientColors[1]}</span>
+            </label>
+          </div>
+        )}
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Auto picks Sunrise from 6am–7pm and Midnight the rest of the day.
+          Pick a static wallpaper. Gradient blends any two colors you choose.
         </p>
       </GlassCard>
           <GlassCard className="space-y-2">

@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
-import AnimatedBackground from './AnimatedBackground';
+import Wallpaper from './Wallpaper';
 import InstallBanner from '@/components/shared/InstallBanner';
 import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher';
 import { UttarAIProvider } from '@/components/ai/UttarAIContext';
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
-import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
+import { applyResolvedTheme, getThemeMode, resolveTheme, GRADIENT_KEY, THEME_KEY } from '@/lib/theme';
 
 const navItems = [
   { path: '/home',      icon: Home,           label: 'Home'     },
@@ -62,21 +62,15 @@ export default function AppLayout() {
   }, [user?.uid, queryClient]);
 
   useEffect(() => {
+    // Wallpapers are static: apply the saved one on mount and when another tab
+    // changes the preference. No clock, timer, or visibility sync any more.
     const sync = () => applyResolvedTheme(resolveTheme(getThemeMode()));
     sync();
-    // Auto mode follows the clock, so keep it in sync if the app stays open
-    // across the 6am or 7pm boundary (and whenever it returns to the foreground).
-    const timer = window.setInterval(() => {
-      if (getThemeMode() === 'auto') sync();
-    }, 60_000);
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') sync();
+    const onStorage = (event) => {
+      if (!event.key || event.key === THEME_KEY || event.key === GRADIENT_KEY) sync();
     };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   // Support the old /ai deep link by opening the pop-up on Home instead of
@@ -115,7 +109,7 @@ export default function AppLayout() {
   // such as /player/* and /run render outside this layout.
   return (
     <div className="min-h-screen bg-background">
-      <AnimatedBackground />
+      <Wallpaper />
       <InstallBanner />
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}

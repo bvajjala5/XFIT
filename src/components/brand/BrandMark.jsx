@@ -1,7 +1,7 @@
 
 /**
  * The Uttar barbell emblem, drawn with a CSS mask so its colour follows the
- * active theme (white on midnight, black on sunrise).
+ * active wallpaper (white on cosmic, black on alabaster).
  */
 export function BrandEmblem({ className = '' }) {
   return <span aria-hidden="true" className={`brand-emblem ${className}`} />

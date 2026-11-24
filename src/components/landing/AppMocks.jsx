@@ -704,24 +704,23 @@ export function WorkoutsMock({
 
 // ── Profile ───────────────────────────────────────────────────────────────
 const THEME_OPTIONS = [
-  { key: 'midnight', label: 'Midnight', desc: 'Always dark', icon: Moon },
-  { key: 'sunrise', label: 'Sunrise', desc: 'Always light', icon: Sun },
-  { key: 'auto', label: 'Auto', desc: 'By time', icon: Clock },
+  { key: 'cosmic', label: 'Cosmic', desc: 'Deep dark', icon: Moon },
+  { key: 'alabaster', label: 'Alabaster', desc: 'Crisp light', icon: Sun },
+  { key: 'gradient', label: 'Gradient', desc: 'Your colors', icon: Palette },
 ]
 
 function ThemeSwatch({ mode }) {
-  if (mode === 'auto') {
+  if (mode === 'gradient') {
     return (
       <div
         className="relative h-8 w-full overflow-hidden rounded-lg border border-black/10"
-        style={{ background: 'linear-gradient(135deg, #0b1020 0%, #111a33 49.5%, #fff1de 50.5%, #fff7ed 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #0ea5e9 100%)' }}
       >
-        <Moon className="absolute left-1.5 top-1 h-2.5 w-2.5 text-slate-200" />
-        <Sun className="absolute bottom-1 right-1.5 h-3 w-3 text-orange-500" />
+        <Palette className="absolute bottom-1 right-1.5 h-3 w-3 text-white/80" />
       </div>
     )
   }
-  const dark = mode === 'midnight'
+  const dark = mode === 'cosmic'
   return (
     <div className={`relative h-8 w-full overflow-hidden rounded-lg border ${dark ? 'border-white/10 bg-[#0b1020]' : 'border-black/5 bg-[#fff7ed]'}`}>
       <span className={`absolute left-1.5 top-1.5 h-0.5 w-6 rounded-full ${dark ? 'bg-white/30' : 'bg-black/15'}`} />
@@ -735,7 +734,7 @@ function ThemeSwatch({ mode }) {
   )
 }
 
-export function ProfileMock({ theme = 'midnight', onTheme }) {
+export function ProfileMock({ theme = 'cosmic', onTheme }) {
   return (
     <div className="space-y-3 p-3.5">
       <div className="flex flex-col items-center gap-1.5 text-center">
@@ -790,7 +789,7 @@ export function ProfileMock({ theme = 'midnight', onTheme }) {
 
       <div className={`${CARD} space-y-2 p-3`}>
         <p className="flex items-center gap-1.5 text-[11px] font-semibold">
-          <Palette className="h-3.5 w-3.5 text-primary" /> App Theme
+          <Palette className="h-3.5 w-3.5 text-primary" /> Wallpaper
         </p>
         <div className="grid grid-cols-3 gap-1.5">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {

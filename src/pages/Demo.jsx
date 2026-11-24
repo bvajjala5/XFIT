@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, BarChart2, Check, ChevronRight, Dumbbell, Home, Link2, Lock, RotateCcw, Sparkles, User } from 'lucide-react'
 import { toast } from 'sonner'
-import AnimatedBackground from '@/components/layout/AnimatedBackground'
+import Wallpaper from '@/components/layout/Wallpaper'
 import BrandMark from '@/components/brand/BrandMark'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
-import useAutoTheme from '@/hooks/useAutoTheme'
+import usePublicWallpaper from '@/hooks/usePublicWallpaper'
 import usePageMeta from '@/hooks/usePageMeta'
 import { useAuth } from '@/lib/AuthContext'
 import {
@@ -60,11 +60,11 @@ const TABS = [
     label: 'Profile',
     icon: User,
     title: 'Make the app yours',
-    copy: 'Your goal, level, and preferred training sit above your all-time totals, with an app theme you can switch in one tap.',
+    copy: 'Your goal, level, and preferred training sit above your all-time totals, with a wallpaper you can switch in one tap.',
     bullets: [
       'See your all-time totals at a glance',
       'Review your goal, level, and preferences',
-      'Tap Midnight, Sunrise, or Auto to change the theme',
+      'Tap Cosmic, Alabaster, or Gradient to change the wallpaper',
     ],
   },
 ]
@@ -81,7 +81,8 @@ const PREVIEWS = {
 }
 
 export default function Demo() {
-  useAutoTheme()
+  // Demo is public: always show the alabaster wallpaper, never the saved one.
+  usePublicWallpaper()
   usePageMeta({
     title: 'Try the Uttar Fitness demo — no account needed',
     description: 'Tap through a live demo of Uttar Fitness: your home screen, health and stats, the workout library, and your profile. Nothing is saved until you sign in.',
@@ -97,7 +98,7 @@ export default function Demo() {
   const [workoutType, setWorkoutType] = useState('All')
   const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
   const [workoutMuscle, setWorkoutMuscle] = useState('All')
-  const [theme, setTheme] = useState('midnight')
+  const [theme, setTheme] = useState('cosmic')
   const [searchParams, setSearchParams] = useSearchParams()
   const tabRefs = useRef({})
   const previewRef = useRef(null)
@@ -162,7 +163,7 @@ export default function Demo() {
 
   const handleTheme = (key) => {
     setTheme(key)
-    toast.message(`Theme set to ${key === 'auto' ? 'Auto' : key[0].toUpperCase() + key.slice(1)}.`)
+    toast.message(`Wallpaper set to ${key[0].toUpperCase() + key.slice(1)}.`)
   }
 
   const resetDemo = () => {
@@ -175,14 +176,14 @@ export default function Demo() {
     setWorkoutType('All')
     setWorkoutDifficulty('All')
     setWorkoutMuscle('All')
-    setTheme('midnight')
+    setTheme('cosmic')
     setPreview(null)
     toast.message('Demo reset. Nothing was saved.')
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <AnimatedBackground />
+      <Wallpaper />
 
       <header className="fixed inset-x-0 top-0 z-40 border-b border-border/40 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -210,7 +211,7 @@ export default function Demo() {
             Take the app for a spin.
           </h1>
           <p className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Tap through the real screens. Complete a workout, switch between Health and Stats, filter the workout library, and change the app theme. Sign in only when you want to keep your own data.
+            Tap through the real screens. Complete a workout, switch between Health and Stats, filter the workout library, and preview the wallpaper picker. Sign in only when you want to keep your own data.
           </p>
         </div>
 
@@ -233,7 +234,7 @@ export default function Demo() {
                 <li>Home — complete the sample workout</li>
                 <li>Insights — switch Health/Stats, log a day, change the range</li>
                 <li>Workouts — search and filter the library</li>
-                <li>Profile — switch the Midnight / Sunrise / Auto theme</li>
+                <li>Profile — preview Cosmic, Alabaster, and Gradient wallpapers</li>
               </ul>
             </div>
 

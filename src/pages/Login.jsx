@@ -3,22 +3,23 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Dumbbell, Footprints, Utensils } from 'lucide-react'
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
-import AnimatedBackground from '@/components/layout/AnimatedBackground';
+import Wallpaper from '@/components/layout/Wallpaper';
 import BrandMark from '@/components/brand/BrandMark';
 import GoogleIcon from '@/components/auth/GoogleIcon';
-import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme';
+import { applyResolvedTheme } from '@/lib/theme';
+import usePublicWallpaper from '@/hooks/usePublicWallpaper';
 
 export default function Login() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Follow the saved mode (Auto by default) so signing out never flips the
-  // login screen to a different theme than the rest of the app.
-  const activeTheme = resolveTheme(getThemeMode());
-  const isDark = activeTheme === 'midnight';
+  // Login is public: always alabaster. usePublicWallpaper restores the saved
+  // wallpaper when this page unmounts, so the app still honours the preference.
+  const activeTheme = usePublicWallpaper();
+  const isDark = activeTheme === 'cosmic';
 
-  // Apply theme class to document so AnimatedBackground picks it up
+  // Apply the wallpaper class to <html> so Wallpaper picks it up.
   React.useEffect(() => {
     applyResolvedTheme(activeTheme);
   }, [activeTheme]);
@@ -32,10 +33,10 @@ export default function Login() {
 
   return (
     <main className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}
-      style={{ background: isDark ? 'linear-gradient(160deg,#080818 0%,#0f0f28 50%,#080818 100%)' : 'linear-gradient(160deg,#fff7ed 0%,#fed7aa 40%,#fde68a 100%)' }}>
+      style={{ background: isDark ? 'linear-gradient(160deg,#080818 0%,#0f0f28 50%,#080818 100%)' : 'linear-gradient(160deg,#fbf6ef 0%,#f4f0ea 55%,#e8e4de 100%)' }}>
 
-      {/* Full screen animated background */}
-      <AnimatedBackground />
+      {/* Static, fixed-position wallpaper */}
+      <Wallpaper />
 
       <Link to="/" className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         style={{ color: isDark ? '#94a3b8' : '#78716c' }}>

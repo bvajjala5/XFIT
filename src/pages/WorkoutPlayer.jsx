@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
@@ -15,12 +14,19 @@ import useFocusTrap from '@/hooks/useFocusTrap';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import FormCheck from '@/components/workout/FormCheck';
 import { toast } from 'sonner';
-import { normalizeExercise, amountLabel } from '@/lib/exerciseTiming';
+import { normalizeExercise } from '@/lib/exerciseTiming';
 import { expectedWorkoutSeconds, isWorkoutTooFast, MIN_WORKOUT_DURATION_RATIO } from '@/lib/workoutValidation';
 import { savePR } from '@/lib/personalRecords';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
 import { cacheWorkout, findCachedWorkout } from '@/lib/workoutCache';
 import { saveWorkoutLog } from '@/lib/workoutLogQueue';
+import HybridTracker from '@/components/workout/HybridTracker';
+import { movementFromExercise } from '@/lib/poseCounter';
+import {
+  MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
+  recordSet, nextPosition, setExerciseMode, adjust, sessionProgress, flattenSets,
+  detectMode, signatureFor, firstIncomplete, setRestSeconds, completedExerciseCount,
+} from '@/lib/workoutTracking';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
 const GOOD_VOICES = [
@@ -105,7 +111,6 @@ function unlockSpeech() {
 
 const PRAISE = ['Nice work.', 'Strong.', 'Good job.', 'That’s it.', 'Keep it up.', 'Well done.'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const amountText = (ex) => amountLabel(ex);
 const exerciseDurationSeconds = (ex) => ex?.duration || (ex?.sets ? ex.sets * (ex.reps || 10) * 3 : 30);
 
 const motivations = ["You're crushing it.","Push through the burn.","Almost there, don't give up.","You're stronger than yesterday.","Feel the power.","Every rep counts.","Let's go."];
@@ -204,10 +209,20 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     }
   }, [customDurationsParam]);
 
-  const [currentEx, setCurrentEx] = useState(0);
-  const [currentSet, setCurrentSet] = useState(1);
-  const [isResting, setIsResting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
+  // Hybrid tracking state. `session` holds one record per completed set; the
+  // remaining values describe the set currently on screen.
+  const [session, setSession] = useState(null);
+  const [exIndex, setExIndex] = useState(0);
+  const [setIndex, setSetIndex] = useState(0);
+  const [phase, setPhase] = useState('work'); // work | rest
+  const [restLeft, setRestLeft] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [actual, setActual] = useState(0);
+  const [weight, setWeight] = useState('');
+  const [poseEnabled, setPoseEnabled] = useState(false);
+  const [tempoEnabled, setTempoEnabled] = useState(false);
+  const cameraRepsRef = useRef(0);
+  const lastCueRef = useRef(-1);
   const [isPaused, setIsPaused] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -234,8 +249,16 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const [prNotes, setPrNotes] = useState('');
   const [savingPR, setSavingPR] = useState(false);
 
+  // Refs keep the one-second interval stable while set values change.
   const timerRef = useRef(null);
-  const timeLeftRef = useRef(0);
+  const sessionRef = useRef(null);
+  const exIndexRef = useRef(0);
+  const setIndexRef = useRef(0);
+  const phaseRef = useRef('work');
+  const elapsedRef = useRef(0);
+  const restLeftRef = useRef(0);
+  const actualRef = useRef(0);
+  const weightRef = useRef('');
   const logModalRef = useRef(null);
   const prModalRef = useRef(null);
   const [flash, setFlash] = useState(false);
@@ -308,9 +331,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const exercises = useMemo(() => {
     if (!workout?.exercises) return [];
     return workout.exercises.map((raw,i) => {
+      // Decide the mode from the source exercise before normalizeExercise adds
+      // default sets/duration. Otherwise timed intervals with reps+duration
+      // look like single-set strength work and stop auto-advancing.
+      const mode = detectMode(raw);
       const ex = normalizeExercise(raw);   // handles builder-style fields (duration_seconds, "8-12" reps)
-      if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i]};
-      return ex;
+      if (customDurations && customDurations[i] !== undefined) return {...ex, duration:customDurations[i], mode};
+      return {...ex, mode};
     });
   }, [workout, customDurations]);
 
@@ -326,135 +353,239 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     (workout?.calories_estimate || 200) * Math.min(seconds / (expectedSeconds || 1800), 1.2)
   );
 
-  // Set the timer whenever the exercise, rest state, or exercise list changes,
-  // and once the workout has loaded (the exercise list arrives after the first
-  // render, which used to leave the timer at 0 and skip exercise 1). State is
-  // adjusted during render; the ref mirrors `timeLeft` for the interval below.
-  const [prevTimerPhase, setPrevTimerPhase] = useState(null);
-  const timerPhase = `${exercises.length}:${currentEx}:${isResting}:${isComplete}`;
-  if (timerPhase !== prevTimerPhase) {
-    setPrevTimerPhase(timerPhase);
-    if (!isComplete && exercises.length) {
-      const ex = exercises[currentEx];
-      if (ex) setTimeLeft(isResting ? (ex.rest_seconds || 30) : exerciseDurationSeconds(ex));
-    }
+  // Build (or restore) the session as soon as the workout's exercise list
+  // arrives. Adjusting state during render avoids a frame with no active set;
+  // this is the same pattern the old timer bootstrap used.
+  const [sessionKey, setSessionKey] = useState(null);
+  const nextSessionKey = exercises.length ? signatureFor(exercises) : null;
+  if (nextSessionKey && nextSessionKey !== sessionKey) {
+    setSessionKey(nextSessionKey);
+    const saved = restoreSession(exercises);
+    const resume = saved ? firstIncomplete(saved) : null;
+    const next = resume && !resume.done ? saved : createSession(exercises);
+    const start = resume && !resume.done ? resume : { exIndex: 0, setIndex: 0 };
+    persistSession(next);
+    setSession(next);
+    setExIndex(start.exIndex);
+    setSetIndex(start.setIndex);
+    setPhase('work');
+    setElapsed(0);
+    setRestLeft(0);
+    setActual(0);
+    setWeight(next.exercises[start.exIndex]?.weight || '');
+    setPoseEnabled(false);
   }
+
+  // Ref-only resets for a freshly loaded workout (safe outside render).
+  useEffect(() => {
+    if (!sessionKey) return;
+    cameraRepsRef.current = 0;
+    lastCueRef.current = -1;
+  }, [sessionKey]);
 
   // Announce the exercise whenever it changes.
   useEffect(() => {
-    if (!exercises.length || isComplete) return;
-    const ex = exercises[currentEx];
+    if (!session?.exercises?.length || isComplete) return;
+    const ex = session.exercises[exIndex];
     if (!ex) return;
 
-    const dur = exerciseDurationSeconds(ex);
     announcedRef.current.countdown = false;
-    if (announcedRef.current.exIndex !== currentEx) {
-      announcedRef.current.exIndex = currentEx;
-      const isLast = currentEx === exercises.length - 1;
-      const amount = amountText(ex, dur);
-      if (currentEx === 0) speakText(`Let’s go. First up, ${ex.name}. ${amount}.`, voiceEnabled);
+    if (announcedRef.current.exIndex !== exIndex) {
+      announcedRef.current.exIndex = exIndex;
+      const isLast = exIndex === session.exercises.length - 1;
+      const amount = ex.mode === MODE_REPS ? `${ex.target} reps` : `${ex.target} seconds`;
+      if (exIndex === 0) speakText(`Let’s go. First up, ${ex.name}. ${amount}.`, voiceEnabled);
       else if (isLast) speakText(`${pick(PRAISE)} Last one. ${ex.name}. ${amount}. Give it everything.`, voiceEnabled);
       else speakText(`${pick(PRAISE)} Next, ${ex.name}. ${amount}.`, voiceEnabled);
     }
-  }, [currentEx, isComplete, exercises, voiceEnabled]);
+  }, [exIndex, isComplete, session, voiceEnabled]);
 
-  // Exercise countdown — use refs to avoid stale closures
-  const exercisesRef = useRef(exercises);
-  const currentExRef = useRef(currentEx);
-  useEffect(() => { exercisesRef.current = exercises; }, [exercises]);
-  useEffect(() => { currentExRef.current = currentEx; }, [currentEx]);
-  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+  useEffect(() => { sessionRef.current = session; }, [session]);
+  useEffect(() => { exIndexRef.current = exIndex; }, [exIndex]);
+  useEffect(() => { setIndexRef.current = setIndex; }, [setIndex]);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { elapsedRef.current = elapsed; }, [elapsed]);
+  useEffect(() => { restLeftRef.current = restLeft; }, [restLeft]);
+  useEffect(() => { actualRef.current = actual; }, [actual]);
+  useEffect(() => { weightRef.current = weight; }, [weight]);
 
   const mountedRef = useRef(false);
-  useEffect(() => { mountedRef.current = true; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Move to the next set (or exercise) after the current set has been recorded.
+  const goNext = useCallback((nextSession, fromEx, fromSet) => {
+    const pos = nextPosition(nextSession, fromEx, fromSet);
+    persistSession(nextSession);
+    if (pos.done) {
+      speakText('Workout complete. You crushed it today.', voiceEnabled);
+      setIsComplete(true);
+      setPoseEnabled(false);
+      return;
+    }
+    if (pos.exIndex !== fromEx) {
+      triggerFlash();
+      setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
+      setTimeout(() => setMotivation(''), 3000);
+    }
+    setExIndex(pos.exIndex);
+    setSetIndex(pos.setIndex);
+    setPhase('work');
+    phaseRef.current = 'work';
+    setElapsed(0); elapsedRef.current = 0;
+    setRestLeft(0); restLeftRef.current = 0;
+    setActual(0); actualRef.current = 0;
+    setWeight(nextSession.exercises[pos.exIndex]?.weight || '');
+    weightRef.current = nextSession.exercises[pos.exIndex]?.weight || '';
+    cameraRepsRef.current = 0;
+    lastCueRef.current = -1;
+    setPoseEnabled(false);
+    const nextName = nextSession.exercises[pos.exIndex]?.name;
+    if (pos.exIndex !== fromEx) speakText(`${pick(PRAISE)} Next, ${nextName}.`, voiceEnabled);
+    else speakText(`Set ${pos.setIndex + 1}`, voiceEnabled);
+  }, [voiceEnabled]);
+
+  const finishSet = useCallback((source = 'manual') => {
+    const current = sessionRef.current;
+    const ex = current?.exercises[exIndexRef.current];
+    if (!ex || phaseRef.current === 'rest') return;
+    playBeep(440, 0.2);
+    const finalSource = source === 'camera' || cameraRepsRef.current > 0 ? 'camera' : 'manual';
+    const record = ex.mode === MODE_REPS
+      ? { actual: actualRef.current, seconds: 0, weight: weightRef.current, source: finalSource }
+      : { actual: 0, seconds: Math.min(elapsedRef.current, ex.target), weight: weightRef.current, source: finalSource };
+    const next = recordSet(current, exIndexRef.current, setIndexRef.current, record);
+    setSession(next);
+    sessionRef.current = next;
+    // Persist before resting too: a reload mid-rest must not lose this set.
+    persistSession(next);
+    const pos = nextPosition(next, exIndexRef.current, setIndexRef.current);
+    if (!pos.done && pos.exIndex === exIndexRef.current) {
+      const rest = ex.restSeconds || 30;
+      setPhase('rest'); phaseRef.current = 'rest';
+      setRestLeft(rest); restLeftRef.current = rest;
+      speakText(`Rest for ${rest} seconds`, voiceEnabled);
+    } else {
+      goNext(next, exIndexRef.current, setIndexRef.current);
+    }
+  }, [goNext, voiceEnabled]);
+
+  const skipRest = useCallback(() => {
+    if (phaseRef.current !== 'rest' || !sessionRef.current) return;
+    playBeep(880, 0.2);
+    goNext(sessionRef.current, exIndexRef.current, setIndexRef.current);
+  }, [goNext]);
 
   useEffect(() => {
-    if (isPaused || isComplete || !exercises.length) return;
+    if (isPaused || isComplete || !session) return undefined;
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       if (!mountedRef.current) return;
-      const prev = timeLeftRef.current;
-      if (prev <= 0) return;
-      if (prev === 4 && !announcedRef.current.countdown) {
+      setTotalTime(t => t + 1);
+
+      if (phaseRef.current === 'rest') {
+        const next = restLeftRef.current - 1;
+        restLeftRef.current = next;
+        setRestLeft(next);
+        if (next <= 0) {
+          playBeep(880, 0.2);
+          skipRest();
+        }
+        return;
+      }
+
+      const ex = sessionRef.current?.exercises[exIndexRef.current];
+      if (!ex || ex.mode !== MODE_TIME) return; // rep sets advance manually
+
+      const next = elapsedRef.current + 1;
+      elapsedRef.current = next;
+      setElapsed(next);
+      if (ex.target - next === 4 && !announcedRef.current.countdown) {
         announcedRef.current.countdown = true;
         speakText('3, 2, 1', voiceEnabled, { rate: 1.0 });
       }
-      setTotalTime(t => t + 1);
-      if (prev > 1) { timeLeftRef.current = prev - 1; setTimeLeft(prev - 1); return; }
-
-      timeLeftRef.current = 0; setTimeLeft(0);
-      const ex = exercisesRef.current[currentExRef.current];
-      const totalSets = ex?.sets || 1;
-      const rest = ex?.rest_seconds || 30;
-
-      if (isResting) {
-        playBeep(880, 0.2); // High beep for end of rest
-        setIsResting(false);
-        setCurrentSet(s => s + 1);
-        speakText(`Set ${currentSet + 1}`, voiceEnabled);
-      } else {
-        if (currentSet < totalSets) {
-          playBeep(440, 0.2); // Low beep for start of rest
-          setIsResting(true);
-          speakText(`Rest for ${rest} seconds`, voiceEnabled);
-        } else {
-          triggerFlash();
-          if (currentExRef.current < exercisesRef.current.length - 1) {
-            setCurrentEx(c => c + 1);
-            setCurrentSet(1);
-            setIsResting(false);
-            setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
-            setTimeout(() => setMotivation(''), 3000);
-          } else {
-            speakText('Workout complete. You crushed it today.', voiceEnabled);
-            setIsComplete(true);
-            clearInterval(timerRef.current);
-          }
-        }
+      if (tempoEnabled && ex.intervalSeconds > 0 && next % ex.intervalSeconds === 0) {
+        playBeep(660, 0.08);
+        navigator.vibrate?.(25);
+      }
+      if (next >= ex.target) {
+        triggerFlash();
+        finishSet('manual');
       }
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, currentEx, exercises.length, voiceEnabled, isResting, currentSet]);
+  }, [isPaused, isComplete, session, tempoEnabled, voiceEnabled, finishSet, skipRest]);
 
-  const completeSet = () => {
-    const ex = exercises[currentEx];
+  const setPrimaryValue = (value) => {
+    const ex = session?.exercises[exIndex];
     if (!ex) return;
-
-    if (isResting) {
-      // The button reads "Skip Rest" while resting; end the rest and start the next set.
-      playBeep(880, 0.2);
-      setIsResting(false);
-      setCurrentSet(s => s + 1);
-      speakText(`Set ${currentSet + 1}`, voiceEnabled);
-      return;
-    }
-
-    const totalSets = ex.sets || 1;
-    if (currentSet < totalSets) {
-      playBeep(440, 0.2);
-      setIsResting(true);
-      speakText(`Rest for ${ex.rest_seconds || 30} seconds`, voiceEnabled);
+    if (ex.mode === MODE_REPS) {
+      const next = adjust(value, 0, 0, 999);
+      actualRef.current = next;
+      setActual(next);
     } else {
-      triggerFlash();
-      if (currentEx < exercises.length - 1) {
-        setCurrentEx(c => c + 1);
-        setCurrentSet(1);
-        setIsResting(false);
-      } else {
-        setIsComplete(true);
-      }
+      const next = adjust(value, 0, 0, ex.target);
+      elapsedRef.current = next;
+      setElapsed(next);
     }
   };
+  const handleAdjust = (delta) => {
+    const ex = session?.exercises[exIndex];
+    if (!ex) return;
+    setPrimaryValue((ex.mode === MODE_REPS ? actualRef.current : elapsedRef.current) + delta);
+  };
+  const handleWeight = (value) => { weightRef.current = value; setWeight(value); };
+  const handleModeChange = (mode) => {
+    if (!session) return;
+    const next = setExerciseMode(session, exIndex, mode);
+    setSession(next);
+    sessionRef.current = next;
+    persistSession(next);
+    setElapsed(0); elapsedRef.current = 0;
+    setActual(0); actualRef.current = 0;
+    cameraRepsRef.current = 0;
+    setPoseEnabled(false);
+    announcedRef.current.countdown = false;
+  };
+  const handleCameraReps = (delta) => {
+    const ex = sessionRef.current?.exercises[exIndexRef.current];
+    if (!ex || ex.mode !== MODE_REPS || phaseRef.current !== 'work' || isPaused) return;
+    cameraRepsRef.current += delta;
+    setPrimaryValue(actualRef.current + delta);
+    playBeep(720, 0.06);
+    navigator.vibrate?.(20);
+  };
+
+  const applyRestSeconds = (seconds) => {
+    const value = adjust(seconds, 0, 0, 600);
+    restLeftRef.current = value;
+    setRestLeft(value);
+    const updated = setRestSeconds(sessionRef.current, exIndexRef.current, value);
+    sessionRef.current = updated;
+    setSession(updated);
+    persistSession(updated);
+  };
+  const handleRestAdjust = (delta) => applyRestSeconds(restLeftRef.current + delta);
+  const handleRestInput = (value) => applyRestSeconds(value);
 
   const skipExercise = useCallback(() => {
-    if (currentEx < exercises.length-1) {
-      setCurrentEx(c => c + 1);
-      setCurrentSet(1);
-      setIsResting(false);
+    if (!sessionRef.current) return;
+    if (exIndexRef.current < sessionRef.current.exercises.length - 1) {
+      setExIndex(exIndexRef.current + 1);
+      setSetIndex(0);
+      setPhase('work'); phaseRef.current = 'work';
+      setElapsed(0); elapsedRef.current = 0;
+      setRestLeft(0); restLeftRef.current = 0;
+      setActual(0); actualRef.current = 0;
+      setPoseEnabled(false);
+      cameraRepsRef.current = 0;
     } else {
       setIsComplete(true);
+      setPoseEnabled(false);
     }
-  }, [currentEx, exercises]);
+  }, []);
 
   const handleLogWorkout = async () => {
     if (!user) { navigate('/home'); return; }
@@ -471,7 +602,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         completedAt: new Date().toISOString(),
         duration_seconds: totalTime,
         calories_burned: caloriesFor(totalTime),
-        exercises_completed: currentEx+1,
+        exercises_completed: completedExerciseCount(session),
+        sets: flattenSets(session),
         rating: rating || null,
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
@@ -486,6 +618,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       toast.error('Could not save this workout. Please try again.');
       return;
     }
+    persistSession(null);
     navigate('/home');
   };
 
@@ -552,6 +685,9 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const openFormCheck = () => {
     formWasPausedRef.current = isPaused;
     setIsPaused(true);
+    // Form Check needs the camera too; release the rep-counter stream first so
+    // phones with a single camera don't get two competing getUserMedia calls.
+    setPoseEnabled(false);
     setFormOpen(true);
   };
   const closeFormCheck = () => {
@@ -559,12 +695,12 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     if (!formWasPausedRef.current) setIsPaused(false);
   };
 
-  const currentExercise = exercises[currentEx] || exercises[0] || {};
-  const totalDuration = exercises.length > 0 ? exercises.reduce((s,e) => s + exerciseDurationSeconds(e), 0) : 1;
+  const currentExercise = exercises[exIndex] || exercises[0] || {};
+  const exState = session?.exercises?.[exIndex];
+  const movement = movementFromExercise(exState?.name || currentExercise?.name || '');
   const tooFast = isWorkoutTooFast(totalTime, expectedSeconds);
   const minimumSeconds = Math.round(expectedSeconds * MIN_WORKOUT_DURATION_RATIO);
-  const elapsed = exercises.slice(0,currentEx).reduce((s,e) => s + exerciseDurationSeconds(e), 0);
-  const overallProgress = totalDuration > 0 ? ((elapsed+(currentExercise?.duration||30)-timeLeft)/totalDuration)*100 : 0;
+  const overallProgress = sessionProgress(session).percent;
   const formatTime = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
   const calories = caloriesFor(totalTime);
 
@@ -604,7 +740,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
             </Button>
           </div>
-          <Button variant="ghost" className="w-full" onClick={() => navigate('/home')}>Skip</Button>
+          <Button variant="ghost" className="w-full" onClick={() => { persistSession(null); navigate('/home') }}>Skip</Button>
         </motion.div>
 
         {/* ── LOG MODAL ── */}
@@ -761,12 +897,18 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             className="fixed inset-0 z-50 bg-primary pointer-events-none" />
         )}
       </AnimatePresence>
-      <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex items-center justify-between gap-2 px-4 py-2">
         <button onClick={() => navigate(-1)} className="glass rounded-full p-2" aria-label="Back"><X className="w-5 h-5" /></button>
-        <div className="text-sm font-medium text-muted-foreground">{currentEx+1} / {exercises.length}</div>
-        <div className="flex items-center gap-2">
+        <div className="min-w-0 text-center">
+          <div className="text-sm font-medium text-muted-foreground">{exIndex + 1} / {exercises.length}</div>
+          {exState && <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Set {setIndex + 1} of {exState.setCount}</div>}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button onClick={openFormCheck} className="glass rounded-full w-11 h-11 flex items-center justify-center" aria-label="Check form" title="Check form">
+            <ScanFace className="w-5 h-5 text-primary" />
+          </button>
           {voiceEnabled && englishVoices().length > 1 && (
-            <button onClick={cycleVoice} className="glass rounded-full px-3 min-h-[44px] text-[11px] text-muted-foreground max-w-[110px] truncate" title="Try another voice">
+            <button onClick={cycleVoice} className="glass rounded-full px-3 min-h-[44px] text-[11px] text-muted-foreground max-w-[90px] truncate" title="Try another voice">
               {voiceName.replace(/^(Microsoft|Google)\s+/i, '').replace(/\s*\(.*\)|\s*Online.*/i, '') || 'Voice'}
             </button>
           )}
@@ -774,68 +916,59 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         </div>
       </div>
       <Progress value={overallProgress} className="h-1 mx-4 rounded-full" />
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col">
-        <div className="my-auto w-full flex flex-col items-center text-center space-y-3 sm:space-y-5">
-          <AnimatePresence mode="wait">
-            <motion.div key={currentEx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-20}} className="space-y-1.5 w-full">
-              <div className="flex justify-center gap-2">
-                {exercises[currentEx]?.sets > 1 && (
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest">
-                    Set {currentSet} of {exercises[currentEx].sets}
-                  </Badge>
-                )}
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black leading-tight">{currentExercise?.name}</h2>
-              <p className="text-muted-foreground text-sm">{currentExercise?.reps?`${amountLabel(currentExercise)}${currentExercise.weight?' · '+currentExercise.weight:''}`:`${currentExercise?.duration||30} seconds`}</p>
-              {currentExercise?.instructions && <p className="text-xs text-muted-foreground max-w-md mx-auto line-clamp-2">{currentExercise.instructions}</p>}
+
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
+        <AnimatePresence>
+          {motivation && (
+            <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="py-1 text-center text-sm font-semibold text-primary">
+              {motivation}
             </motion.div>
-          </AnimatePresence>
-          <div className="flex w-full items-center justify-center gap-4 sm:gap-12">
-            <div className="w-[150px] sm:w-[260px] shrink-0">
-              <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[currentEx + 1]?.name} />
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative w-28 h-28 sm:w-40 sm:h-40">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-                  <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(0,0%,15%)" strokeWidth="8" />
-                  <circle cx="100" cy="100" r="90" fill="none" stroke={isResting ? 'hsl(142,70%,45%)' : 'hsl(211,100%,52%)'} strokeWidth="8" strokeLinecap="round" strokeDasharray={2*Math.PI*90} strokeDashoffset={2*Math.PI*90*(1-timeLeft/(isResting ? (exercises[currentEx]?.rest_seconds || 30) : exerciseDurationSeconds(exercises[currentEx])))} style={{transition:'stroke-dashoffset 0.5s ease'}} />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={`text-3xl sm:text-5xl font-black tabular-nums ${isResting ? 'text-green-400' : ''}`}>{formatTime(timeLeft)}</span>
-                  {isResting && <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-green-400">Resting</span>}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={openFormCheck}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
-              >
-                <ScanFace className="h-4 w-4" /> Check Form
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-            <AnimatePresence>
-              {motivation && <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}} className="text-primary font-semibold sm:text-lg">{motivation}</motion.div>}
-            </AnimatePresence>
-            {currentEx < exercises.length-1 && (
-              <div className="text-sm text-muted-foreground">
-                <span className="text-xs uppercase tracking-wider">Next up:</span>
-                <span className="ml-2 font-medium text-foreground">{exercises[currentEx+1]?.name}</span>
-              </div>
-            )}
-          </div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence mode="wait">
+          <motion.div key={exIndex} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} className="mb-2 text-center">
+            <h2 className="text-xl font-black leading-tight sm:text-2xl">{currentExercise?.name}</h2>
+            {currentExercise?.instructions && <p className="mx-auto mt-0.5 max-w-md text-[11px] text-muted-foreground line-clamp-2">{currentExercise.instructions}</p>}
+          </motion.div>
+        </AnimatePresence>
+
+        {exState ? (
+          <HybridTracker
+            exercise={exState}
+            phase={phase}
+            restLeft={restLeft}
+            elapsed={elapsed}
+            actual={actual}
+            weight={weight}
+            paused={isPaused}
+            poseEnabled={poseEnabled}
+            movement={movement}
+            tempoEnabled={tempoEnabled}
+            onPoseToggle={() => setPoseEnabled((value) => !value)}
+            onTempoToggle={() => setTempoEnabled((value) => !value)}
+            onAdjust={handleAdjust}
+            onQuickInput={setPrimaryValue}
+            onWeightChange={handleWeight}
+            onModeChange={handleModeChange}
+            onCompleteSet={() => (phase === 'rest' ? skipRest() : finishSet('manual'))}
+            onSkipRest={skipRest}
+            onCameraReps={handleCameraReps}
+            onRestAdjust={handleRestAdjust}
+            onRestInput={handleRestInput}
+          />
+        ) : (
+          <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
+        )}
+
+        <div className="mx-auto mt-3 w-[140px] sm:w-[200px]">
+          <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
         </div>
       </div>
-      <div className="flex items-center justify-center gap-3 px-4 py-3 sm:gap-4">
+
+      <div className="flex items-center justify-center gap-3 px-4 py-2 sm:gap-4">
         <Button variant="secondary" size="icon" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume workout' : 'Pause workout'}>
           {isPaused?<Play className="w-6 h-6" fill="currentColor"/>:<Pause className="w-6 h-6"/>}
         </Button>
-        {!isPaused && !isComplete && (
-          <Button className="flex-1 max-w-[160px] h-12 sm:h-14 rounded-full font-bold" onClick={completeSet}>
-            {isResting ? 'Skip Rest' : 'Complete Set'}
-          </Button>
-        )}
         <Button variant="secondary" size="icon" className="w-11 h-11 sm:w-12 sm:h-12 rounded-full" onClick={skipExercise} aria-label="Skip exercise">
           <SkipForward className="w-5 h-5" />
         </Button>

@@ -19,10 +19,10 @@ import {
   Utensils,
   WifiOff,
 } from 'lucide-react'
-import AnimatedBackground from '@/components/layout/AnimatedBackground'
+import Wallpaper from '@/components/layout/Wallpaper'
 import BrandMark from '@/components/brand/BrandMark'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
-import useAutoTheme from '@/hooks/useAutoTheme'
+import usePublicWallpaper from '@/hooks/usePublicWallpaper'
 import usePageMeta from '@/hooks/usePageMeta'
 import {
   PhoneFrame,
@@ -216,7 +216,8 @@ function MobileCta() {
 }
 
 export default function Landing() {
-  const heroTheme = useAutoTheme()
+  // Public pages always use the alabaster wallpaper; no clock-driven theme.
+  usePublicWallpaper()
   usePageMeta({
     title: 'Uttar Fitness — The all-in-one fitness app',
     description: 'The all-in-one fitness app for workouts, weekly plans, nutrition, sleep, health metrics, and AI coaching. Try the interactive demo free — no account needed.',
@@ -225,7 +226,7 @@ export default function Landing() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <AnimatedBackground />
+      <Wallpaper />
 
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-[hsl(var(--accent-solid))] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">
         Skip to content
@@ -308,46 +309,27 @@ export default function Landing() {
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
               <figure className="relative overflow-hidden rounded-[2rem] border border-border/50 shadow-[0_35px_90px_-35px_rgba(0,0,0,0.75)]">
-                {/* Matched light/dark posters at their full uncropped aspect ratio.
-                    Only the poster for the active theme is mounted, so the other
-                    artwork is never requested. Each is a responsive WebP (with the
-                    JPEG fallback) and is the landing LCP, so it loads eagerly at
-                    high priority — matching the theme-aware preload in index.html. */}
-                {heroTheme === 'midnight' ? (
-                  <picture className="block">
-                    <source
-                      type="image/webp"
-                      srcSet="/hero-midnight-480.webp 480w, /hero-midnight-640.webp 640w, /hero-midnight-820.webp 820w"
-                      sizes="(max-width: 380px) 88vw, 340px"
-                    />
-                    <img
-                      src="/hero-midnight.jpg"
-                      alt="Uttar Fitness in midnight mode on a phone held in one hand."
-                      width={820}
-                      height={794}
-                      decoding="async"
-                      fetchpriority="high"
-                      className="block h-auto w-full"
-                    />
-                  </picture>
-                ) : (
-                  <picture className="block">
-                    <source
-                      type="image/webp"
-                      srcSet="/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w"
-                      sizes="(max-width: 380px) 88vw, 340px"
-                    />
-                    <img
-                      src="/hero-sunrise.jpg"
-                      alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
-                      width={820}
-                      height={1099}
-                      decoding="async"
-                      fetchpriority="high"
-                      className="block h-auto w-full"
-                    />
-                  </picture>
-                )}
+                {/* A single static hero poster at its full uncropped aspect ratio.
+                    Responsive WebP sources (with the JPEG fallback) match the
+                    unconditional preload in index.html. The image is the landing
+                    LCP, so it loads eagerly at high priority. A new poster can
+                    replace these assets later without any theme-aware logic. */}
+                <picture className="block">
+                  <source
+                    type="image/webp"
+                    srcSet="/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w"
+                    sizes="(max-width: 380px) 88vw, 340px"
+                  />
+                  <img
+                    src="/hero-sunrise.jpg"
+                    alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
+                    width={820}
+                    height={1099}
+                    decoding="async"
+                    fetchpriority="high"
+                    className="block h-auto w-full"
+                  />
+                </picture>
               </figure>
             </motion.div>
           </div>

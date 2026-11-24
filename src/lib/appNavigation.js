@@ -75,10 +75,10 @@ export const APP_DESTINATIONS = [
   },
   {
     path: '/profile#app-theme',
-    label: 'Change app theme',
-    title: 'Profile · App Theme',
-    description: 'Switch between Midnight (dark), Sunrise (light), and Auto theme.',
-    keywords: ['theme', 'dark mode', 'light mode', 'appearance', 'midnight', 'sunrise', 'auto theme'],
+    label: 'Change wallpaper',
+    title: 'Profile · Wallpaper',
+    description: 'Switch between Cosmic (dark), Alabaster (light), and a custom two-color Gradient wallpaper.',
+    keywords: ['theme', 'wallpaper', 'dark mode', 'light mode', 'appearance', 'cosmic', 'alabaster', 'gradient'],
   },
   {
     path: '/profile',

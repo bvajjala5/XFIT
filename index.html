@@ -28,42 +28,92 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#20212d" />
 
-    <!-- Resolve the saved theme before the first paint. Kept inline so the theme
-         never flashes and the browser does not wait on an extra script request.
-         public/_headers carries the matching CSP sha256 hash. -->
+    <!-- Resolve the saved wallpaper before the first paint. Kept inline so the
+         page never flashes and the browser does not wait on an extra script
+         request. public/_headers carries the matching CSP sha256 hash. -->
     <script>
 (function () {
   var KEY = 'xfit-theme';
+  var GRADIENT_KEY = 'xfit-gradient-colors';
+  var DEFAULT_COLORS = ['#1e1b4b', '#0ea5e9'];
+  var HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
   var saved = null;
   try {
     saved = localStorage.getItem(KEY);
   } catch (error) {
     /* private mode */
   }
-  var mode = saved === 'midnight' || saved === 'sunrise' ? saved : 'auto';
-  var hour = new Date().getHours();
-  var resolved = mode === 'auto' ? (hour >= 6 && hour < 19 ? 'sunrise' : 'midnight') : mode;
-  var root = document.documentElement;
-  root.classList.remove('theme-midnight', 'theme-sunrise');
-  root.classList.add('theme-' + resolved);
-  root.setAttribute('data-theme', resolved);
-  root.setAttribute('data-theme-mode', mode);
-  var meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', resolved === 'sunrise' ? '#fbf6ef' : '#20212d');
+  // No clock and no Auto mode: legacy values are migrated once and stored.
+  // This mirrors theme.js exactly, including its cosmic default for new users.
+  var migrated = saved === 'midnight' ? 'cosmic'
+    : (saved === 'sunrise' || saved === 'auto') ? 'alabaster'
+    : (saved === 'cosmic' || saved === 'alabaster' || saved === 'gradient') ? saved
+    : 'cosmic';
+  try {
+    if (saved !== migrated) localStorage.setItem(KEY, migrated);
+  } catch (error) {
+    /* private mode */
+  }
+  // Public pages always paint Alabaster. The saved wallpaper is left untouched
+  // so signing in or opening the app still restores the user's preference.
+  var path = location.pathname.replace(/\/+$/, '') || '/';
+  var isPublicPage = path === '/' || path === '/demo' || path === '/login';
+  var mode = isPublicPage ? 'alabaster' : migrated;
 
-  // Start the default-theme hero poster before React mounts. It is the likely
-  // LCP element, and without this hint the browser would not discover it until
-  // the app has rendered — a wasted round trip on slow connections. The hint
-  // matches the <picture> srcset in the landing hero exactly, and is only added
-  // on the landing route so other pages don't preload an image they never use.
+  var colors = DEFAULT_COLORS;
+  try {
+    var parsed = JSON.parse(localStorage.getItem(GRADIENT_KEY));
+    if (Array.isArray(parsed) && parsed.length === 2 && parsed.every(function (color) {
+      return typeof color === 'string' && HEX.test(color);
+    })) {
+      colors = parsed.map(function (color) {
+        var digits = color.slice(1).toLowerCase();
+        if (digits.length === 3) {
+          digits = digits.charAt(0) + digits.charAt(0) + digits.charAt(1) + digits.charAt(1) + digits.charAt(2) + digits.charAt(2);
+        }
+        return '#' + digits;
+      });
+    }
+  } catch (error) {
+    /* malformed or unavailable storage: use the defaults */
+  }
+
+  var root = document.documentElement;
+  root.classList.remove('theme-cosmic', 'theme-alabaster', 'theme-gradient', 'theme-midnight', 'theme-sunrise');
+  root.classList.add('theme-' + mode);
+  root.setAttribute('data-theme', mode);
+  root.setAttribute('data-theme-mode', migrated);
+  if (mode === 'gradient') {
+    root.style.setProperty('--wallpaper-from', colors[0]);
+    root.style.setProperty('--wallpaper-to', colors[1]);
+  }
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    var chrome = '#1a1c23';
+    if (mode === 'alabaster') chrome = '#fbf6ef';
+    if (mode === 'gradient') {
+      var midpoint = '';
+      for (var i = 0; i < 3; i++) {
+        var from = parseInt(colors[0].slice(1 + i * 2, 3 + i * 2), 16);
+        var to = parseInt(colors[1].slice(1 + i * 2, 3 + i * 2), 16);
+        midpoint += ('0' + Math.round((from + to) / 2).toString(16)).slice(-2);
+      }
+      chrome = '#' + midpoint;
+    }
+    meta.setAttribute('content', chrome);
+  }
+
+  // Start the landing hero before React mounts. It is the likely LCP element,
+  // and without this hint the browser would not discover it until the app has
+  // rendered — a wasted round trip on slow connections. The hero is now a
+  // single static sunrise poster, so the preload is unconditional on '/'.
   if (location.pathname === '/') {
-    var hero = resolved === 'midnight' ? 'midnight' : 'sunrise';
     var preload = document.createElement('link');
     preload.rel = 'preload';
     preload.as = 'image';
     preload.type = 'image/webp';
     preload.setAttribute('fetchpriority', 'high');
-    preload.setAttribute('imagesrcset', '/hero-' + hero + '-480.webp 480w, /hero-' + hero + '-640.webp 640w, /hero-' + hero + '-820.webp 820w');
+    preload.setAttribute('imagesrcset', '/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w');
     preload.setAttribute('imagesizes', '(max-width: 380px) 88vw, 340px');
     document.head.appendChild(preload);
   }
@@ -79,7 +129,7 @@
         --boot-tile: #000;
         --boot-mark: #fff;
       }
-      html.theme-sunrise {
+      html.theme-alabaster {
         --boot-page: #fbf6ef;
         --boot-text: #6b6560;
         --boot-heading: #1c1917;

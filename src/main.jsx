@@ -11,9 +11,12 @@ import { Toaster } from 'sonner'
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
 import { registerSW } from 'virtual:pwa-register'
 
-// Apply the saved theme before the first React paint so the boot shell, the
-// logo, and the app background never flash the wrong mode.
-applyResolvedTheme(resolveTheme(getThemeMode()))
+// Match the inline boot script: public pages always paint Alabaster, while the
+// signed-in app uses the saved wallpaper. Keeping both in sync avoids a flash
+// between the static shell and the first React paint.
+const publicPath = window.location.pathname.replace(/\/+$/, '') || '/'
+const isPublicPage = publicPath === '/' || publicPath === '/demo' || publicPath === '/login'
+applyResolvedTheme(isPublicPage ? 'alabaster' : resolveTheme(getThemeMode()))
 
 // Register the PWA worker after the page has loaded so it never competes with
 // the critical rendering path. registerSW() is the plugin's own entry point:

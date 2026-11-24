@@ -396,16 +396,16 @@ const AI_QUESTIONS = [
     id: 'theme',
     icon: Compass,
     title: 'Find a feature',
-    prompt: 'How do I change my app theme?',
+    prompt: 'How do I change my wallpaper?',
     answer: {
       kind: 'text',
       intro: 'You can change it in two taps:',
       bullets: [
         'Open Profile from the bottom bar',
-        'Tap the theme control and pick Midnight, Sunrise, or Auto',
+        'Pick Cosmic, Alabaster, or Gradient',
       ],
-      outro: 'Auto follows the clock — Sunrise through the day, Midnight at night.',
-      actions: [{ label: 'Change app theme' }],
+      outro: 'Gradient blends any two colors you choose. Nothing follows the clock anymore.',
+      actions: [{ label: 'Change wallpaper' }],
     },
   },
   {
