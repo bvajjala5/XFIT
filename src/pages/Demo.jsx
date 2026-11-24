@@ -164,7 +164,7 @@ export default function Demo() {
       setTab(NAV_TO_TAB[key])
       return
     }
-    if (key === 'ai') toast.message('Uttar AI opens as a full-screen coach in the app.')
+    if (key === 'ai') toast.message('Uttar AI opens as a full-screen AI coach in the app.')
     else if (key === 'plan') toast.message('The weekly plan opens from the Plan quick link.')
     else if (key === 'run') toast.message('The run tracker is built into the app.')
     else toast.message('That screen opens in the full app.')

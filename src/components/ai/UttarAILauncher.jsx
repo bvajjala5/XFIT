@@ -12,7 +12,7 @@ export const preloadUttarAI = () => import('@/pages/UttarAI').catch(() => {})
 function AILoading() {
   return (
     <div className="flex h-full flex-col items-center justify-center">
-      <BrandLoader size="md" label="Waking up your coach…" />
+      <BrandLoader size="md" label="Waking up Uttar AI…" />
     </div>
   )
 }

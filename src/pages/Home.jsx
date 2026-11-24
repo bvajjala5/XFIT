@@ -230,8 +230,7 @@ export default function Home() {
         </div>
         <div className="flex items-start justify-end gap-2 min-w-0">
           <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mt-1">
-            <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote.text}”</blockquote>
-            {quote.author !== 'Unknown' && <figcaption className="text-[10px] text-muted-foreground mt-1">{quote.author}</figcaption>}
+            <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote}”</blockquote>
           </figure>
           <GoalsTrackerButton logs={logs} />
         </div>

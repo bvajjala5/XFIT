@@ -54,8 +54,7 @@ export default function WorkoutsAndRun() {
 
   const filtered = allWorkouts.filter(w => {
     const title = w.title || w.name || '';
-    const trainer = w.trainer || '';
-    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase()) || trainer.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase());
     const matchType = type === 'All' || w.type === type;
     const matchDiff = difficulty === 'All' || w.difficulty === difficulty;
     const matchMuscle = muscleGroup === 'All' || (MUSCLE_MAP[muscleGroup] || []).some(kw =>
@@ -137,7 +136,7 @@ export default function WorkoutsAndRun() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
           <Input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search workouts or trainers..."
+            placeholder="Search workouts..."
             className="pl-9 bg-card border-border/60 h-10"/>
         </div>
         <button

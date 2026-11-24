@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace, Eye, EyeOff } from 'lucide-react';
+import { Trophy, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -598,6 +598,34 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     }
   }, []);
 
+  // Re-entering a workout resumes its saved session. This is the explicit way
+  // back to set one: clear the saved progress and rebuild every timer/ref so a
+  // restarted run cannot inherit a stale rest countdown or completed set.
+  const restartWorkout = useCallback(() => {
+    if (!exercises.length) return;
+    const fresh = createSession(exercises);
+    const firstWeight = fresh.exercises[0]?.weight || '';
+    persistSession(fresh);
+    sessionRef.current = fresh;
+    setSession(fresh);
+    setExIndex(0); exIndexRef.current = 0;
+    setSetIndex(0); setIndexRef.current = 0;
+    setPhase('work'); phaseRef.current = 'work';
+    setElapsed(0); elapsedRef.current = 0;
+    setRestLeft(0); restLeftRef.current = 0;
+    setActual(0); actualRef.current = 0;
+    setWeight(firstWeight); weightRef.current = firstWeight;
+    setTotalTime(0);
+    setIsPaused(false);
+    setIsComplete(false);
+    setMotivation('');
+    setPoseEnabled(false);
+    cameraRepsRef.current = 0;
+    lastCueRef.current = -1;
+    announcedRef.current = { exIndex: -1, countdown: false };
+    toast.success('Workout restarted from the first set.');
+  }, [exercises]);
+
   const handleLogWorkout = async () => {
     if (!user) { navigate('/home'); return; }
     if (isWorkoutTooFast(totalTime, expectedSeconds)) {
@@ -913,6 +941,16 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         <div className="min-w-0 text-center">
           <div className="text-sm font-medium text-muted-foreground">{exIndex + 1} / {exercises.length}</div>
           {exState && <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Set {setIndex + 1} of {exState.setCount}</div>}
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Restart this workout from the first set? Your saved progress will be cleared.')) restartWorkout();
+            }}
+            title="Restart workout from the first set"
+            className="mx-auto mt-0.5 flex min-h-[24px] items-center gap-1 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            <RotateCcw className="h-3 w-3" /> Restart
+          </button>
         </div>
         <div className="flex items-center gap-1.5">
           <button onClick={openFormCheck} className="glass rounded-full w-11 h-11 flex items-center justify-center" aria-label="Check form" title="Check form">

@@ -255,7 +255,7 @@ export function FormCheckPreview() {
               <span className="absolute bottom-3 right-3 h-6 w-6 rounded-br-2xl border-b-4 border-r-4 border-primary" />
             </div>
             <div className="w-full rounded-2xl border border-white/15 bg-white/5 px-3 py-2.5 text-left">
-              <p className="text-[10px] font-semibold text-white/85">What the coach can and can&rsquo;t do</p>
+              <p className="text-[10px] font-semibold text-white/85">What Uttar AI can and can&rsquo;t do</p>
               <p className="mt-1 text-[9px] leading-relaxed text-white/60">Flags body position, alignment, range of motion, stance, and safety risks. Can&rsquo;t feel weight, judge tempo, or diagnose injury.</p>
             </div>
           </div>
@@ -562,7 +562,7 @@ export function AIPreview() {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-black">Uttar AI</p>
-              <p className="truncate text-[10px] text-muted-foreground">Your coach for training, nutrition, and recovery</p>
+              <p className="truncate text-[10px] text-muted-foreground">Your AI coach for training, nutrition, and recovery</p>
             </div>
           </div>
           {thread.length ? (
@@ -650,7 +650,7 @@ export function AIPreview() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What it does</p>
           <h3 className="mt-2 text-lg font-black leading-tight">Ask in plain language, get a plan back</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Uttar AI is the coach built into the app. It reads your profile, training history, and nutrition log, then answers in plain language — or builds something you can save.
+            Uttar AI is the AI coach built into the app. It reads your profile, training history, and nutrition log, then answers in plain language — or builds something you can save.
           </p>
         </div>
 
@@ -669,7 +669,7 @@ export function AIPreview() {
 
         <p className="flex items-start gap-2 rounded-2xl border border-border/50 bg-card/60 p-3.5 text-xs leading-relaxed text-muted-foreground backdrop-blur-md">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          This preview answers a fixed set of questions offline so you can see the shape of it. The real coach uses your own history and needs a signed-in account.
+          This preview answers a fixed set of questions offline so you can see the shape of it. The real AI uses your own history and needs a signed-in account.
         </p>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           AI can make mistakes — check form and safety, and talk to a clinician about injuries or medical conditions.

@@ -202,13 +202,12 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0 shrink-0">
           <p className="text-[10px] text-muted-foreground">Good morning</p>
-          <p className="text-lg font-extrabold leading-tight">Alex</p>
+          <p className="text-lg font-extrabold leading-tight">Demo user</p>
         </div>
         <figure className="min-w-0 max-w-[54%] rounded-xl bg-card/50 px-2.5 py-1.5 text-right">
           <blockquote className="text-[8px] italic leading-snug text-muted-foreground">
-            &ldquo;Take care of your body. It&rsquo;s the only place you have to live.&rdquo;
+            &ldquo;Direct Your Greatness, Live Uttar&rdquo;
           </blockquote>
-          <figcaption className="mt-0.5 text-[8px] text-muted-foreground">Jim Rohn</figcaption>
         </figure>
       </div>
 
@@ -819,7 +818,7 @@ export function WorkoutsMock({
           <input
             value={search}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Search workouts or trainers..."
+            placeholder="Search workouts..."
             aria-label="Search workouts"
             className="h-9 w-full rounded-xl border border-border/60 bg-card pl-8 pr-3 text-[10px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
           />
@@ -828,7 +827,7 @@ export function WorkoutsMock({
         <div className="relative flex items-center">
           <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <span className="flex h-9 w-full items-center rounded-xl border border-border/60 bg-card pl-8 pr-3 text-[10px] text-muted-foreground">
-            Search workouts or trainers...
+            Search workouts...
           </span>
         </div>
       )}
@@ -904,8 +903,8 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
           <User className="h-6 w-6 text-primary" />
         </span>
         <div>
-          <p className="text-sm font-bold leading-tight">Alex Rivera</p>
-          <p className="text-[9px] text-muted-foreground">alex.rivera@example.com</p>
+          <p className="text-sm font-bold leading-tight">Demo user</p>
+          <p className="text-[9px] text-muted-foreground">demo@example.com</p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold text-[hsl(var(--accent-text))]">Build Muscle</span>

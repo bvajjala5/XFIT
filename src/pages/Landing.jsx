@@ -36,7 +36,7 @@ const SECONDARY_BUTTON = 'inline-flex h-12 items-center justify-center gap-2 rou
 const FEATURES = [
   {
     icon: Dumbbell,
-    title: 'Workouts with a coach',
+    title: 'Workouts with AI guidance',
     copy: 'Timers, sets, rest, and AI form cues stay on screen while you train — no counting reps in your head.',
     detail: 'Guided player + form checks',
   },

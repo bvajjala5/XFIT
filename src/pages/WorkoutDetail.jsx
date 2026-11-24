@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, User, Save, Check, RotateCcw, ScanFace } from 'lucide-react';
+import { ArrowLeft, Play, Clock, Flame, Dumbbell, Signal, Save, Check, RotateCcw, ScanFace } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -212,16 +212,6 @@ export default function WorkoutDetail() {
             {workout.description || 'A great workout to challenge yourself.'}
           </p>
         </div>
-
-        {/* Trainer */}
-        <GlassCard className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <div className="font-semibold">{workout.trainer || (isCustom ? 'Custom workout' : '')}</div>
-          </div>
-        </GlassCard>
 
         {/* Exercises */}
         {workout.exercises?.length > 0 && (

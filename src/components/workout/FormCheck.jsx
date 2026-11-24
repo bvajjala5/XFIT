@@ -146,7 +146,7 @@ export default function FormCheck({ open, onClose, exerciseName }) {
       setChecks((n) => n + 1)
     } catch (err) {
       if (session !== sessionRef.current) return
-      setCueError(err?.message || 'The coach could not review that moment. Keep training — the next check will try again.')
+      setCueError(err?.message || 'Uttar AI could not review that moment. Keep training — the next check will try again.')
     } finally {
       if (session === sessionRef.current) {
         busyRef.current = false
@@ -290,7 +290,7 @@ export default function FormCheck({ open, onClose, exerciseName }) {
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20">
                         <Sparkles className="h-3.5 w-3.5 text-primary" />
                       </span>
-                      <p className="text-xs font-bold">Coach cue</p>
+                      <p className="text-xs font-bold">AI cue</p>
                     </div>
                     {checks > 0 && (
                       <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/70">
@@ -315,11 +315,11 @@ export default function FormCheck({ open, onClose, exerciseName }) {
           {phase === 'ready' && (
             <>
               <p className="text-center text-xs text-white/70">
-                Prop your phone up so your whole body stays in frame. The coach checks a few frames as you train.
+                Prop your phone up so your whole body stays in frame. Uttar AI checks a few frames as you train.
               </p>
 
               <div className="mx-auto w-full max-w-sm rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left">
-                <p className="text-[11px] font-semibold text-white/85">What the coach can and can&rsquo;t do</p>
+                <p className="text-[11px] font-semibold text-white/85">What Uttar AI can and can&rsquo;t do</p>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-white/65">
                   <span className="font-semibold text-white/80">It can flag</span> what the camera can see: body position, joint alignment, range of motion, stance, and obvious safety risks.
                 </p>

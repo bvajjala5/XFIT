@@ -471,7 +471,7 @@ export default function UttarAI({ onClose }) {
           <BrandMark className="h-10 w-10 rounded-2xl shadow-lg shadow-black/20" emblemClassName="w-7" />
           <div className="min-w-0">
             <h1 id="uttar-ai-title" className="text-xl font-black">Uttar AI</h1>
-            <p className="truncate text-xs text-muted-foreground">Your coach for training, nutrition, and recovery</p>
+            <p className="truncate text-xs text-muted-foreground">Your AI coach for training, nutrition, and recovery</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">

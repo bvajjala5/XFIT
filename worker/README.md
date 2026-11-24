@@ -28,5 +28,5 @@ node --test worker/auth.test.mjs
 - The built-in rate limit (10 requests/min per user) is best-effort per Worker instance.
   For hard limits add a Cloudflare Rate Limiting rule on the Worker route in the dashboard.
 - Also set a daily quota / budget alert on the key in Google AI Studio / Cloud Console.
-- Bringing Coach X back later: add a chat page that calls `callAI()` from `src/lib/ai.js`
+- Bringing the AI chat feature back later: add a chat page that calls `callAI()` from `src/lib/ai.js`
   with a system prompt — no new server work needed.
