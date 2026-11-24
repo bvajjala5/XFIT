@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildWorkoutShareUrl, decodeSharedWorkout } from './workoutShareLink.js'
+import { shareContent } from './shareContent.js'
 
 const workout = {
   id: 'abc123',
@@ -28,4 +29,39 @@ test('shared workout links round-trip without private fields', () => {
 
 test('malformed workout links are rejected', () => {
   assert.throws(() => decodeSharedWorkout('not-a-real-payload'))
+})
+
+test('shareContent uses the native share sheet when available', async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+  const calls = []
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { share: async (data) => { calls.push(data) } },
+  })
+  try {
+    const result = await shareContent({ title: 'Done', text: 'Nice workout', url: '/home' })
+    assert.equal(result, 'shared')
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].url, 'https://xfit-bpe.pages.dev/home')
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'navigator', descriptor)
+    else delete globalThis.navigator
+  }
+})
+
+test('shareContent falls back to copying an absolute link', async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+  let copied = ''
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { clipboard: { writeText: async (value) => { copied = value } } },
+  })
+  try {
+    const result = await shareContent({ text: 'Nice workout', url: '/home' })
+    assert.equal(result, 'copied')
+    assert.equal(copied, 'Nice workout\nhttps://xfit-bpe.pages.dev/home')
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'navigator', descriptor)
+    else delete globalThis.navigator
+  }
 })
