@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore/lite'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, ScanBarcode } from 'lucide-react'
+import { Search, X, Plus, Trash2, Loader2, Apple, ChefHat, ChevronLeft, Globe, ScanBarcode, Pencil, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/firestore'
 import GlassCard from '@/components/shared/GlassCard'
@@ -11,6 +11,13 @@ import useFocusTrap from '@/hooks/useFocusTrap'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createFoodSearch, calcNutrition, compositeFromItems, defaultGrams } from '@/lib/foodSearch'
+import {
+  applyFoodCorrection,
+  foodSourceLabel,
+  loadFoodCorrections,
+  removeFoodCorrection,
+  saveFoodCorrection,
+} from '@/lib/foodCorrections'
 
 // Keep the barcode decoder out of the first paint; it is only fetched when the
 // scan button is used.
@@ -64,13 +71,18 @@ const saveRecent = (uid, food) => {
 }
 
 function FoodRow({ food, onClick, badge }) {
+  const source = badge || foodSourceLabel(food)
   return (
     <button onClick={() => onClick(food)} className="w-full text-left glass rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 border border-transparent transition-all">
       <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
         {food.source === 'meal' ? <ChefHat className="w-4 h-4 text-muted-foreground" /> : <Apple className="w-4 h-4 text-muted-foreground" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{title(food)}{badge && <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary align-middle">{badge}</span>}</p>
+        <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
+          <span className="truncate">{title(food)}</span>
+          <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 align-middle text-[9px] font-bold text-primary">{source}</span>
+          {food.corrected && <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">Corrected</span>}
+        </p>
         {(food.brand || (food.label && food.label !== food.name)) && <p className="text-xs text-muted-foreground truncate">{food.brand || food.name}</p>}
       </div>
       <div className="text-right shrink-0">
@@ -115,6 +127,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const [view, setView] = useState('search')              // search | detail | meal | custom
   const [text, setText] = useState('')
   const [selected, setSelected] = useState(null)
+  const [selectedBase, setSelectedBase] = useState(null)   // original third-party entry before local correction
   const [grams, setGrams] = useState(100)
   const [mealType, setMealType] = useState(defaultMealForNow())
   const [draft, setDraft] = useState(null)                // { title, items: [{food, grams}], save }
@@ -122,20 +135,32 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
   const [onlineBusy, setOnlineBusy] = useState(false)
   const [custom, setCustom] = useState({ name: '', serving: '100', calories: '', protein: '', carbs: '', fat: '' })
   const [scanOpen, setScanOpen] = useState(false)
+  const [corrections, setCorrections] = useState(() => loadFoodCorrections())
+  const [editingCorrection, setEditingCorrection] = useState(false)
+  const [correctionDraft, setCorrectionDraft] = useState(null)
   const qc = useQueryClient()
   const contentRef = useRef(null)
   const searchRef = useRef(null)
   const customNameRef = useRef(null)
 
-  useEffect(() => { if (open) loadEngine().then(setEngine).catch(() => setEngineError(true)) }, [open])
+  useEffect(() => {
+    if (!open) return
+    loadEngine().then(setEngine).catch(() => setEngineError(true))
+  }, [open])
   // Reset the sheet when it opens (or the default meal changes), and clear the
   // search when it closes, adjusting state during render.
   const [prevOpenMeal, setPrevOpenMeal] = useState(null)
   const openMealKey = `${open}:${defaultMeal || ''}`
   if (prevOpenMeal !== openMealKey) {
     setPrevOpenMeal(openMealKey)
-    if (open) setMealType(defaultMeal || defaultMealForNow())
-    else { setView('search'); setText(''); setSelected(null); setDraft(null); setOnline(null); setScanOpen(false) }
+    if (open) {
+      setMealType(defaultMeal || defaultMealForNow())
+      setCorrections(loadFoodCorrections())
+    }
+    else {
+      setView('search'); setText(''); setSelected(null); setSelectedBase(null); setDraft(null)
+      setOnline(null); setScanOpen(false); setEditingCorrection(false); setCorrectionDraft(null)
+    }
   }
   const [prevText, setPrevText] = useState(text)
   if (text !== prevText) {
@@ -152,8 +177,20 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     enabled: !!userId && open,
   })
 
-  const result = useMemo(() => (engine && text.trim() ? engine.search(text) : null), [engine, text])
-  const mealSuggestion = useMemo(() => (engine && text.trim() ? engine.parseMealQuery(text) : null), [engine, text])
+  const result = useMemo(() => {
+    if (!engine || !text.trim()) return null
+    const found = engine.search(text)
+    return {
+      curated: found.curated.map((food) => applyFoodCorrection(food, corrections)),
+      usda: found.usda.map((food) => applyFoodCorrection(food, corrections)),
+    }
+  }, [engine, text, corrections])
+  const mealSuggestion = useMemo(() => {
+    if (!engine || !text.trim()) return null
+    const parsed = engine.parseMealQuery(text)
+    if (!parsed) return null
+    return { ...parsed, items: parsed.items.map((item) => ({ ...item, food: applyFoodCorrection(item.food, corrections) })) }
+  }, [engine, text, corrections])
   const myMatches = useMemo(() => {
     const q = text.trim().toLowerCase()
     return q ? myFoods.filter((f) => f.name.toLowerCase().includes(q)) : myFoods.slice(0, 6)
@@ -167,7 +204,10 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  const recent = useMemo(() => (open && userId ? loadRecent(userId) : []), [open, userId])
+  const recent = useMemo(() => {
+    if (!open || !userId) return []
+    return loadRecent(userId).map((food) => ({ ...applyFoodCorrection(food, corrections), recentBase: food }))
+  }, [open, userId, corrections])
   useFocusTrap(contentRef, open, onClose)
 
   // The focus trap lands on the first focusable element (the header Close
@@ -183,19 +223,81 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
 
   // ── actions ───────────────────────────────────────────────────────────────
   const pick = (food) => {
+    // Recents display corrected values, but keep the original for reset/logging.
+    const baseFood = food.recentBase || food
+    const corrected = applyFoodCorrection(baseFood, corrections)
     if (draft) {                                   // we're building a meal: add as an ingredient
-      setDraft({ ...draft, items: [...draft.items, { food, grams: defaultGrams(food) }] })
+      setDraft({ ...draft, items: [...draft.items, { food: corrected, grams: defaultGrams(corrected) }] })
       setText(''); setView('meal'); return
     }
-    setSelected(food); setGrams(food.servingGrams || (food.source === 'custom' || food.source === 'meal' ? 100 : defaultGrams(food))); setView('detail')
+    setSelectedBase(baseFood)
+    setSelected(corrected)
+    setGrams(corrected.servingGrams || (corrected.source === 'custom' || corrected.source === 'meal' ? 100 : defaultGrams(corrected)))
+    setEditingCorrection(false)
+    setCorrectionDraft(null)
+    setView('detail')
   }
   const startMeal = (m) => { setDraft({ title: m?.title || 'My meal', items: m?.items || [], save: true }); setText(''); setView('meal') }
 
-  const finish = (entry) => { saveRecent(userId, entry.foodRef); onAdd(clean({ ...entry, foodRef: undefined })); onClose() }
+  const finish = (entry) => {
+    // Recents keep the original data so resetting a correction works later.
+    saveRecent(userId, entry.recentRef || entry.foodRef)
+    onAdd(clean({ ...entry, foodRef: undefined, recentRef: undefined }))
+    onClose()
+  }
 
   const addSelected = () => {
     const n = calcNutrition(selected.per100, grams)
-    finish({ foodRef: selected, id: selected.id, name: title(selected), brand: selected.brand || '', source: selected.source, grams, mealType, ...n, per100: selected.per100, ingredients: selected.ingredients, loggedAt: new Date().toISOString() })
+    finish({
+      foodRef: selected,
+      recentRef: selectedBase || selected,
+      id: selected.id,
+      name: title(selected),
+      brand: selected.brand || '',
+      source: selected.source,
+      grams,
+      mealType,
+      ...n,
+      per100: selected.per100,
+      corrected: selected.corrected || undefined,
+      ingredients: selected.ingredients,
+      loggedAt: new Date().toISOString(),
+    })
+  }
+
+  const canCorrect = selectedBase && ['usda', 'online'].includes(selectedBase.source)
+
+  const startCorrection = () => {
+    const base = selectedBase || selected
+    const firstServing = base?.servings?.[0]
+    setCorrectionDraft({
+      serving: String(base?.servingGrams || firstServing?.[1] || 100),
+      servingLabel: firstServing?.[0] || '1 serving',
+      calories: String(base?.per100?.calories ?? 0),
+      protein: String(base?.per100?.protein ?? 0),
+      carbs: String(base?.per100?.carbs ?? 0),
+      fat: String(base?.per100?.fat ?? 0),
+    })
+    setEditingCorrection(true)
+  }
+
+  const saveCorrection = () => {
+    const base = selectedBase || selected
+    const next = saveFoodCorrection(base, correctionDraft)
+    setCorrections(next)
+    setSelected(applyFoodCorrection(base, next))
+    setEditingCorrection(false)
+    toast.success('Saved on this device only')
+  }
+
+  const resetCorrection = () => {
+    const base = selectedBase || selected
+    const next = removeFoodCorrection(base)
+    setCorrections(next)
+    setSelected(applyFoodCorrection(base, next))
+    setEditingCorrection(false)
+    if (base) saveRecent(userId, base)
+    toast.success('Back to the original food data')
   }
 
   const addMeal = async () => {
@@ -223,7 +325,8 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       const ref = await addDoc(collection(db, 'users', userId, 'customFoods'), clean({ name, source: 'custom', per100, servingGrams: serving, servings: [[`1 serving`, serving]], createdAt: serverTimestamp() }))
       qc.invalidateQueries({ queryKey: ['custom-foods', userId] })
       const food = { id: `custom-${ref.id}`, docId: ref.id, name, source: 'custom', per100, servingGrams: serving, servings: [['1 serving', serving]] }
-      setSelected(food); setGrams(serving); setView('detail')
+      setSelectedBase(null); setSelected(food); setGrams(serving)
+      setEditingCorrection(false); setCorrectionDraft(null); setView('detail')
     } catch { toast.error("Couldn't save that food — check your connection") }
   }
 
@@ -234,7 +337,10 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
 
   const runOnline = async () => {
     setOnlineBusy(true)
-    try { setOnline(await searchPackaged(text)) } catch { toast.error("Couldn't reach the packaged-food database"); setOnline(null) } finally { setOnlineBusy(false) }
+    try {
+      const found = await searchPackaged(text)
+      setOnline(found.map((food) => applyFoodCorrection(food, corrections)))
+    } catch { toast.error("Couldn't reach the packaged-food database"); setOnline(null) } finally { setOnlineBusy(false) }
   }
 
   // ── views ─────────────────────────────────────────────────────────────────
@@ -253,8 +359,12 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
       <div className="space-y-4">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">{selected.source === 'meal' ? <ChefHat className="w-6 h-6 text-muted-foreground" /> : <Apple className="w-6 h-6 text-muted-foreground" />}</div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="font-bold leading-tight">{title(selected)}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary">{foodSourceLabel(selected)}</span>
+              {selected.corrected && <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">Corrected on this device</span>}
+            </div>
             {(selected.brand || (selected.label && selected.label !== selected.name)) && <p className="text-xs text-muted-foreground mt-0.5">{selected.brand || selected.name}</p>}
             {selected.ingredients && <p className="text-xs text-muted-foreground mt-0.5">{selected.ingredients.map((i) => `${i.name} ${i.grams}g`).join(' · ')}</p>}
             <button onClick={() => setView('search')} className="text-xs text-primary mt-1 inline-flex items-center gap-0.5"><ChevronLeft className="w-3 h-3" />Back to search</button>
@@ -270,6 +380,56 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
           </div>
         </div>
         <MacroCard n={n} />
+        {canCorrect && (
+          <div className="rounded-xl border border-border/60 bg-secondary/30 p-3 space-y-3">
+            {!editingCorrection ? (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {selected.corrected ? 'This correction is saved on this device only.' : 'Label looks wrong? Fix it for next time.'}
+                  </p>
+                  <button type="button" onClick={startCorrection} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border/60 bg-card/60 px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:border-foreground/20">
+                    <Pencil className="h-3 w-3" /> {selected.corrected ? 'Edit correction' : 'Fix details'}
+                  </button>
+                </div>
+                {selected.corrected && (
+                  <button type="button" onClick={resetCorrection} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                    <RotateCcw className="h-3 w-3" /> Use original values
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-[11px] font-semibold">Correct the numbers for 100 g</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    ['serving', 'Serving (g)'],
+                    ['calories', 'Calories'],
+                    ['protein', 'Protein (g)'],
+                    ['carbs', 'Carbs (g)'],
+                    ['fat', 'Fat (g)'],
+                  ].map(([key, label]) => (
+                    <label key={key} className="space-y-1">
+                      <span className="text-[10px] text-muted-foreground">{label}</span>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={correctionDraft?.[key] ?? ''}
+                        onChange={(event) => setCorrectionDraft((draftValue) => ({ ...draftValue, [key]: event.target.value }))}
+                        className="h-9 bg-secondary/60 border-0 text-xs"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[10px] leading-relaxed text-muted-foreground">Saved only on this device. We do not change the shared food database or entries you already logged.</p>
+                <div className="flex gap-2">
+                  <Button className="h-9 flex-1 rounded-lg text-xs" onClick={saveCorrection}>Save correction</Button>
+                  <Button variant="secondary" className="h-9 flex-1 rounded-lg text-xs" onClick={() => setEditingCorrection(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <MealTypePicker value={mealType} onChange={setMealType} />
         <Button className="w-full h-12 rounded-xl text-base gap-2" onClick={addSelected}><Plus className="w-4 h-4" /> Add to Log</Button>
       </div>
@@ -332,6 +492,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
             <ScanBarcode className="w-4 h-4" />
           </button>
         </div>
+        <p className="px-1 text-[10px] leading-relaxed text-muted-foreground">Every result shows its source. If a label looks wrong, you can correct it on this device without changing the shared database.</p>
         {draft && <p className="text-xs text-primary">Adding an ingredient to “{draft.title}” — <button className="underline" onClick={() => setView('meal')}>back to meal</button></p>}
         {engineError && <GlassCard className="text-sm text-center space-y-2"><p>Couldn't load the food database.</p><Button size="sm" onClick={() => { setEngineError(false); loadEngine().then(setEngine).catch(() => setEngineError(true)) }}>Try again</Button></GlassCard>}
 
@@ -339,7 +500,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
           {!has && (
             <>
               {recent.length > 0 && <Section label="Recent">{recent.slice(0, 6).map((f) => <FoodRow key={f.id} food={f} onClick={pick} />)}</Section>}
-              {myFoods.length > 0 && <Section label="My foods">{myFoods.slice(0, 6).map((f) => <FoodRow key={f.id} food={f} onClick={pick} badge={f.source === 'meal' ? 'Meal' : undefined} />)}</Section>}
+              {myFoods.length > 0 && <Section label="My foods">{myFoods.slice(0, 6).map((f) => <FoodRow key={f.id} food={f} onClick={pick} />)}</Section>}
               {!draft && <button onClick={() => startMeal(null)} className="w-full glass rounded-xl p-3 flex items-center gap-3 text-left hover:border-primary/30 border border-transparent"><ChefHat className="w-5 h-5 text-primary" /><div><p className="font-semibold text-sm">Build a meal</p><p className="text-xs text-muted-foreground">Combine foods, like chicken + rice, into one entry</p></div></button>}
               <p className="text-center text-muted-foreground text-xs py-2">Search 8,000+ foods from the USDA database</p>
             </>
@@ -353,7 +514,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
             </button>
           )}
           {has && myMatches.length > 0 && <Section label="My foods">{myMatches.map((f) => (
-            <div key={f.id} className="relative"><FoodRow food={f} onClick={pick} badge={f.source === 'meal' ? 'Meal' : undefined} />
+            <div key={f.id} className="relative"><FoodRow food={f} onClick={pick} />
               <button onClick={(e) => deleteMine(f, e)} aria-label={`Delete ${f.name}`} className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-card border border-border text-red-400 flex items-center justify-center"><Trash2 className="w-3 h-3" /></button></div>))}</Section>}
           {has && result?.curated.length > 0 && <Section label="Everyday foods">{result.curated.map((f) => <FoodRow key={f.id} food={f} onClick={pick} />)}</Section>}
           {has && result?.usda.length > 0 && <Section label={result.curated.length ? 'More from USDA' : 'USDA foods'}>{result.usda.map((f) => <FoodRow key={f.id} food={f} onClick={pick} />)}</Section>}

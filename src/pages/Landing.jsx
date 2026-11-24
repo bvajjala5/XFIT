@@ -612,6 +612,8 @@ export default function Landing() {
             <a href="#faq" className="py-1.5 transition-colors hover:text-foreground">FAQ</a>
             <Link to="/demo" className="py-1.5 transition-colors hover:text-foreground">Demo</Link>
             <Link to="/login" className="py-1.5 transition-colors hover:text-foreground">Sign in</Link>
+            <Link to="/changelog" className="py-1.5 transition-colors hover:text-foreground">Changelog</Link>
+            <Link to="/status" className="py-1.5 transition-colors hover:text-foreground">Status</Link>
             <Link to="/privacy" className="py-1.5 transition-colors hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="py-1.5 transition-colors hover:text-foreground">Terms</Link>
           </nav>

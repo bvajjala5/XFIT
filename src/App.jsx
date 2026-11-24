@@ -18,6 +18,8 @@ const Insights = lazy(() => import('@/pages/Insights'))
 const CustomWorkoutBuilder = lazy(() => import('@/pages/CustomWorkoutBuilder'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
+const Changelog = lazy(() => import('@/pages/Changelog'))
+const Status = lazy(() => import('@/pages/Status'))
 const PersonalRecords = lazy(() => import('@/pages/PersonalRecords'))
 const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
 const Community = lazy(() => import('@/pages/Community'))
@@ -87,6 +89,8 @@ export default function App() {
       {/* Public legal pages, linked from the landing page before sign-in. */}
       <Route path="/privacy" element={<Suspense fallback={<LoadingScreen />}><Privacy /></Suspense>} />
       <Route path="/terms" element={<Suspense fallback={<LoadingScreen />}><Terms /></Suspense>} />
+      <Route path="/changelog" element={<Suspense fallback={<LoadingScreen />}><Changelog /></Suspense>} />
+      <Route path="/status" element={<Suspense fallback={<LoadingScreen />}><Status /></Suspense>} />
 
       {/* Full-screen pages */}
       <Route path="/player/:id" element={

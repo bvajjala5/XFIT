@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, ChevronDown, Apple, Sunrise, Sun, Moon } from 'lucide-react'
 import FoodPicker from '@/components/nutrition/FoodPicker'
 import { localDateStr } from '@/lib/utils'
+import { foodSourceLabel } from '@/lib/foodCorrections'
 import { toast } from 'sonner'
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack']
@@ -150,7 +151,7 @@ export default function MealTracker({ userId }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">{food.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{food.grams}g · P:{food.protein}g C:{food.carbs}g F:{food.fat}g</p>
+                          <p className="text-[11px] text-muted-foreground">{food.grams}g · {foodSourceLabel(food)}{food.corrected ? ' · corrected' : ''} · P:{food.protein}g C:{food.carbs}g F:{food.fat}g</p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-bold text-orange-400">{food.calories}</p>

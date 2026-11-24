@@ -462,6 +462,8 @@ export default function Demo() {
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-6 text-[11px] text-muted-foreground sm:flex-row sm:px-6">
           <p>Demo mode · Uttar Fitness</p>
           <nav aria-label="Demo footer" className="flex items-center gap-4">
+            <Link to="/changelog" className="transition-colors hover:text-foreground">Changelog</Link>
+            <Link to="/status" className="transition-colors hover:text-foreground">Status</Link>
             <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
             <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
             <Link to="/" className="transition-colors hover:text-foreground">Home</Link>

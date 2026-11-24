@@ -3,19 +3,39 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firestore';
 import { deleteUser } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, query, orderBy, where } from 'firebase/firestore/lite';
+import { collection, getDocs, getDoc, deleteDoc, doc, query, orderBy, where } from 'firebase/firestore/lite';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { clearAppCaches } from '@/lib/cache';
 import { getThemeMode, setThemeMode } from '@/lib/theme';
+import { localDateStr } from '@/lib/utils';
+import { buildUserDataExport, downloadJson, serializeDocument } from '@/lib/dataExport';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
+
+// One inventory for export and account deletion so the two stay in sync.
+const USER_DATA_COLLECTIONS = ['workouts','customWorkouts','goals','healthLogs','messages','schedule','foodLogs','runs','journal','preferences',
+  'personalRecords','fcmTokens','customFoods','weightLogs','checkins','followers'];
+
+async function readUserDataCollection(uid, name) {
+  if (name === 'foodLogs') {
+    const dates = await getDocs(collection(db, 'users', uid, 'foodLogs'))
+    const logs = []
+    for (const dateDoc of dates.docs) {
+      const entries = await getDocs(collection(db, 'users', uid, 'foodLogs', dateDoc.id, 'entries'))
+      logs.push({ ...serializeDocument(dateDoc), entries: entries.docs.map(serializeDocument) })
+    }
+    return logs
+  }
+  const snap = await getDocs(collection(db, 'users', uid, name))
+  return snap.docs.map(serializeDocument)
+}
 
 const THEME_OPTIONS = [
   { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black', icon: Moon },
@@ -51,6 +71,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
 
   const handleWallpaper = (key) => {
@@ -104,9 +125,7 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     if (!user) return;
     try {
-      const colls = ['workouts','customWorkouts','goals','healthLogs','messages','schedule','foodLogs','runs','journal','preferences',
-        'personalRecords','fcmTokens','customFoods','weightLogs','checkins','followers'];
-      for (const c of colls) { const snap = await getDocs(collection(db,'users',user.uid,c)); for (const d of snap.docs) await deleteDoc(d.ref); }
+      for (const c of USER_DATA_COLLECTIONS) { const snap = await getDocs(collection(db,'users',user.uid,c)); for (const d of snap.docs) await deleteDoc(d.ref); }
       // Remove public community workouts this user published, so deletion is complete.
       const shared = await getDocs(query(collection(db, 'sharedWorkouts'), where('sharedBy', '==', user.uid)));
       for (const d of shared.docs) await deleteDoc(d.ref);
@@ -120,6 +139,33 @@ export default function Profile() {
         : 'Could not finish deleting your account. Please sign in again and retry.');
       await logout();
       navigate('/', { replace: true });
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user || exporting) return;
+    setExporting(true);
+    try {
+      const profileSnap = await getDoc(doc(db, 'users', user.uid));
+      const collections = {};
+      for (const name of USER_DATA_COLLECTIONS) {
+        collections[name] = await readUserDataCollection(user.uid, name);
+      }
+      const shared = await getDocs(query(collection(db, 'sharedWorkouts'), where('sharedBy', '==', user.uid)));
+      collections.sharedWorkouts = shared.docs.map(serializeDocument);
+
+      const payload = buildUserDataExport(user.uid, {
+        profile: profileSnap.exists() ? serializeDocument(profileSnap) : null,
+        ...collections,
+      });
+      const filename = `uttar-fitness-data-${localDateStr()}.json`;
+      if (!downloadJson(filename, payload)) throw new Error('Download unavailable');
+      toast.success('Your data export is downloading');
+    } catch (error) {
+      console.error('Data export failed:', error);
+      toast.error("Couldn't export your data. Please try again.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -207,6 +253,19 @@ export default function Profile() {
         </p>
       </GlassCard>
           <GlassCard className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Data</p>
+            <button
+              type="button"
+              onClick={handleExportData}
+              disabled={exporting}
+              className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary disabled:opacity-60"
+            >
+              <span className="flex items-center gap-3"><Download className="h-4 w-4 text-muted-foreground" /> {exporting ? 'Preparing export…' : 'Export Data'}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <p className="text-[10px] leading-relaxed text-muted-foreground">Downloads a JSON copy of your workouts, nutrition, runs, health logs and preferences. It stays on your device.</p>
+          </GlassCard>
+          <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
             <Link to="/history" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span className="flex items-center gap-3"><Dumbbell className="w-4 h-4 text-muted-foreground" /> Workout History</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
@@ -217,6 +276,10 @@ export default function Profile() {
             <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
             <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <div className="border-t border-border/30" />
+            <Link to="/changelog" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Changelog</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <div className="border-t border-border/30" />
+            <Link to="/status" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Status &amp; reliability</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
           </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={handleSignOut}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>
