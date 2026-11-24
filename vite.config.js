@@ -16,8 +16,9 @@ export default defineConfig({
         name: 'Uttar Fitness',
         short_name: 'Uttar Fitness',
         description: 'AI-powered fitness tracker for workouts, weekly plans, nutrition, health metrics, and progress.',
-        theme_color: '#20212d',
-        background_color: '#20212d',
+        // Match index.html and the app's black-and-white wallpapers: no colour cast.
+        theme_color: '#000000',
+        background_color: '#000000',
         display: 'standalone',
         start_url: '/',
         orientation: 'portrait',

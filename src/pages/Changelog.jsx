@@ -14,6 +14,7 @@ const RELEASES = [
       'Past runs can be imported from CSV, GPX, or TCX files, including Strava exports. Drop several files at once, download samples, and preview everything on your device before saving. Re-importing the same activity will not create duplicates.',
       'Profile photos now load at a higher resolution, so your picture looks sharp on high-density screens.',
       'Small fixes: closing the Google sign-in popup no longer shows an error, workout history shows a loading state, and demo/privacy copy matches what the app actually does.',
+      'The installable app now uses a pure black splash colour instead of a leftover blue tint.',
     ],
   },
   {
