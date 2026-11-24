@@ -130,6 +130,11 @@ export default function WorkoutsAndRun() {
         </span>
         <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
       </Link>
+      <div className="-mt-2 flex justify-end pr-1">
+        <Link to="/run?import=1" className="text-[11px] font-semibold text-primary transition-colors hover:text-foreground">
+          Import a CSV instead
+        </Link>
+      </div>
 
       {/* ── Search + filter toggle ───────────────────────────── */}
       <div className="flex items-center gap-2">

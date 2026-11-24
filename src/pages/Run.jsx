@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { Footprints } from 'lucide-react'
+import { FileSpreadsheet, Footprints } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import RunTracker from '@/components/run/RunTracker'
 import RunSummary from '@/components/run/RunSummary'
+import CsvImportDialog from '@/components/run/CsvImportDialog'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Run() {
   const { user, userData } = useAuth()
+  const [searchParams] = useSearchParams()
   const [summary, setSummary] = useState(null)
+  const [importOpen, setImportOpen] = useState(() => searchParams.get('import') === '1')
   const distanceUnit = userData?.distance_unit || 'miles'
 
   function handleComplete(runSummary) {
@@ -26,6 +30,13 @@ export default function Run() {
             <Footprints className="w-6 h-6 text-primary" /> Run Tracker
           </h1>
           <p className="text-white/70 text-sm mt-0.5 drop-shadow-sm">GPS tracking, pace, splits & more</p>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition-colors hover:bg-white/25"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Import CSV
+          </button>
         </div>
       </motion.div>
 
@@ -42,6 +53,13 @@ export default function Run() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CsvImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        userId={user?.uid}
+        unit={distanceUnit}
+      />
     </div>
   )
 }

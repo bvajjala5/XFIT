@@ -3,9 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import GlassCard from '@/components/shared/GlassCard'
 import { Button } from '@/components/ui/button'
 import { Trophy, Navigation, Footprints, Flame, Clock, TrendingUp, RotateCcw } from 'lucide-react'
-import { db } from '@/lib/firestore'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore/lite'
-import { saveWorkoutLog } from '@/lib/workoutLogQueue'
+import { saveRun as persistRun } from '@/lib/runSave'
 import { formatDistance, formatPace, normalizeDistanceUnit, unitConfig } from '@/lib/distanceUnits'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
@@ -34,41 +32,18 @@ export default function RunSummary({ summary, userId, unit = 'miles' }) {
   async function saveRun() {
     if (!userId) { toast.error('Not signed in'); return }
     try {
-      const runData = {
+      const { queued } = await persistRun(userId, {
         distance,
         elapsed,
         steps,
         calories,
-        pace, // kept as min/km for existing history
-        distance_unit: distanceUnit,
-        splits: splits.map(s => ({ ...s })),
-        completedAt: serverTimestamp(),
-        type: 'run',
-      }
-      // The workout log is the one that feeds Recent Workouts, Progress, and
-      // Streak, so save it through the durable queue first. A failed write is
-      // kept on the device instead of losing the run.
-      const { queued } = await saveWorkoutLog(userId, {
-        workout_title: `Run — ${distText} ${config.short}`,
-        workout_type: 'cardio',
-        duration_seconds: elapsed,
-        calories_burned: calories,
-        completedAt: new Date().toISOString(),
-        type: 'run',
-        distance,
         pace,
-        distance_unit: distanceUnit,
+        splits,
+        distanceUnit,
       })
-      if (!queued) {
-        try {
-          await addDoc(collection(db, 'users', userId, 'runs'), runData)
-        } catch (err) {
-          console.warn('Run history write failed; the workout log was still saved.', err)
-        }
-        toast.success('Run saved!')
-      } else {
-        toast.success('Saved on this device — it will sync when you’re back online.')
-      }
+      toast.success(queued
+        ? 'Saved on this device — it will sync when you’re back online.'
+        : 'Run saved!')
     } catch (err) {
       console.error('Save run error:', err)
       toast.error('Failed to save: ' + (err.message || 'Unknown error'))
