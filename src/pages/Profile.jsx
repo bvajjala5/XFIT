@@ -19,7 +19,7 @@ const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improv
 
 const THEME_OPTIONS = [
   { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black',  icon: Moon },
-  { key: 'alabaster', label: 'Alabaster', desc: 'Pure white',  icon: Sun },
+  { key: 'alabaster', label: 'White mode', desc: 'Pure white',  icon: Sun },
   { key: 'gradient',  label: 'Gradient',  desc: 'Your colors', icon: Palette },
 ];
 

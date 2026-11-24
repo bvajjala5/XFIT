@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import {
+  ArrowLeft,
   BarChart2,
   BarChart3,
   Calendar,
@@ -14,6 +16,7 @@ import {
   Footprints,
   Heart,
   Home,
+  Minus,
   Moon,
   Palette,
   Play,
@@ -21,6 +24,7 @@ import {
   Scale,
   Search,
   Settings,
+  SkipForward,
   Sparkles,
   Sun,
   TrendingUp,
@@ -143,11 +147,23 @@ export function PhoneFrame({ children, className = '', label, active = 'home', o
 }
 
 /** Wide browser-style frame for the interactive demo. */
-export function DemoFrame({ children, className = '', active = 'home', onNavigate }) {
+export function DemoFrame({ children, className = '', active = 'home', onNavigate, theme = 'alabaster' }) {
+  // The public page stays Alabaster, but the phone preview can wear any of the
+  // three wallpapers. Theme classes work on this inner element too, so all mock
+  // tokens (cards, text, nav) follow the selected wallpaper without a reload.
+  const screenTheme = ['cosmic', 'alabaster', 'gradient'].includes(theme) ? theme : 'alabaster'
+  // `color` must be set here too: the public page's <html> owns the inherited
+  // text color, so changing only the CSS variables on this nested element would
+  // leave dark-preview text black-on-black.
+  const screenStyle = screenTheme === 'cosmic'
+    ? { background: '#000', color: 'hsl(var(--foreground))' }
+    : screenTheme === 'alabaster'
+      ? { background: '#fff', color: 'hsl(var(--foreground))' }
+      : { backgroundImage: 'linear-gradient(135deg, #1e1b4b 0%, #0ea5e9 100%)', color: 'hsl(var(--foreground))' }
   return (
     <div className={`mx-auto w-full max-w-2xl ${className}`}>
       <div className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/70 p-1.5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] backdrop-blur-xl">
-        <div className="overflow-hidden rounded-[1.35rem] border border-border/50 bg-background/90">
+        <div style={screenStyle} className={`overflow-hidden rounded-[1.35rem] border border-border/50 theme-${screenTheme}`}>
           <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5" aria-hidden="true">
             <span className="h-2 w-2 rounded-full bg-red-400/70" />
             <span className="h-2 w-2 rounded-full bg-amber-400/70" />
@@ -267,16 +283,32 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
         {[
           ['Core Crusher', 'Mine · 12 min · 6 exercises', Dumbbell],
           ['Athletic HIIT Cardio', 'Suggested · hiit · 30 min', Flame],
-        ].map(([title, meta, Icon]) => (
-          <div key={title} className="flex items-center gap-2.5 border-t border-border/40 px-3 py-2">
-            <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[10px] font-medium">{title}</p>
-              <p className="truncate text-[8px] text-muted-foreground">{meta}</p>
-            </div>
-            <Play className="h-3 w-3 shrink-0 text-muted-foreground" />
-          </div>
-        ))}
+        ].map(([title, meta, Icon]) => {
+          const row = (
+            <>
+              <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[10px] font-medium">{title}</p>
+                <p className="truncate text-[8px] text-muted-foreground">{meta}</p>
+              </div>
+              <Play className="h-3 w-3 shrink-0 text-muted-foreground" />
+            </>
+          )
+          const rowClass = 'flex w-full items-center gap-2.5 border-t border-border/40 px-3 py-2 text-left'
+          return go ? (
+            <button
+              key={title}
+              type="button"
+              onClick={() => go(`workout:${title}`)}
+              aria-label={`Open ${title} in the demo player`}
+              className={`${rowClass} transition-colors hover:bg-secondary/50 active:bg-secondary/70`}
+            >
+              {row}
+            </button>
+          ) : (
+            <div key={title} className={rowClass}>{row}</div>
+          )
+        })}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -294,6 +326,141 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ── Guided player (interactive demo) ──────────────────────────────────────
+const DEMO_EXERCISES = {
+  'Core Crusher': ['Crunches', 'Plank', 'Russian Twist'],
+  'Athletic HIIT Cardio': ['Jumping Jacks', 'High Knees', 'Mountain Climbers'],
+}
+const DEMO_SETS_PER_EXERCISE = 3
+const DEMO_TARGET_REPS = 12
+const DEMO_REST_SECONDS = 20
+
+/** A small working player so the demo can show sets, reps and rest without an account. */
+export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
+  const exercises = DEMO_EXERCISES[title] || DEMO_EXERCISES['Core Crusher']
+  const totalSets = exercises.length * DEMO_SETS_PER_EXERCISE
+  const [setIndex, setSetIndex] = useState(0)
+  const [reps, setReps] = useState(0)
+  const [restTotal, setRestTotal] = useState(0)
+  const [restLeft, setRestLeft] = useState(0)
+  const [finished, setFinished] = useState(false)
+
+  const resting = restTotal > 0
+  useEffect(() => {
+    if (!resting) return undefined
+    const id = window.setInterval(() => {
+      setRestLeft((n) => {
+        if (n <= 1) {
+          window.clearInterval(id)
+          return 0
+        }
+        return n - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [resting])
+
+  const advance = () => {
+    setRestTotal(0)
+    setRestLeft(0)
+    setReps(0)
+    if (setIndex + 1 >= totalSets) setFinished(true)
+    else setSetIndex((i) => i + 1)
+  }
+
+  const completeSet = () => {
+    if (setIndex + 1 >= totalSets) {
+      setFinished(true)
+      return
+    }
+    setRestTotal(DEMO_REST_SECONDS)
+    setRestLeft(DEMO_REST_SECONDS)
+  }
+
+  const exerciseIdx = Math.floor(setIndex / DEMO_SETS_PER_EXERCISE)
+  const setNo = (setIndex % DEMO_SETS_PER_EXERCISE) + 1
+  const progress = finished ? 100 : ((setIndex + 1) / totalSets) * 100
+
+  return (
+    <div className="space-y-3 p-3.5">
+      <div className="flex items-center justify-between gap-2">
+        {onExit ? (
+          <button type="button" onClick={onExit}
+            className="flex min-h-[32px] items-center gap-1 rounded-lg px-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+            <ArrowLeft className="h-3 w-3" /> Back
+          </button>
+        ) : <span />}
+        <p className="min-w-0 truncate text-[10px] font-bold">{title}</p>
+        <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[8px] font-bold text-muted-foreground">DEMO</span>
+      </div>
+
+      <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
+        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+      </div>
+
+      {finished ? (
+        <div className={`${CARD} flex flex-col items-center gap-2 p-5 text-center`}>
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Check className="h-5 w-5" strokeWidth={3} />
+          </span>
+          <p className="text-base font-black">Workout complete</p>
+          <p className="text-[9px] text-muted-foreground">{totalSets} sets logged in the demo. Nothing was saved.</p>
+          {onExit && (
+            <button type="button" onClick={onExit}
+              className="mt-1 min-h-[36px] w-full rounded-xl primary-gradient px-3 text-[10px] font-bold text-white">
+              Back to Home
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className={`${CARD} p-4 text-center`}>
+            <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Set {setNo} of {DEMO_SETS_PER_EXERCISE}
+            </p>
+            <p className="mt-1 text-lg font-black leading-tight">{exercises[exerciseIdx]}</p>
+            <p className="mt-3 text-5xl font-black tabular-nums">{resting ? restLeft : reps}</p>
+            <p className="text-[9px] text-muted-foreground">
+              {resting ? 'seconds of rest' : `reps · target ${DEMO_TARGET_REPS}`}
+            </p>
+          </div>
+
+          {resting ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={advance}
+                className="flex min-h-[40px] items-center justify-center gap-1 rounded-xl border border-border bg-secondary/60 px-2 text-[10px] font-bold">
+                <SkipForward className="h-3 w-3" /> Skip Rest
+              </button>
+              <button type="button" onClick={advance} disabled={restLeft > 0}
+                className="min-h-[40px] rounded-xl primary-gradient px-2 text-[10px] font-bold text-white disabled:opacity-40">
+                {restLeft > 0 ? 'Resting…' : 'Next set'}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <button type="button" aria-label="Decrease reps" onClick={() => setReps((n) => Math.max(0, n - 1))}
+                className="flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-secondary/60">
+                <Minus className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={completeSet}
+                className="min-h-[44px] rounded-xl primary-gradient px-2 text-[10px] font-bold text-white">
+                {setIndex + 1 >= totalSets ? 'Finish set' : 'Complete set'}
+              </button>
+              <button type="button" aria-label="Increase reps" onClick={() => setReps((n) => Math.min(DEMO_TARGET_REPS, n + 1))}
+                className="flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-secondary/60">
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <p className="text-center text-[8px] text-muted-foreground">
+            Demo player · optional camera counting and voice cues live in the full app.
+          </p>
+        </>
+      )}
     </div>
   )
 }
@@ -705,7 +872,7 @@ export function WorkoutsMock({
 // ── Profile ───────────────────────────────────────────────────────────────
 const THEME_OPTIONS = [
   { key: 'cosmic', label: 'Dark mode', desc: 'Pure black', icon: Moon },
-  { key: 'alabaster', label: 'Alabaster', desc: 'Pure white', icon: Sun },
+  { key: 'alabaster', label: 'White mode', desc: 'Pure white', icon: Sun },
   { key: 'gradient', label: 'Gradient', desc: 'Your colors', icon: Palette },
 ]
 

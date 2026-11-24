@@ -77,7 +77,7 @@ export const APP_DESTINATIONS = [
     path: '/profile#app-theme',
     label: 'Change wallpaper',
     title: 'Profile · Wallpaper',
-    description: 'Switch between Dark mode (pure black), Alabaster (pure white), and a custom two-color Gradient wallpaper.',
+    description: 'Switch between Dark mode (pure black), White mode (pure white), and a custom two-color Gradient wallpaper.',
     keywords: ['theme', 'wallpaper', 'dark mode', 'light mode', 'appearance', 'cosmic', 'alabaster', 'gradient'],
   },
   {

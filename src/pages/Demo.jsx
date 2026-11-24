@@ -14,6 +14,7 @@ import {
   InsightsHealthMock,
   InsightsStatsMock,
   ProfileMock,
+  WorkoutPlayerMock,
   WorkoutsMock,
 } from '@/components/landing/AppMocks'
 import { AIPreview, BarcodePreview, FormCheckPreview } from '@/components/landing/DemoPreviews'
@@ -64,13 +65,15 @@ const TABS = [
     bullets: [
       'See your all-time totals at a glance',
       'Review your goal, level, and preferences',
-      'Tap Dark mode, Alabaster, or Gradient to change the wallpaper',
+      'Tap Dark mode, White mode, or Gradient to change the wallpaper',
     ],
   },
 ]
 
 // Keys the in-phone bottom bar can send, mapped to demo tabs.
 const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
+
+const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'White mode', gradient: 'Gradient' }
 
 // Premium-feature previews, deep-linkable by key. The title is used for the
 // preview heading.
@@ -99,6 +102,7 @@ export default function Demo() {
   const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
   const [workoutMuscle, setWorkoutMuscle] = useState('All')
   const [theme, setTheme] = useState('cosmic')
+  const [playerTitle, setPlayerTitle] = useState('Core Crusher')
   const [searchParams, setSearchParams] = useSearchParams()
   const tabRefs = useRef({})
   const previewRef = useRef(null)
@@ -151,6 +155,11 @@ export default function Demo() {
   }
 
   const handleNavigate = (key) => {
+    if (typeof key === 'string' && key.startsWith('workout:')) {
+      setPlayerTitle(key.slice('workout:'.length))
+      setTab('player')
+      return
+    }
     if (NAV_TO_TAB[key]) {
       setTab(NAV_TO_TAB[key])
       return
@@ -163,7 +172,7 @@ export default function Demo() {
 
   const handleTheme = (key) => {
     setTheme(key)
-    toast.message(`Wallpaper set to ${key[0].toUpperCase() + key.slice(1)}.`)
+    toast.message(`Wallpaper set to ${THEME_LABELS[key] || key}.`)
   }
 
   const resetDemo = () => {
@@ -177,6 +186,7 @@ export default function Demo() {
     setWorkoutDifficulty('All')
     setWorkoutMuscle('All')
     setTheme('cosmic')
+    setPlayerTitle('Core Crusher')
     setPreview(null)
     toast.message('Demo reset. Nothing was saved.')
   }
@@ -234,7 +244,7 @@ export default function Demo() {
                 <li>Home — complete the sample workout</li>
                 <li>Insights — switch Health/Stats, log a day, change the range</li>
                 <li>Workouts — search and filter the library</li>
-                <li>Profile — preview Dark mode, Alabaster, and Gradient wallpapers</li>
+                <li>Profile — preview Dark mode, White mode, and Gradient wallpapers</li>
               </ul>
             </div>
 
@@ -351,11 +361,13 @@ export default function Demo() {
               })}
             </div>
 
-            <DemoFrame active={tab} onNavigate={handleNavigate}>
+            <DemoFrame active={tab === 'player' ? null : tab} onNavigate={handleNavigate} theme={theme}>
               <div
                 role="tabpanel"
                 id={`demo-panel-${tab}`}
-                aria-labelledby={`demo-tab-${tab}`}
+                {...(tab === 'player'
+                  ? { 'aria-label': 'Demo workout player' }
+                  : { 'aria-labelledby': `demo-tab-${tab}` })}
                 tabIndex={0}
                 className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
@@ -387,6 +399,9 @@ export default function Demo() {
                   />
                 )}
                 {tab === 'profile' && <ProfileMock theme={theme} onTheme={handleTheme} />}
+                {tab === 'player' && (
+                  <WorkoutPlayerMock title={playerTitle} onExit={() => setTab('home')} />
+                )}
               </div>
             </DemoFrame>
 
