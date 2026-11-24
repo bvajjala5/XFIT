@@ -118,7 +118,7 @@ function parseCompletedAt(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
-function stableId(key) {
+export function stableId(key) {
   let hash = 5381
   for (let i = 0; i < key.length; i += 1) hash = ((hash << 5) + hash + key.charCodeAt(i)) | 0
   return `csv-${(hash >>> 0).toString(36)}`

@@ -132,7 +132,7 @@ export default function WorkoutsAndRun() {
       </Link>
       <div className="-mt-2 flex justify-end pr-1">
         <Link to="/run?import=1" className="text-[11px] font-semibold text-primary transition-colors hover:text-foreground">
-          Import a CSV instead
+          Import a run file instead
         </Link>
       </div>
 

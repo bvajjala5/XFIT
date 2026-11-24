@@ -35,7 +35,7 @@ export default function Run() {
             onClick={() => setImportOpen(true)}
             className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition-colors hover:bg-white/25"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" /> Import CSV
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Import run file
           </button>
         </div>
       </motion.div>

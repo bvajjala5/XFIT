@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Download, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDistance, formatPace, normalizeDistanceUnit } from '@/lib/distanceUnits'
-import { mapRunRows, SAMPLE_CSV } from '@/lib/csvImport'
+import { SAMPLE_CSV } from '@/lib/csvImport'
+import { parseActivityFile } from '@/lib/activityFiles'
 import { saveRun } from '@/lib/runSave'
 import useFocusTrap from '@/hooks/useFocusTrap'
 import { toast } from 'sonner'
@@ -31,8 +32,8 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
   const [busy, setBusy] = useState(false)
 
   const result = useMemo(
-    () => (raw ? mapRunRows(raw, { unit: selectedUnit }) : null),
-    [raw, selectedUnit],
+    () => (raw ? parseActivityFile(raw, fileName, { unit: selectedUnit }) : null),
+    [raw, fileName, selectedUnit],
   )
 
   function reset() {
@@ -113,7 +114,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
           ref={contentRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Import runs from CSV"
+          aria-label="Import runs from a file"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
@@ -144,12 +145,12 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
                 htmlFor="csv-run-file"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2 text-xs font-semibold transition-colors hover:bg-secondary"
               >
-                <Upload className="w-3.5 h-3.5" /> Choose CSV
+                <Upload className="w-3.5 h-3.5" /> Choose file
               </label>
               <input
                 id="csv-run-file"
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,.gpx,.tcx,text/csv,application/gpx+xml,application/tcx+xml"
                 onChange={handleFile}
                 className="sr-only"
               />
@@ -162,28 +163,32 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
               </button>
             </div>
 
-            <div>
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Distances in CSV are</p>
-              <div className="flex gap-1.5 rounded-xl bg-secondary/50 p-1">
-                {['miles', 'kilometers'].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setSelectedUnit(option)}
-                    aria-pressed={selectedUnit === option}
-                    className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
-                      selectedUnit === option ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
+            {(!result || result.format === 'csv') && (
+              <div>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Distances in CSV are</p>
+                <div className="flex gap-1.5 rounded-xl bg-secondary/50 p-1">
+                  {['miles', 'kilometers'].map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setSelectedUnit(option)}
+                      aria-pressed={selectedUnit === option}
+                      className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
+                        selectedUnit === option ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {result && (
               <div className="space-y-2">
-                <p className="truncate text-xs font-semibold">{fileName}</p>
+                <p className="truncate text-xs font-semibold">
+                  {fileName} <span className="text-[10px] uppercase text-muted-foreground">{result.format}</span>
+                </p>
                 {result.rows.length > 0 && (
                   <div className="max-h-44 overflow-auto rounded-xl border border-border/60">
                     <table className="w-full text-left text-[11px]">
@@ -199,7 +204,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
                         {result.rows.slice(0, 8).map((row) => (
                           <tr key={row.id} className="border-t border-border/40">
                             <td className="px-2 py-1.5">{formatDate(row.completedAt)}</td>
-                            <td className="px-2 py-1.5">{formatDistance(row.distance, row.distance_unit)} {selectedUnit === 'miles' ? 'mi' : 'km'}</td>
+                            <td className="px-2 py-1.5">{formatDistance(row.distance, row.distance_unit)} {row.distance_unit === 'miles' ? 'mi' : 'km'}</td>
                             <td className="px-2 py-1.5">{formatClock(row.elapsed)}</td>
                             <td className="px-2 py-1.5">{formatPace(row.elapsed, row.distance, row.distance_unit)}</td>
                           </tr>
@@ -219,7 +224,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
 
             {!result && (
               <p className="rounded-xl bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-                Columns: <span className="font-semibold text-foreground">date, distance, duration</span>, plus optional calories, steps, and name. Duration accepts <span className="font-semibold text-foreground">hh:mm:ss</span> or minutes. Re-importing the same rows will not create duplicates.
+                Strava and device exports work: <span className="font-semibold text-foreground">CSV, GPX, or TCX</span>. For CSV use columns <span className="font-semibold text-foreground">date, distance, duration</span>, plus optional calories, steps, and name. Duration accepts <span className="font-semibold text-foreground">hh:mm:ss</span> or minutes. Re-importing the same activity will not create duplicates.
               </p>
             )}
 
