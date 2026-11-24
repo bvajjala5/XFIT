@@ -261,8 +261,8 @@ export default function Landing() {
 
       <main id="main" className="relative z-10">
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-36 lg:grid lg:grid-cols-[1.04fr_0.96fr] lg:items-center lg:gap-14 lg:pb-28">
-          <div className="relative">
+        <section className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-36 lg:pb-28">
+          <div className="relative max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
               Built for real life
@@ -298,40 +298,6 @@ export default function Landing() {
                 </span>
               ))}
             </div>
-          </div>
-
-          <div className="relative mt-14 lg:mt-0">
-            <div aria-hidden="true" className="absolute left-1/2 top-1/2 h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[90px]" />
-            <motion.div
-              className="relative mx-auto w-full max-w-[340px]"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <figure className="relative overflow-hidden rounded-[2rem] border border-border/50 shadow-[0_35px_90px_-35px_rgba(0,0,0,0.75)]">
-                {/* A single static hero poster at its full uncropped aspect ratio.
-                    Responsive WebP sources (with the JPEG fallback) match the
-                    unconditional preload in index.html. The image is the landing
-                    LCP, so it loads eagerly at high priority. A new poster can
-                    replace these assets later without any theme-aware logic. */}
-                <picture className="block">
-                  <source
-                    type="image/webp"
-                    srcSet="/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w"
-                    sizes="(max-width: 380px) 88vw, 340px"
-                  />
-                  <img
-                    src="/hero-sunrise.jpg"
-                    alt="Uttar Fitness on a phone held in one hand, showing today's workout, weekly progress, and quick actions."
-                    width={820}
-                    height={1099}
-                    decoding="async"
-                    fetchpriority="high"
-                    className="block h-auto w-full"
-                  />
-                </picture>
-              </figure>
-            </motion.div>
           </div>
         </section>
 

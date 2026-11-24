@@ -26,7 +26,7 @@
      The stored key stays `cosmic` for backwards compatibility; only the
      wallpaper name shown to people changes. Mid-gray accents keep white
      button labels readable while `text-primary` stays legible on black. */
-  :root, .theme-cosmic, .theme-gradient {
+  :root, .theme-cosmic {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
     --card: 0 0% 5%;
@@ -47,8 +47,6 @@
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 60%;
-    --gradient-start: 0 0% 0%;
-    --gradient-end: 0 0% 10%;
     --card-glow: 0 0% 45%;
     --accent-text: 0 0% 82%;
     --accent-solid: 0 0% 45%;
@@ -82,8 +80,6 @@
     --border: 0 0% 88%;
     --input: 0 0% 88%;
     --ring: 0 0% 32%;
-    --gradient-start: 0 0% 100%;
-    --gradient-end: 0 0% 96%;
     --card-glow: 0 0% 32%;
     --accent-text: 0 0% 24%;
     --accent-solid: 0 0% 30%;
@@ -95,10 +91,6 @@
     --brand-glow: 0 0% 32%;
     --radius: 0.875rem;
   }
-
-  /* The landing hero is a single static poster (see Landing.jsx): public pages
-     always use the alabaster wallpaper, so there is no light/dark swap and no
-     display-toggling CSS to keep in sync. */
 
   * { @apply border-border; }
 
@@ -123,13 +115,6 @@
   }
   .card-hover {
     @apply transition-all duration-200 hover:scale-[1.01] active:scale-[0.99];
-  }
-  .gradient-bg {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--gradient-start)) 0%,
-      hsl(var(--gradient-end)) 100%
-    );
   }
   .primary-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
@@ -255,32 +240,6 @@
 .wallpaper-alabaster .wallpaper-layer-shape,
 .wallpaper-alabaster .wallpaper-layer-glow {
   display: none;
-}
-
-/* Gradient: the two chosen colors come from CSS variables set inline by
-   Wallpaper.jsx and on <html> by applyResolvedTheme / the boot script. */
-.wallpaper-gradient .wallpaper-layer-base { background: transparent; }
-.wallpaper-gradient .wallpaper-layer-shape-one {
-  top: -15vh;
-  left: -10vw;
-  width: 65vw;
-  height: 65vh;
-  background: radial-gradient(circle, var(--wallpaper-from, transparent), transparent 72%);
-  opacity: 0.22;
-  filter: blur(90px);
-}
-.wallpaper-gradient .wallpaper-layer-shape-two {
-  right: -12vw;
-  bottom: -20vh;
-  width: 65vw;
-  height: 70vh;
-  background: radial-gradient(circle, var(--wallpaper-to, transparent), transparent 72%);
-  opacity: 0.22;
-  filter: blur(90px);
-}
-.wallpaper-gradient .wallpaper-layer-glow {
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.06), transparent 45%, rgba(0, 0, 0, 0.06));
 }
 
 /* Scrollbar */

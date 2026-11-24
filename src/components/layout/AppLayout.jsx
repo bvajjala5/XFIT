@@ -10,7 +10,7 @@ import InstallBanner from '@/components/shared/InstallBanner';
 import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher';
 import { UttarAIProvider } from '@/components/ai/UttarAIContext';
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
-import { applyResolvedTheme, getGradientColors, getThemeMode, gradientNavColors, resolveTheme, GRADIENT_KEY, THEME_KEY } from '@/lib/theme';
+import { applyResolvedTheme, getThemeMode, resolveTheme, THEME_KEY } from '@/lib/theme';
 
 const navItems = [
   { path: '/home',      icon: Home,           label: 'Home'     },
@@ -25,7 +25,6 @@ export default function AppLayout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [aiOpen, setAiOpen] = useState(false);
-  const [gradient, setGradient] = useState(null);
   const openAI = useCallback(() => setAiOpen(true), []);
 
   // Completed workouts are queued locally when the network is unavailable.
@@ -66,13 +65,11 @@ export default function AppLayout() {
     // Wallpapers are static: apply the saved one on mount and when another tab
     // changes the preference. No clock, timer, or visibility sync any more.
     const sync = () => {
-      const resolved = resolveTheme(getThemeMode());
-      applyResolvedTheme(resolved);
-      setGradient(resolved === 'gradient' ? getGradientColors() : null);
+      applyResolvedTheme(resolveTheme(getThemeMode()));
     };
     sync();
     const onStorage = (event) => {
-      if (!event.key || event.key === THEME_KEY || event.key === GRADIENT_KEY) sync();
+      if (!event.key || event.key === THEME_KEY) sync();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -109,28 +106,7 @@ export default function AppLayout() {
     );
   };
 
-  // The gradient nav starts at the bottom on phones and at the left on desktop,
-  // matching the wallpaper's start → end direction. Local token overrides keep
-  // icons readable whether the chosen start color is light or dark.
-  const gradientNav = gradient ? gradientNavColors(gradient) : null;
-  const navTokens = gradientNav
-    ? {
-      '--primary': gradientNav.primary,
-      '--foreground': gradientNav.primary,
-      '--muted-foreground': gradientNav.muted,
-      '--brand-tile': gradientNav.tile,
-      '--brand-mark': gradientNav.mark,
-    }
-    : null;
-  const sidebarStyle = gradient
-    ? { ...navTokens, backgroundImage: `linear-gradient(to right, ${gradient[0]}, ${gradient[1]})` }
-    : undefined;
-  const bottomNavStyle = {
-    paddingBottom: 'env(safe-area-inset-bottom)',
-    ...(gradient
-      ? { ...navTokens, backgroundImage: `linear-gradient(to top, ${gradient[0]}, ${gradient[1]})` }
-      : {}),
-  };
+  const bottomNavStyle = { paddingBottom: 'env(safe-area-inset-bottom)' };
 
   // The coach lives in the app chrome on every tab: the sidebar logo on desktop
   // and the first slot of the mobile tab bar, before Home. Full-screen sessions
@@ -143,7 +119,7 @@ export default function AppLayout() {
       <InstallBanner />
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}
-      <nav style={sidebarStyle} className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
+      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
         <button
           type="button"
           onClick={() => setAiOpen(true)}

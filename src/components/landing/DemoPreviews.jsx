@@ -402,9 +402,9 @@ const AI_QUESTIONS = [
       intro: 'You can change it in two taps:',
       bullets: [
         'Open Profile from the bottom bar',
-        'Pick Dark mode, White mode, or Gradient',
+        'Pick Dark mode or White mode',
       ],
-      outro: 'Gradient blends any two colors you choose. Nothing follows the clock anymore.',
+      outro: 'Both are static wallpapers. Nothing follows the clock anymore.',
       actions: [{ label: 'Change wallpaper' }],
     },
   },

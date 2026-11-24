@@ -7,7 +7,7 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy, where } from 'fire
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { clearAppCaches } from '@/lib/cache';
-import { getGradientColors, getThemeMode, setThemeMode } from '@/lib/theme';
+import { getThemeMode, setThemeMode } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
@@ -18,35 +18,17 @@ import { toast } from 'sonner';
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 const THEME_OPTIONS = [
-  { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black',  icon: Moon },
-  { key: 'alabaster', label: 'White mode', desc: 'Pure white',  icon: Sun },
-  { key: 'gradient',  label: 'Gradient',  desc: 'Your colors', icon: Palette },
+  { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black', icon: Moon },
+  { key: 'alabaster', label: 'White mode', desc: 'Pure white', icon: Sun },
 ];
 
-// Tiny static swatches — no animation and no theme-dependent hero artwork.
-function ThemePreview({ mode, colors }) {
-  if (mode === 'cosmic') {
-    return (
-      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-        <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-white/30" />
-        <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-white/15" />
-      </div>
-    )
-  }
-
-  if (mode === 'alabaster') {
-    return (
-      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10 bg-white">
-        <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-black/20" />
-        <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-black/10" />
-      </div>
-    )
-  }
-
+// Tiny static swatches — no animation and no theme-dependent artwork.
+function ThemePreview({ mode }) {
+  const dark = mode === 'cosmic';
   return (
-    <div className="relative h-11 w-full overflow-hidden rounded-xl border border-black/10" style={{ background: `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)` }}>
-      <span className="absolute left-2 top-2 h-1 w-9 rounded-full bg-white/60" />
-      <span className="absolute left-2 top-4 h-1 w-6 rounded-full bg-white/35" />
+    <div className={`relative h-11 w-full overflow-hidden rounded-xl border ${dark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
+      <span className={`absolute left-2 top-2 h-1 w-9 rounded-full ${dark ? 'bg-white/30' : 'bg-black/20'}`} />
+      <span className={`absolute left-2 top-4 h-1 w-6 rounded-full ${dark ? 'bg-white/15' : 'bg-black/10'}`} />
     </div>
   )
 }
@@ -59,20 +41,10 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
-  const [gradientColors, setColors] = useState(() => getGradientColors());
 
   const handleWallpaper = (key) => {
     setThemeMode(key);
     setTheme(key);
-  };
-
-  const updateGradientColor = (index, value) => {
-    const next = [...gradientColors];
-    next[index] = value;
-    setColors(next);
-    // Save and apply immediately so the preview and the page change together.
-    setThemeMode('gradient', next);
-    setTheme('gradient');
   };
 
   // Uttar AI can deep-link to a Profile card, e.g. /profile#profile-settings.
@@ -189,7 +161,7 @@ export default function Profile() {
           <Palette className="w-4 h-4 text-primary" />
           <div className="text-sm font-semibold">Wallpaper</div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
             const selected = theme === key
             return (
@@ -209,7 +181,7 @@ export default function Profile() {
                     <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
                 )}
-                <ThemePreview mode={key} colors={gradientColors} />
+                <ThemePreview mode={key} />
                 <div className="mt-2 flex items-center gap-1.5 px-0.5">
                   <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className="truncate text-xs font-semibold">{label}</span>
@@ -219,32 +191,8 @@ export default function Profile() {
             )
           })}
         </div>
-        {theme === 'gradient' && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border/40 bg-secondary/30 p-3">
-            <label className="flex items-center gap-2 text-xs font-medium">
-              <input
-                type="color"
-                value={gradientColors[0]}
-                onChange={(event) => updateGradientColor(0, event.target.value)}
-                aria-label="Gradient start color"
-                className="h-8 w-8 cursor-pointer rounded-md border-0 bg-transparent p-0"
-              />
-              Start <span className="font-mono text-[10px] text-muted-foreground">{gradientColors[0]}</span>
-            </label>
-            <label className="flex items-center gap-2 text-xs font-medium">
-              <input
-                type="color"
-                value={gradientColors[1]}
-                onChange={(event) => updateGradientColor(1, event.target.value)}
-                aria-label="Gradient end color"
-                className="h-8 w-8 cursor-pointer rounded-md border-0 bg-transparent p-0"
-              />
-              End <span className="font-mono text-[10px] text-muted-foreground">{gradientColors[1]}</span>
-            </label>
-          </div>
-        )}
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Pick a static wallpaper. Gradient blends any two colors you choose.
+          Pick a static wallpaper: Dark mode or White mode.
         </p>
       </GlassCard>
           <GlassCard className="space-y-2">

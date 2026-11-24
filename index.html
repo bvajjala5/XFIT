@@ -34,9 +34,6 @@
     <script>
 (function () {
   var KEY = 'xfit-theme';
-  var GRADIENT_KEY = 'xfit-gradient-colors';
-  var DEFAULT_COLORS = ['#1e1b4b', '#0ea5e9'];
-  var HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
   var saved = null;
   try {
     saved = localStorage.getItem(KEY);
@@ -47,7 +44,7 @@
   // This mirrors theme.js exactly, including its cosmic default for new users.
   var migrated = saved === 'midnight' ? 'cosmic'
     : (saved === 'sunrise' || saved === 'auto') ? 'alabaster'
-    : (saved === 'cosmic' || saved === 'alabaster' || saved === 'gradient') ? saved
+    : (saved === 'cosmic' || saved === 'alabaster') ? saved
     : 'cosmic';
   try {
     if (saved !== migrated) localStorage.setItem(KEY, migrated);
@@ -60,55 +57,14 @@
   var isPublicPage = path === '/' || path === '/demo' || path === '/login';
   var mode = isPublicPage ? 'alabaster' : migrated;
 
-  var colors = DEFAULT_COLORS;
-  try {
-    var parsed = JSON.parse(localStorage.getItem(GRADIENT_KEY));
-    if (Array.isArray(parsed) && parsed.length === 2 && parsed.every(function (color) {
-      return typeof color === 'string' && HEX.test(color);
-    })) {
-      colors = parsed.map(function (color) {
-        var digits = color.slice(1).toLowerCase();
-        if (digits.length === 3) {
-          digits = digits.charAt(0) + digits.charAt(0) + digits.charAt(1) + digits.charAt(1) + digits.charAt(2) + digits.charAt(2);
-        }
-        return '#' + digits;
-      });
-    }
-  } catch (error) {
-    /* malformed or unavailable storage: use the defaults */
-  }
-
   var root = document.documentElement;
   root.classList.remove('theme-cosmic', 'theme-alabaster', 'theme-gradient', 'theme-midnight', 'theme-sunrise');
   root.classList.add('theme-' + mode);
   root.setAttribute('data-theme', mode);
   root.setAttribute('data-theme-mode', migrated);
-  if (mode === 'gradient') {
-    root.style.setProperty('--wallpaper-from', colors[0]);
-    root.style.setProperty('--wallpaper-to', colors[1]);
-    root.style.setProperty('--boot-page', colors[0]);
-  }
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    var chrome = '#000000';
-    if (mode === 'alabaster') chrome = '#ffffff';
-    if (mode === 'gradient') chrome = colors[0];
-    meta.setAttribute('content', chrome);
-  }
-
-  // Start the landing hero before React mounts. It is the likely LCP element,
-  // and without this hint the browser would not discover it until the app has
-  // rendered — a wasted round trip on slow connections. The hero is now a
-  // single static sunrise poster, so the preload is unconditional on '/'.
-  if (location.pathname === '/') {
-    var preload = document.createElement('link');
-    preload.rel = 'preload';
-    preload.as = 'image';
-    preload.type = 'image/webp';
-    preload.setAttribute('fetchpriority', 'high');
-    preload.setAttribute('imagesrcset', '/hero-sunrise-480.webp 480w, /hero-sunrise-640.webp 640w, /hero-sunrise-820.webp 820w');
-    preload.setAttribute('imagesizes', '(max-width: 380px) 88vw, 340px');
-    document.head.appendChild(preload);
+    meta.setAttribute('content', mode === 'alabaster' ? '#ffffff' : '#000000');
   }
 })();
     </script>

@@ -148,18 +148,16 @@ export function PhoneFrame({ children, className = '', label, active = 'home', o
 
 /** Wide browser-style frame for the interactive demo. */
 export function DemoFrame({ children, className = '', active = 'home', onNavigate, theme = 'alabaster' }) {
-  // The public page stays Alabaster, but the phone preview can wear any of the
-  // three wallpapers. Theme classes work on this inner element too, so all mock
+  // The public page stays Alabaster, but the phone preview can wear either
+  // static wallpaper. Theme classes work on this inner element too, so all mock
   // tokens (cards, text, nav) follow the selected wallpaper without a reload.
-  const screenTheme = ['cosmic', 'alabaster', 'gradient'].includes(theme) ? theme : 'alabaster'
+  const screenTheme = ['cosmic', 'alabaster'].includes(theme) ? theme : 'alabaster'
   // `color` must be set here too: the public page's <html> owns the inherited
   // text color, so changing only the CSS variables on this nested element would
   // leave dark-preview text black-on-black.
   const screenStyle = screenTheme === 'cosmic'
     ? { background: '#000', color: 'hsl(var(--foreground))' }
-    : screenTheme === 'alabaster'
-      ? { background: '#fff', color: 'hsl(var(--foreground))' }
-      : { backgroundImage: 'linear-gradient(135deg, #1e1b4b 0%, #0ea5e9 100%)', color: 'hsl(var(--foreground))' }
+    : { background: '#fff', color: 'hsl(var(--foreground))' }
   return (
     <div className={`mx-auto w-full max-w-2xl ${className}`}>
       <div className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/70 p-1.5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.7)] backdrop-blur-xl">
@@ -872,20 +870,9 @@ export function WorkoutsMock({
 const THEME_OPTIONS = [
   { key: 'cosmic', label: 'Dark mode', desc: 'Pure black', icon: Moon },
   { key: 'alabaster', label: 'White mode', desc: 'Pure white', icon: Sun },
-  { key: 'gradient', label: 'Gradient', desc: 'Your colors', icon: Palette },
 ]
 
 function ThemeSwatch({ mode }) {
-  if (mode === 'gradient') {
-    return (
-      <div
-        className="relative h-8 w-full overflow-hidden rounded-lg border border-black/10"
-        style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #0ea5e9 100%)' }}
-      >
-        <Palette className="absolute bottom-1 right-1.5 h-3 w-3 text-white/80" />
-      </div>
-    )
-  }
   const dark = mode === 'cosmic'
   return (
     <div className={`relative h-8 w-full overflow-hidden rounded-lg border ${dark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
@@ -952,7 +939,7 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
         <p className="flex items-center gap-1.5 text-[11px] font-semibold">
           <Palette className="h-3.5 w-3.5 text-primary" /> Wallpaper
         </p>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
             const selected = theme === key
             const inner = (
