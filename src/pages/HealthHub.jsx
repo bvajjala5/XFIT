@@ -395,7 +395,7 @@ export default function HealthHub({ embedded = false } = {}) {
         <Activity className="w-5 h-5 text-primary mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-semibold">Connect a Fitness Device</p>
-          <p className="text-xs text-muted-foreground mt-1">Apple Health, Fitbit, and Garmin integrations require a published app. For now, log your stats manually above or use the Run tracker for GPS-based step counting.</p>
+          <p className="text-xs text-muted-foreground mt-1">Health Connect and Apple Health support is planned but not available yet. For now, log your stats manually above, use the Run tracker for GPS-based step counting, or import a run file from CSV, GPX, or TCX.</p>
         </div>
       </GlassCard>
     </>

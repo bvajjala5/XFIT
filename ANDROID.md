@@ -85,6 +85,11 @@ The OAuth domains are already in the `capacitor.config.json` allowlist.
 - Note that Form Check needs camera access and runs need location access. Neither
   permission is required to use the rest of the app.
 
+## Later: native health data
+
+Health Connect and Apple Health are not wired into the wrapper yet. See
+`HEALTH_INTEGRATION.md` for the data scope, permission plan, and phases.
+
 ## Device test checklist
 
 - Google sign-in and Export Data from Profile.
