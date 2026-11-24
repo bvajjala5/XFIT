@@ -82,7 +82,7 @@ cd android && ./gradlew bundleRelease --no-daemon
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (4.0 MB, SHA-256
-`5299d5de1277e5353be94a5f943cf135eeecae6f9534a958873f37008ea2783b`).
+`f607efe570bf368d2edd51648d68c5862a27e15b52f027f44bf0547c6c1b7ce7`).
 Signature verified with `jarsigner -verify`. Android Studio is **not** required
 for this command.
 
