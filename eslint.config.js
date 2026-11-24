@@ -23,6 +23,9 @@ export default [
       // The standalone Electron admin app is its own project with its own
       // toolchain; it is linted (if at all) from inside admin-desktop.
       'admin-desktop/**',
+      // The generated Capacitor native project contains copied, minified web
+      // bundles. Those come from the already-linted dist/ output.
+      'android/**',
     ],
   },
 

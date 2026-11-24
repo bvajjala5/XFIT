@@ -1,0 +1,18 @@
+{
+  "appId": "com.uttar.fitness",
+  "appName": "Uttar Fitness",
+  "webDir": "dist",
+  "server": {
+    "url": "https://xfit-bpe.pages.dev",
+    "androidScheme": "https",
+    "allowNavigation": [
+      "xfit-bpe.pages.dev",
+      "accounts.google.com",
+      "xfit-723dd.firebaseapp.com",
+      "*.googleusercontent.com"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
