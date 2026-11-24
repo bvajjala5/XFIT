@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Play, Pause, SkipForward, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace } from 'lucide-react';
+import { Trophy, X, ArrowRight, Volume2, VolumeX, Star, Share2, Loader2, ChevronRight, AlertTriangle, ScanFace, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -224,6 +224,17 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const cameraRepsRef = useRef(0);
   const lastCueRef = useRef(-1);
   const [isPaused, setIsPaused] = useState(false);
+  // The animated demo / body map is opt-out: hiding it gives a quieter screen
+  // and skips the lazy photo downloads entirely. Remember the choice.
+  const [showMedia, setShowMedia] = useState(() => {
+    try { return localStorage.getItem('xfit_show_exercise_media') !== 'false'; }
+    catch { return true; }
+  });
+  const toggleMedia = () => setShowMedia((visible) => {
+    try { localStorage.setItem('xfit_show_exercise_media', String(!visible)); }
+    catch { /* private mode: the choice just won't persist */ }
+    return !visible;
+  });
   const [isComplete, setIsComplete] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const formWasPausedRef = useRef(false);
@@ -907,6 +918,15 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           <button onClick={openFormCheck} className="glass rounded-full w-11 h-11 flex items-center justify-center" aria-label="Check form" title="Check form">
             <ScanFace className="w-5 h-5 text-primary" />
           </button>
+          <button
+            onClick={toggleMedia}
+            className="glass rounded-full w-11 h-11 flex items-center justify-center"
+            aria-label={showMedia ? 'Hide exercise demo and body map' : 'Show exercise demo and body map'}
+            aria-pressed={showMedia}
+            title={showMedia ? 'Hide exercise demo and body map' : 'Show exercise demo and body map'}
+          >
+            {showMedia ? <Eye className="w-5 h-5 text-primary" /> : <EyeOff className="w-5 h-5 text-muted-foreground" />}
+          </button>
           {voiceEnabled && englishVoices().length > 1 && (
             <button onClick={cycleVoice} className="glass rounded-full px-3 min-h-[44px] text-[11px] text-muted-foreground max-w-[90px] truncate" title="Try another voice">
               {voiceName.replace(/^(Microsoft|Google)\s+/i, '').replace(/\s*\(.*\)|\s*Online.*/i, '') || 'Voice'}
@@ -955,23 +975,26 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             onCameraReps={handleCameraReps}
             onRestAdjust={handleRestAdjust}
             onRestInput={handleRestInput}
+            onPauseToggle={() => setIsPaused((value) => !value)}
+            onSkip={skipExercise}
           />
         ) : (
           <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
         )}
 
-        <div className="mx-auto mt-3 w-[140px] sm:w-[200px]">
-          <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-3 px-4 py-2 sm:gap-4">
-        <Button variant="secondary" size="icon" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full" onClick={() => setIsPaused(!isPaused)} aria-label={isPaused ? 'Resume workout' : 'Pause workout'}>
-          {isPaused?<Play className="w-6 h-6" fill="currentColor"/>:<Pause className="w-6 h-6"/>}
-        </Button>
-        <Button variant="secondary" size="icon" className="w-11 h-11 sm:w-12 sm:h-12 rounded-full" onClick={skipExercise} aria-label="Skip exercise">
-          <SkipForward className="w-5 h-5" />
-        </Button>
+        {showMedia ? (
+          <div className="mx-auto mt-3 w-[140px] sm:w-[200px]">
+            <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={toggleMedia}
+            className="mx-auto mt-3 flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            <EyeOff className="h-3.5 w-3.5" /> Show exercise demo
+          </button>
+        )}
       </div>
 
       <FormCheck open={formOpen} exerciseName={currentExercise?.name} onClose={closeFormCheck} />

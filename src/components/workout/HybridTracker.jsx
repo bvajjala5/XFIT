@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Camera, Dumbbell, Minus, Plus, Timer, Vibrate, Zap } from 'lucide-react'
+import { Activity, Camera, Dumbbell, Minus, Pause, Play, Plus, SkipForward, Timer, Vibrate, Zap } from 'lucide-react'
 import { MODE_REPS, MODE_TIME, adjust, parseQuantity } from '@/lib/workoutTracking'
 import { MOVEMENTS } from '@/lib/poseCounter'
 import PoseRepCounter from './PoseRepCounter'
@@ -31,7 +31,7 @@ export default function HybridTracker({
   poseEnabled, movement, tempoEnabled,
   onPoseToggle, onTempoToggle, onAdjust, onQuickInput,
   onWeightChange, onModeChange, onCompleteSet, onSkipRest, onCameraReps,
-  onRestAdjust, onRestInput,
+  onRestAdjust, onRestInput, onPauseToggle, onSkip,
 }) {
   const [quick, setQuick] = useState('')
   const [restDraft, setRestDraft] = useState('')
@@ -97,14 +97,7 @@ export default function HybridTracker({
             </button>
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground">Adjustments apply to this exercise’s next rest too.</p>
-          <button
-            type="button"
-            onClick={onSkipRest}
-            className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-green-500 px-6 text-sm font-bold text-green-950 active:scale-[0.98]"
-          >
-            <Zap className="h-4 w-4" /> Skip Rest
-          </button>
-          <p className="mt-2 text-xs text-muted-foreground">Next: {exercise?.name}</p>
+          <p className="mt-3 text-xs text-muted-foreground">Next: {exercise?.name}</p>
         </div>
       ) : (
         <>
@@ -207,16 +200,43 @@ export default function HybridTracker({
             />
           )}
 
-          <button
-            type="button"
-            onClick={onCompleteSet}
-            disabled={paused}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl primary-gradient text-sm font-black text-primary-foreground disabled:opacity-50"
-          >
-            <Activity className="h-4 w-4" /> Complete set
-          </button>
         </>
       )}
+
+      {/* One control row: Pause on the left, the main action in the middle,
+          Next on the right. It stays put across work and rest so muscle memory
+          never has to relearn where the buttons are. */}
+      <div className="flex items-stretch justify-center gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onPauseToggle}
+          aria-label={paused ? 'Resume workout' : 'Pause workout'}
+          title={paused ? 'Resume workout' : 'Pause workout'}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/60 active:scale-95 sm:h-14 sm:w-14"
+        >
+          {paused ? <Play className="h-5 w-5" fill="currentColor" /> : <Pause className="h-5 w-5" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={isRest ? onSkipRest : onCompleteSet}
+          disabled={!isRest && paused}
+          className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl primary-gradient px-3 text-sm font-black text-primary-foreground active:scale-[0.98] disabled:opacity-50 sm:min-h-[56px]"
+        >
+          {isRest ? <Zap className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+          {isRest ? 'Skip Rest' : 'Complete set'}
+        </button>
+
+        <button
+          type="button"
+          onClick={onSkip}
+          aria-label="Skip to next exercise"
+          title="Skip to next exercise"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/60 active:scale-95 sm:h-14 sm:w-14"
+        >
+          <SkipForward className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   )
 }
