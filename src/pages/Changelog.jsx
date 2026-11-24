@@ -21,6 +21,7 @@ const RELEASES = [
       'Share buttons now open the device share sheet with a real link; on desktop they copy the link instead of failing. Custom workouts can also be shared from the three-dot menu in Workouts.',
       'Shared workout links open a preview anyone can add to their own workouts. The link carries the workout itself, so nothing is published to the community list without your say-so.',
       'Removed an invalid metadata link and added a real Android asset-links file so app links and a TWA can verify.',
+      'Import and export tools now live under Profile → Advanced / Data tools instead of cluttering the Run and Workouts screens. Native health sync will stay opt-in and permission-based when it ships.',
     ],
   },
   {

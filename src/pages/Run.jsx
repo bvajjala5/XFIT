@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { FileSpreadsheet, Footprints } from 'lucide-react'
+import { Footprints } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/lib/AuthContext'
 import RunTracker from '@/components/run/RunTracker'
@@ -15,8 +15,8 @@ export default function Run() {
   const [runActive, setRunActive] = useState(false)
   const distanceUnit = userData?.distance_unit || 'miles'
 
-  // The title/import header belongs to the idle screen. Once a run starts the
-  // map and stats need the whole viewport, so hide it until the tracker resets.
+  // The title belongs to the idle screen. Once a run starts, the map and stats
+  // need the whole viewport, so hide it until the tracker resets.
   const handleStatusChange = useCallback((next) => setRunActive(next !== 'idle'), [])
 
   function handleComplete(runSummary) {
@@ -37,13 +37,6 @@ export default function Run() {
                 <Footprints className="w-6 h-6 text-primary" /> Run Tracker
               </h1>
               <p className="text-muted-foreground text-sm mt-0.5">GPS tracking, pace, splits &amp; more</p>
-              <button
-                type="button"
-                onClick={() => setImportOpen(true)}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-border/50 bg-card/80 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur transition-colors hover:bg-secondary/80"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" /> Import run file
-              </button>
             </div>
           </motion.div>
         )}

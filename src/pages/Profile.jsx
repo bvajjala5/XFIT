@@ -14,7 +14,7 @@ import { avatarImageUrl } from '@/lib/avatarUrl';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download, Database, FileSpreadsheet } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
@@ -73,6 +73,7 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
 
   const handleWallpaper = (key) => {
@@ -253,18 +254,44 @@ export default function Profile() {
           Dark and Light stay put. Auto switches to Light at 7am and Dark at 7pm, with a smooth fade.
         </p>
       </GlassCard>
-          <GlassCard className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Data</p>
+          <GlassCard id="advanced-data" className="space-y-2 scroll-mt-24">
             <button
               type="button"
-              onClick={handleExportData}
-              disabled={exporting}
-              className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary disabled:opacity-60"
+              onClick={() => setAdvancedOpen((open) => !open)}
+              aria-expanded={advancedOpen}
+              className="flex w-full items-center justify-between py-1 text-left transition-colors hover:text-primary"
             >
-              <span className="flex items-center gap-3"><Download className="h-4 w-4 text-muted-foreground" /> {exporting ? 'Preparing export…' : 'Export Data'}</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <Database className="h-4 w-4" /> Advanced / Data tools
+              </span>
+              <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${advancedOpen ? 'rotate-90' : ''}`} />
             </button>
-            <p className="text-[10px] leading-relaxed text-muted-foreground">Downloads a JSON copy of your workouts, nutrition, runs, health logs and preferences. It stays on your device.</p>
+            {advancedOpen && (
+              <div className="space-y-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleExportData}
+                  disabled={exporting}
+                  className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary disabled:opacity-60"
+                >
+                  <span className="flex items-center gap-3"><Download className="h-4 w-4 text-muted-foreground" /> {exporting ? 'Preparing export…' : 'Export Data'}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <p className="text-[10px] leading-relaxed text-muted-foreground">Downloads a JSON copy of your workouts, nutrition, runs, health logs and preferences. It stays on your device.</p>
+                <div className="border-t border-border/30" />
+                <button
+                  type="button"
+                  onClick={() => navigate('/run?import=1')}
+                  className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary"
+                >
+                  <span className="flex items-center gap-3"><FileSpreadsheet className="h-4 w-4 text-muted-foreground" /> Import runs from a file</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <p className="text-[10px] leading-relaxed text-muted-foreground">CSV, GPX and TCX files are parsed on your device. Preview the runs first; re-importing the same activity won’t create duplicates.</p>
+                <div className="border-t border-border/30" />
+                <p className="text-[10px] leading-relaxed text-muted-foreground">Health Connect and HealthKit sync will arrive with the native apps. It will ask for permission each time — Uttar never reads health data silently in the background.</p>
+              </div>
+            )}
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
