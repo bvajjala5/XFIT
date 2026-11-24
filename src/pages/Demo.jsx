@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import Wallpaper from '@/components/layout/Wallpaper'
 import BrandMark from '@/components/brand/BrandMark'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
-import usePublicWallpaper from '@/hooks/usePublicWallpaper'
+import usePreviewWallpaper from '@/hooks/usePreviewWallpaper'
 import usePageMeta from '@/hooks/usePageMeta'
 import { useAuth } from '@/lib/AuthContext'
 import {
@@ -65,7 +65,7 @@ const TABS = [
     bullets: [
       'See your all-time totals at a glance',
       'Review your goal, level, and preferences',
-      'Tap Dark mode or White mode to change the wallpaper',
+      'Tap Dark mode or Light mode to change the wallpaper',
     ],
   },
 ]
@@ -73,7 +73,7 @@ const TABS = [
 // Keys the in-phone bottom bar can send, mapped to demo tabs.
 const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
 
-const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'White mode' }
+const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'Light mode' }
 
 // Premium-feature previews, deep-linkable by key. The title is used for the
 // preview heading.
@@ -84,8 +84,9 @@ const PREVIEWS = {
 }
 
 export default function Demo() {
-  // Demo is public: always show the alabaster wallpaper, never the saved one.
-  usePublicWallpaper()
+  // The preview wallpaper is shared with the landing page: picking a theme here
+  // recolours both pages without touching the saved app preference.
+  const [theme, setTheme] = usePreviewWallpaper()
   usePageMeta({
     title: 'Try the Uttar Fitness demo — no account needed',
     description: 'Tap through a live demo of Uttar Fitness: your home screen, health and stats, the workout library, and your profile. Nothing is saved until you sign in.',
@@ -101,7 +102,6 @@ export default function Demo() {
   const [workoutType, setWorkoutType] = useState('All')
   const [workoutDifficulty, setWorkoutDifficulty] = useState('All')
   const [workoutMuscle, setWorkoutMuscle] = useState('All')
-  const [theme, setTheme] = useState('cosmic')
   const [playerTitle, setPlayerTitle] = useState('Core Crusher')
   const [searchParams, setSearchParams] = useSearchParams()
   const tabRefs = useRef({})
@@ -185,7 +185,7 @@ export default function Demo() {
     setWorkoutType('All')
     setWorkoutDifficulty('All')
     setWorkoutMuscle('All')
-    setTheme('cosmic')
+    setTheme('alabaster')
     setPlayerTitle('Core Crusher')
     setPreview(null)
     toast.message('Demo reset. Nothing was saved.')
@@ -244,7 +244,7 @@ export default function Demo() {
                 <li>Home — complete the sample workout</li>
                 <li>Insights — switch Health/Stats, log a day, change the range</li>
                 <li>Workouts — search and filter the library</li>
-                <li>Profile — preview Dark mode and White mode wallpapers</li>
+                <li>Profile — preview Dark mode and Light mode wallpapers</li>
               </ul>
             </div>
 

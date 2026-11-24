@@ -1,6 +1,6 @@
 // Wallpaper helpers shared by the boot shell, the app layout, the public pages,
 // and the Profile picker. Stored values stay "cosmic" (shown as Dark mode) or
-// "alabaster" (shown as White mode). There is no clock-driven mode.
+// "alabaster" (shown as Light mode). There is no clock-driven mode.
 // This module is also imported by Node tests, so never touch the DOM at load
 // time and guard every browser API.
 

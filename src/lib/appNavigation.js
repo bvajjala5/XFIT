@@ -77,7 +77,7 @@ export const APP_DESTINATIONS = [
     path: '/profile#app-theme',
     label: 'Change wallpaper',
     title: 'Profile · Wallpaper',
-    description: 'Switch between Dark mode (pure black) and White mode (pure white).',
+    description: 'Switch between Dark mode (pure black) and Light mode (pure white).',
     keywords: ['theme', 'wallpaper', 'dark mode', 'light mode', 'appearance', 'cosmic', 'alabaster'],
   },
   {

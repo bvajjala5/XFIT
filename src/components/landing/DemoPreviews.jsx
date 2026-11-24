@@ -402,7 +402,7 @@ const AI_QUESTIONS = [
       intro: 'You can change it in two taps:',
       bullets: [
         'Open Profile from the bottom bar',
-        'Pick Dark mode or White mode',
+        'Pick Dark mode or Light mode',
       ],
       outro: 'Both are static wallpapers. Nothing follows the clock anymore.',
       actions: [{ label: 'Change wallpaper' }],

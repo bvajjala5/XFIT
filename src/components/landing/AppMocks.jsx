@@ -148,9 +148,9 @@ export function PhoneFrame({ children, className = '', label, active = 'home', o
 
 /** Wide browser-style frame for the interactive demo. */
 export function DemoFrame({ children, className = '', active = 'home', onNavigate, theme = 'alabaster' }) {
-  // The public page stays Alabaster, but the phone preview can wear either
-  // static wallpaper. Theme classes work on this inner element too, so all mock
-  // tokens (cards, text, nav) follow the selected wallpaper without a reload.
+  // The phone preview follows the public page's shared preview wallpaper.
+  // Theme classes work on this inner element too, so all mock tokens (cards,
+  // text, nav) follow the selected wallpaper without a reload.
   const screenTheme = ['cosmic', 'alabaster'].includes(theme) ? theme : 'alabaster'
   // `color` must be set here too: the public page's <html> owns the inherited
   // text color, so changing only the CSS variables on this nested element would
@@ -870,7 +870,7 @@ export function WorkoutsMock({
 // ── Profile ───────────────────────────────────────────────────────────────
 const THEME_OPTIONS = [
   { key: 'cosmic', label: 'Dark mode', desc: 'Pure black', icon: Moon },
-  { key: 'alabaster', label: 'White mode', desc: 'Pure white', icon: Sun },
+  { key: 'alabaster', label: 'Light mode', desc: 'Pure white', icon: Sun },
 ]
 
 function ThemeSwatch({ mode }) {

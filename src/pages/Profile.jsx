@@ -19,7 +19,7 @@ const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improv
 
 const THEME_OPTIONS = [
   { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black', icon: Moon },
-  { key: 'alabaster', label: 'White mode', desc: 'Pure white', icon: Sun },
+  { key: 'alabaster', label: 'Light mode', desc: 'Pure white', icon: Sun },
 ];
 
 // Tiny static swatches — no animation and no theme-dependent artwork.
@@ -192,7 +192,7 @@ export default function Profile() {
           })}
         </div>
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Pick a static wallpaper: Dark mode or White mode.
+          Pick a static wallpaper: Dark mode or Light mode.
         </p>
       </GlassCard>
           <GlassCard className="space-y-2">

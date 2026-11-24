@@ -22,7 +22,7 @@ import {
 import Wallpaper from '@/components/layout/Wallpaper'
 import BrandMark from '@/components/brand/BrandMark'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
-import usePublicWallpaper from '@/hooks/usePublicWallpaper'
+import usePreviewWallpaper from '@/hooks/usePreviewWallpaper'
 import usePageMeta from '@/hooks/usePageMeta'
 import {
   PhoneFrame,
@@ -216,8 +216,9 @@ function MobileCta() {
 }
 
 export default function Landing() {
-  // Public pages always use the alabaster wallpaper; no clock-driven theme.
-  usePublicWallpaper()
+  // Shares the demo's preview wallpaper, so a theme picked in the demo also
+  // recolours the landing page. The saved app preference stays untouched.
+  usePreviewWallpaper()
   usePageMeta({
     title: 'Uttar Fitness — The all-in-one fitness app',
     description: 'The all-in-one fitness app for workouts, weekly plans, nutrition, sleep, health metrics, and AI coaching. Try the interactive demo free — no account needed.',
