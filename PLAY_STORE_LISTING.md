@@ -59,7 +59,7 @@ Use these as the starting point, then check each answer against the shipped buil
 ## Assets still to produce
 
 - 512×512 launcher icon: `public/icons/icon-512.png` is ready to reuse.
-- 1024×500 feature graphic (not created yet).
+- 1024×500 feature graphic: `store/feature-graphic.png` (source: `store/feature-graphic.svg`) is ready to upload.
 - 2–8 phone screenshots, ideally 1080×1920, from a clean test account: Home, Workout player, Workouts library, Insights, and the run-import preview. Do not screenshot the maintainer's real account data.
 - A short promo video is optional.
 
