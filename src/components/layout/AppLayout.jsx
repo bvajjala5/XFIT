@@ -11,6 +11,7 @@ import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher
 import { UttarAIProvider } from '@/components/ai/UttarAIContext';
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
 import { applyResolvedTheme, getThemeMode, resolveTheme, THEME_KEY } from '@/lib/theme';
+import useAutoTheme from '@/hooks/useAutoTheme';
 
 const navItems = [
   { path: '/home',      icon: Home,           label: 'Home'     },
@@ -26,6 +27,9 @@ export default function AppLayout() {
   const queryClient = useQueryClient();
   const [aiOpen, setAiOpen] = useState(false);
   const openAI = useCallback(() => setAiOpen(true), []);
+
+  // Auto mode only schedules work when it is the saved preference.
+  useAutoTheme();
 
   // Completed workouts are queued locally when the network is unavailable.
   // Flush them on launch, when the browser comes back online, and periodically
@@ -62,8 +66,9 @@ export default function AppLayout() {
   }, [user?.uid, queryClient]);
 
   useEffect(() => {
-    // Wallpapers are static: apply the saved one on mount and when another tab
-    // changes the preference. No clock, timer, or visibility sync any more.
+    // Apply the saved mode on mount and when another tab changes it. Auto is
+    // resolved to one of the two static wallpapers; useAutoTheme owns the timer
+    // that re-resolves it at the next 7am/7pm boundary.
     const sync = () => {
       applyResolvedTheme(resolveTheme(getThemeMode()));
     };

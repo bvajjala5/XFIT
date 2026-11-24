@@ -20,10 +20,21 @@ const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improv
 const THEME_OPTIONS = [
   { key: 'cosmic',    label: 'Dark mode', desc: 'Pure black', icon: Moon },
   { key: 'alabaster', label: 'Light mode', desc: 'Pure white', icon: Sun },
+  { key: 'auto',      label: 'Auto mode', desc: 'Dark at night', icon: Clock },
 ];
 
 // Tiny static swatches — no animation and no theme-dependent artwork.
 function ThemePreview({ mode }) {
+  if (mode === 'auto') {
+    return (
+      <div className="relative h-11 w-full overflow-hidden rounded-xl border border-border/40 bg-white">
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-black" />
+        <span className="absolute left-2 top-2 h-1 w-6 rounded-full bg-white/30" />
+        <span className="absolute right-2 top-2 h-1 w-6 rounded-full bg-black/20" />
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-secondary px-1.5 py-px text-[8px] font-bold tracking-wide text-foreground">AUTO</span>
+      </div>
+    );
+  }
   const dark = mode === 'cosmic';
   return (
     <div className={`relative h-11 w-full overflow-hidden rounded-xl border ${dark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
@@ -161,7 +172,7 @@ export default function Profile() {
           <Palette className="w-4 h-4 text-primary" />
           <div className="text-sm font-semibold">Wallpaper</div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
             const selected = theme === key
             return (
@@ -182,17 +193,17 @@ export default function Profile() {
                   </span>
                 )}
                 <ThemePreview mode={key} />
-                <div className="mt-2 flex items-center gap-1.5 px-0.5">
+                <div className="mt-2 flex items-center gap-1 px-0.5">
                   <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="truncate text-xs font-semibold">{label}</span>
+                  <span className="truncate text-[11px] font-semibold">{label}</span>
                 </div>
-                <div className="px-0.5 text-[10px] text-muted-foreground">{desc}</div>
+                <div className="truncate px-0.5 text-[9px] text-muted-foreground">{desc}</div>
               </button>
             )
           })}
         </div>
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Pick a static wallpaper: Dark mode or Light mode.
+          Dark and Light stay put. Auto switches to Light at 7am and Dark at 7pm, with a smooth fade.
         </p>
       </GlassCard>
           <GlassCard className="space-y-2">

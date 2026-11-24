@@ -121,6 +121,28 @@
   }
 }
 
+/* Auto mode (and any manual switch) fades the two static wallpapers into each
+   other. applyResolvedTheme adds this class only when the resolved wallpaper
+   actually changes and removes it afterwards, so ordinary hovers keep their
+   own snappy transitions. Only colour-like properties are transitioned: Framer
+   Motion keeps full control of transforms. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 420ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition-duration: 0ms;
+  }
+}
+
 /* ── Brand mark ───────────────────────────────────────────────────────────
    The emblem is a white-on-transparent PNG used as a mask, so its colour can
    follow the active wallpaper. Dark mode renders white-on-black, Alabaster

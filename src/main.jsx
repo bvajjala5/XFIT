@@ -9,14 +9,19 @@ import { AuthProvider } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
+import { getPublicWallpaper } from '@/lib/publicWallpaper'
 import { registerSW } from 'virtual:pwa-register'
 
-// Match the inline boot script: public pages always paint Alabaster, while the
-// signed-in app uses the saved wallpaper. Keeping both in sync avoids a flash
+// Match the inline boot script: Login always paints Alabaster, the landing and
+// demo pages follow the shared preview mode (which may be Auto), and the
+// signed-in app uses the saved mode. Keeping both in sync avoids a flash
 // between the static shell and the first React paint.
 const publicPath = window.location.pathname.replace(/\/+$/, '') || '/'
-const isPublicPage = publicPath === '/' || publicPath === '/demo' || publicPath === '/login'
-applyResolvedTheme(isPublicPage ? 'alabaster' : resolveTheme(getThemeMode()))
+const isDemoPage = publicPath === '/' || publicPath === '/demo'
+const initialTheme = publicPath === '/login'
+  ? 'alabaster'
+  : isDemoPage ? getPublicWallpaper() : resolveTheme(getThemeMode())
+applyResolvedTheme(initialTheme)
 
 // Register the PWA worker after the page has loaded so it never competes with
 // the critical rendering path. registerSW() is the plugin's own entry point:

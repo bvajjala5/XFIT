@@ -65,7 +65,7 @@ const TABS = [
     bullets: [
       'See your all-time totals at a glance',
       'Review your goal, level, and preferences',
-      'Tap Dark mode or Light mode to change the wallpaper',
+      'Tap Dark mode, Light mode, or Auto to change the wallpaper',
     ],
   },
 ]
@@ -73,7 +73,7 @@ const TABS = [
 // Keys the in-phone bottom bar can send, mapped to demo tabs.
 const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
 
-const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'Light mode' }
+const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'Light mode', auto: 'Auto mode' }
 
 // Premium-feature previews, deep-linkable by key. The title is used for the
 // preview heading.
@@ -244,7 +244,7 @@ export default function Demo() {
                 <li>Home — complete the sample workout</li>
                 <li>Insights — switch Health/Stats, log a day, change the range</li>
                 <li>Workouts — search and filter the library</li>
-                <li>Profile — preview Dark mode and Light mode wallpapers</li>
+                <li>Profile — preview Dark, Light, and Auto wallpapers</li>
               </ul>
             </div>
 

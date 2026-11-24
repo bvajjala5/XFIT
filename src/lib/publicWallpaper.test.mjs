@@ -57,3 +57,16 @@ test('a dark preview saved earlier is restored on load', async () => {
     assert.equal(getPublicWallpaper(), 'cosmic')
   })
 })
+
+test('auto is a valid preview mode and never touches the saved app theme', async () => {
+  await withStorage(async (store) => {
+    store.set('xfit-public-wallpaper', 'auto')
+    const { getPublicWallpaper, setPublicWallpaper } = await import('./publicWallpaper.js?case=auto')
+
+    assert.equal(getPublicWallpaper(), 'auto')
+    assert.equal(setPublicWallpaper('cosmic'), 'cosmic')
+    assert.equal(setPublicWallpaper('auto'), 'auto')
+    assert.equal(store.get('xfit-public-wallpaper'), 'auto')
+    assert.equal(store.has('xfit-theme'), false)
+  })
+})

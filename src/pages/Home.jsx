@@ -221,17 +221,18 @@ export default function Home() {
       <WeeklyRecap logs={logs} />
       <NotificationSetup userId={user?.uid} open={currentPopup === 'notifications'} onDismiss={() => advancePopup('notifications')} />
 
-      {/* Greeting + quote */}
+      {/* Greeting + quote. The quote sits under the name so the right side of
+          the header stays a single, predictable target on every screen width. */}
       <motion.header initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-        className="pt-8 pb-5 flex items-end justify-between gap-5">
-        <div className="min-w-0 shrink-0 max-w-[48%]">
+        className="pt-8 pb-5 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <p className="text-muted-foreground text-sm">{getGreeting()}</p>
           <h1 className="text-3xl font-extrabold tracking-tight truncate">{firstName}</h1>
-        </div>
-        <div className="flex items-start justify-end gap-2 min-w-0">
-          <figure className="min-w-0 text-right bg-card/45 backdrop-blur-md rounded-2xl px-3 py-2 mt-1">
-            <blockquote className="text-xs leading-snug text-muted-foreground italic line-clamp-3">“{quote}”</blockquote>
+          <figure className="mt-1.5 inline-flex max-w-full rounded-full bg-card/45 px-2.5 py-1 backdrop-blur-md">
+            <blockquote className="min-w-0 truncate text-[11px] italic leading-snug text-muted-foreground">“{quote}”</blockquote>
           </figure>
+        </div>
+        <div className="shrink-0">
           <GoalsTrackerButton logs={logs} />
         </div>
       </motion.header>
@@ -255,7 +256,7 @@ export default function Home() {
           )}
           <div className="relative shrink-0">
             <button onClick={() => { setShowHint(false); setManualCheckin(true) }}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground min-h-[44px]">
+              className="flex items-center gap-2 rounded-full border border-transparent px-2.5 py-1.5 text-sm text-muted-foreground transition-colors duration-200 hover:border-foreground/20 hover:bg-secondary/40 hover:text-foreground min-h-[44px]">
               <ClipboardCheck className="w-5 h-5" /> <span>Check-in</span>
             </button>
             <AnimatePresence>
@@ -320,13 +321,21 @@ export default function Home() {
                 </li>
               ))}
               {recommended && (
-                <li><Link to={`/workouts/${recommended.id}`} className="flex items-center gap-3 px-5 py-3 min-h-[56px] hover:bg-secondary/40 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{recommended.title}</p>
-                    <p className="text-xs text-muted-foreground capitalize">Suggested · {recommended.type?.replace('_', ' ')} · {durationOf(recommended)} min</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </Link></li>
+                <li className="px-3 pb-3 pt-1.5">
+                  <Link to={`/workouts/${recommended.id}`}
+                    className="group flex min-h-[64px] items-center gap-3 rounded-2xl border border-border/60 bg-secondary/40 px-3 py-2.5 transition-colors duration-200 hover:border-foreground/20 hover:bg-secondary/70 active:scale-[0.99]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/10">
+                      <Play className="h-4 w-4 fill-current text-foreground" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{recommended.title}</p>
+                      <p className="truncate text-xs capitalize text-muted-foreground">Suggested · {recommended.type?.replace('_', ' ')} · {durationOf(recommended)} min</p>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-bold text-background shadow-sm transition-transform duration-200 group-hover:scale-[1.04]">
+                      Start <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </Link>
+                </li>
               )}
             </ul>
           </motion.section>
@@ -334,13 +343,13 @@ export default function Home() {
 
         {/* Quick links */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-3 gap-3">
-          <Link to="/plan" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+          <Link to="/plan" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 transition-all duration-200 hover:border-foreground/20 hover:bg-secondary/40 active:scale-[0.98]`}>
             <CalendarDays className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Plan</span>
           </Link>
-          <button type="button" onClick={openAI} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+          <button type="button" onClick={openAI} className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 transition-all duration-200 hover:border-foreground/20 hover:bg-secondary/40 active:scale-[0.98]`}>
             <Sparkles className="w-4 h-4 text-primary" /><span className="text-sm font-medium">Ask AI</span>
           </button>
-          <Link to="/run" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform`}>
+          <Link to="/run" className={`${cardCls} px-3 min-h-[56px] flex items-center justify-center gap-2 transition-all duration-200 hover:border-foreground/20 hover:bg-secondary/40 active:scale-[0.98]`}>
             <Zap className="w-4 h-4 text-muted-foreground" /><span className="text-sm font-medium">Run</span>
           </Link>
         </motion.div>

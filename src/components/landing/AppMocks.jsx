@@ -871,9 +871,18 @@ export function WorkoutsMock({
 const THEME_OPTIONS = [
   { key: 'cosmic', label: 'Dark mode', desc: 'Pure black', icon: Moon },
   { key: 'alabaster', label: 'Light mode', desc: 'Pure white', icon: Sun },
+  { key: 'auto', label: 'Auto mode', desc: 'Dark at night', icon: Clock },
 ]
 
 function ThemeSwatch({ mode }) {
+  if (mode === 'auto') {
+    return (
+      <div className="relative h-8 w-full overflow-hidden rounded-lg border border-border/40 bg-white">
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-black" />
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-secondary px-1.5 py-px text-[7px] font-bold tracking-wide text-foreground">AUTO</span>
+      </div>
+    )
+  }
   const dark = mode === 'cosmic'
   return (
     <div className={`relative h-8 w-full overflow-hidden rounded-lg border ${dark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'}`}>
@@ -940,7 +949,7 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
         <p className="flex items-center gap-1.5 text-[11px] font-semibold">
           <Palette className="h-3.5 w-3.5 text-primary" /> Wallpaper
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
             const selected = theme === key
             const inner = (

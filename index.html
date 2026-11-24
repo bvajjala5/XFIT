@@ -34,28 +34,44 @@
     <script>
 (function () {
   var KEY = 'xfit-theme';
+  var PREVIEW_KEY = 'xfit-public-wallpaper';
   var saved = null;
+  var preview = null;
   try {
     saved = localStorage.getItem(KEY);
   } catch (error) {
     /* private mode */
   }
-  // No clock and no Auto mode: legacy values are migrated once and stored.
+  try {
+    preview = sessionStorage.getItem(PREVIEW_KEY);
+  } catch (error) {
+    /* private mode */
+  }
+  // Legacy values migrate once. Auto is a real preference now and is kept.
   // This mirrors theme.js exactly, including its cosmic default for new users.
   var migrated = saved === 'midnight' ? 'cosmic'
-    : (saved === 'sunrise' || saved === 'auto') ? 'alabaster'
-    : (saved === 'cosmic' || saved === 'alabaster') ? saved
+    : saved === 'sunrise' ? 'alabaster'
+    : (saved === 'cosmic' || saved === 'alabaster' || saved === 'auto') ? saved
     : 'cosmic';
   try {
     if (saved !== migrated) localStorage.setItem(KEY, migrated);
   } catch (error) {
     /* private mode */
   }
-  // Public pages always paint Alabaster. The saved wallpaper is left untouched
-  // so signing in or opening the app still restores the user's preference.
+  // Auto only resolves to one of the two static wallpapers: Light from 7am to
+  // 7pm, Dark otherwise. Login stays Alabaster; the landing and demo pages
+  // follow the shared session preview instead of the saved account preference.
+  var hour = new Date().getHours();
+  var autoWallpaper = hour >= 7 && hour < 19 ? 'alabaster' : 'cosmic';
+  function resolve(value) {
+    if (value === 'auto') return autoWallpaper;
+    return value === 'cosmic' ? 'cosmic' : 'alabaster';
+  }
   var path = location.pathname.replace(/\/+$/, '') || '/';
-  var isPublicPage = path === '/' || path === '/demo' || path === '/login';
-  var mode = isPublicPage ? 'alabaster' : migrated;
+  var isDemoPage = path === '/' || path === '/demo';
+  var mode = path === '/login' ? 'alabaster'
+    : isDemoPage ? (preview ? resolve(preview) : 'alabaster')
+    : resolve(migrated);
 
   var root = document.documentElement;
   root.classList.remove('theme-cosmic', 'theme-alabaster', 'theme-gradient', 'theme-midnight', 'theme-sunrise');
