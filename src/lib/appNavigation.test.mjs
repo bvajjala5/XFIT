@@ -74,6 +74,17 @@ test('findNavSuggestions rescues clear where/how questions', () => {
   )
 })
 
+test('findNavSuggestions routes Uttar AI upgrade questions to the upgrade page', () => {
+  assert.deepEqual(
+    findNavSuggestions('How do I get more Uttar AI when I run out?').map((action) => action.path),
+    ['/ai-upgrade']
+  )
+  assert.deepEqual(
+    resolveNavActions([{ path: '/subscription', label: 'Manage subscription' }]).map((action) => action.path),
+    ['/ai-upgrade']
+  )
+})
+
 test('findNavSuggestions ignores questions that are not about the app', () => {
   assert.deepEqual(findNavSuggestions('How much protein should I eat?'), [])
 })

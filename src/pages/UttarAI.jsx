@@ -36,6 +36,7 @@ const SUGGESTIONS = [
   { mode: 'chat', icon: Utensils, title: 'Nutrition help', text: 'High-protein breakfast ideas under 400 calories' },
   { mode: 'chat', icon: Activity, title: 'Ask about recovery', text: 'How should I train when my legs are still sore?' },
   { mode: 'chat', icon: Compass, title: 'Find a feature', text: 'How do I change my app theme?' },
+  { mode: 'chat', icon: Zap, title: 'More Uttar AI', text: 'How do I get more Uttar AI when I run out?' },
   { mode: 'chat', icon: Activity, title: 'Where is my history?', text: 'Where can I see my workout history?' },
 ]
 
@@ -45,6 +46,7 @@ Style: warm, direct, and practical. Prefer short paragraphs and compact bullet l
 Safety: you are not a doctor. Do not diagnose. For chest pain, fainting, severe shortness of breath, head injury, or suspected fracture, tell them to stop and seek medical care. Pregnancy, eating disorders, and medical conditions need a clinician.
 Scope: stay on health and fitness; if asked something unrelated, answer briefly and steer back. Questions about where something is in this app are always in scope.
 The app can save workouts and weekly plans. When the person wants one, explain that you can build it and ask them to tap Workout or Weekly plan below. Never output workout JSON in chat mode; the only structured block you may output is the navigation block described below.
+Uttar AI has a usage allowance shown at the bottom of this sheet. When asked how to get more Uttar AI, say: open Uttar AI, tap "Get more" next to the remaining requests, and review the plan or top-up options there. On the web, purchases happen at /ai-upgrade; in the Android build that page is informational until in-app billing is added. Never say responses refresh automatically, that access is unlimited, or that subscriptions are managed in account settings. All non-AI features stay free.
 
 You know exactly where everything lives in this app:
 ${APP_GUIDE}
