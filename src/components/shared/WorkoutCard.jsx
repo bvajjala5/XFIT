@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Flame, MoreVertical, Trash2 } from 'lucide-react';
+import { Clock, Flame, MoreVertical, Share2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
 const label = (t = '') => t.replace(/_/g, ' ');
 
-export default function WorkoutCard({ workout, index = 0, isCustom = false, onDelete }) {
+export default function WorkoutCard({ workout, index = 0, isCustom = false, onDelete, onShare, sharing = false }) {
   const [showMenu, setShowMenu] = useState(false);
   let minutes = workout.duration;
   try { const saved = localStorage.getItem('xfit_total_duration_' + workout.id); if (saved) minutes = saved; } catch {}
@@ -35,8 +35,20 @@ export default function WorkoutCard({ workout, index = 0, isCustom = false, onDe
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="absolute right-0 mt-1 w-32 bg-card border border-border shadow-xl rounded-xl overflow-hidden z-20"
+                className="absolute right-0 mt-1 w-36 bg-card border border-border shadow-xl rounded-xl overflow-hidden z-20"
               >
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onShare?.(workout);
+                  }}
+                  disabled={sharing}
+                  className="w-full px-3 py-2 text-left text-xs text-foreground hover:bg-secondary/60 flex items-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  <Share2 className="w-3 h-3" /> {sharing ? 'Sharing…' : 'Share'}
+                </button>
                 <button
                   onClick={(e) => {
                     e.preventDefault();

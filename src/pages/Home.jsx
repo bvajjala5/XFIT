@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import TermsModal from '@/components/shared/TermsModal'
 import WeeklyRecap from '@/components/shared/WeeklyRecap'
 import NotificationSetup from '@/components/shared/NotificationSetup'
-import { shareWorkout, unshareWorkout, isShared } from '@/lib/shareWorkout'
+import { shareCustomWorkout } from '@/lib/workoutShareLink'
 import { seedWorkouts } from '@/lib/seedWorkouts'
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache'
 import { getPendingWorkoutLogs, WORKOUT_LOGS_CHANGED } from '@/lib/workoutLogQueue'
@@ -76,20 +76,11 @@ export default function Home() {
   const advancePopup = (from) => setCurrentPopup(computeNextPopup(from, user?.uid));
 
   async function handleShare(w) {
-    if (!user) return
     setSharingId(w.id)
     try {
-      const already = await isShared(w.id)
-      if (already) {
-        await unshareWorkout(w.id)
-        toast.success('Workout removed from community')
-      } else {
-        const name = userDoc?.full_name || user.displayName || 'Anonymous'
-        await shareWorkout(user.uid, name, w)
-        toast.success('Workout shared with the community')
-      }
-    } catch {
-      toast.error('Could not share workout')
+      const result = await shareCustomWorkout(w)
+      if (result === 'copied') toast.success('Workout link copied — send it to anyone')
+      else if (result === 'failed') toast.error('Could not share workout')
     } finally {
       setSharingId(null)
     }
@@ -314,7 +305,7 @@ export default function Home() {
                     </div>
                     <Play className="w-4 h-4 text-muted-foreground" />
                   </Link>
-                  <button onClick={() => handleShare(w)} disabled={sharingId === w.id} aria-label="Share with community"
+                  <button onClick={() => handleShare(w)} disabled={sharingId === w.id} aria-label="Share workout"
                     className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-50">
                     <Share2 className="w-4 h-4" />
                   </button>

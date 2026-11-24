@@ -18,6 +18,8 @@ const RELEASES = [
       'The Run Tracker title is readable in Light mode and now clears off the screen once a run starts.',
       'Tempo cues now live in the workout gear menu, and hiding the demo no longer leaves an “exercise demo is hidden” message.',
       'The small input button now says “Apply” so it is clear it changes the typed reps or time without ending the set.',
+      'Share buttons now open the device share sheet with a real link; on desktop they copy the link instead of failing. Custom workouts can also be shared from the three-dot menu in Workouts.',
+      'Shared workout links open a preview anyone can add to their own workouts. The link carries the workout itself, so nothing is published to the community list without your say-so.',
     ],
   },
   {

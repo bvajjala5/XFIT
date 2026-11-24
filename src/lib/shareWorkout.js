@@ -1,28 +1,6 @@
 import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore/lite';
 import { db } from './firestore';
-
-// Only these fields are ever published. Custom workouts also contain private
-// fields (for example the AI `prompt`), so spreading the whole document would
-// leak user data to the public community collection.
-const PUBLIC_WORKOUT_FIELDS = [
-  'name', 'description', 'type', 'difficulty',
-  'estimated_duration', 'estimated_calories', 'is_split_template',
-];
-
-const PUBLIC_EXERCISE_FIELDS = [
-  'id', 'name', 'sets', 'reps', 'duration', 'duration_seconds',
-  'rest_seconds', 'animation', 'notes', 'muscles', 'muscle', 'equipment',
-  'image', 'type',
-];
-
-function publicExercise(exercise) {
-  if (!exercise || typeof exercise !== 'object') return exercise;
-  const clean = {};
-  for (const key of PUBLIC_EXERCISE_FIELDS) {
-    if (exercise[key] !== undefined) clean[key] = exercise[key];
-  }
-  return clean;
-}
+import { toPublicWorkout } from './publicWorkout';
 
 /**
  * Share a custom workout to the global sharedWorkouts collection.
@@ -30,16 +8,8 @@ function publicExercise(exercise) {
  */
 export async function shareWorkout(userId, displayName, workout) {
   const ref = doc(db, 'sharedWorkouts', workout.id);
-  const publicWorkout = {};
-  for (const key of PUBLIC_WORKOUT_FIELDS) {
-    if (workout[key] !== undefined) publicWorkout[key] = workout[key];
-  }
-  if (Array.isArray(workout.exercises)) {
-    publicWorkout.exercises = workout.exercises.map(publicExercise);
-  }
-
   await setDoc(ref, {
-    ...publicWorkout,
+    ...toPublicWorkout(workout),
     sharedBy: userId,
     sharedByName: String(displayName || 'Anonymous').slice(0, 100),
     sharedAt: serverTimestamp(),
@@ -74,7 +44,7 @@ export async function importWorkout(userId, sharedWorkout) {
     importedFromName: sharedByName,
     created_at: serverTimestamp(),
   });
-  // Increment import counter (best-effort)
+  // Increment import counter (best-effort), only when a community doc exists.
   try {
     const { updateDoc, increment } = await import('firebase/firestore/lite');
     await updateDoc(doc(db, 'sharedWorkouts', id), { importCount: increment(1) });

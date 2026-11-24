@@ -9,6 +9,7 @@ import WorkoutCard from '@/components/shared/WorkoutCard';
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { shareCustomWorkout } from '@/lib/workoutShareLink';
 
 const TYPES = ['All','hiit','strength','cardio','yoga','mobility'];
 const DIFFICULTIES = ['All','beginner','intermediate','advanced'];
@@ -27,6 +28,7 @@ export default function WorkoutsAndRun() {
   const [difficulty, setDifficulty] = useState('All')
   const [muscleGroup, setMuscleGroup] = useState('All');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sharingId, setSharingId] = useState(null);
 
   const { data: workouts = [], isLoading: workoutsLoading } = useQuery({
     queryKey: ['workouts'],
@@ -89,6 +91,17 @@ export default function WorkoutsAndRun() {
     } catch (err) {
       console.error(err);
       toast.error('Failed to delete workout');
+    }
+  }
+
+  async function handleShareWorkout(workout) {
+    setSharingId(workout.id);
+    try {
+      const result = await shareCustomWorkout(workout);
+      if (result === 'copied') toast.success('Workout link copied — send it to anyone');
+      else if (result === 'failed') toast.error('Could not share workout');
+    } finally {
+      setSharingId(null);
     }
   }
 
@@ -247,7 +260,7 @@ export default function WorkoutsAndRun() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((w, i) => <WorkoutCard key={w.id} workout={w} index={i} isCustom={w.isCustom} onDelete={handleDeleteWorkout}/>)}
+          {filtered.map((w, i) => <WorkoutCard key={w.id} workout={w} index={i} isCustom={w.isCustom} onDelete={handleDeleteWorkout} onShare={handleShareWorkout} sharing={sharingId === w.id}/>)}
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ import { saveWorkoutLog } from '@/lib/workoutLogQueue';
 import HybridTracker from '@/components/workout/HybridTracker';
 import PlayerSettingsMenu from '@/components/workout/PlayerSettingsMenu';
 import { movementFromExercise } from '@/lib/poseCounter';
+import { shareContent, dataUrlToFile } from '@/lib/shareContent';
 import {
   MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
   recordSet, nextPosition, setExerciseMode, adjust, sessionProgress, flattenSets,
@@ -119,7 +120,7 @@ const exerciseDurationSeconds = (ex) => ex?.duration || (ex?.sets ? ex.sets * (e
 
 const motivations = ["You're crushing it.","Push through the burn.","Almost there, don't give up.","You're stronger than yesterday.","Feel the power.","Every rep counts.","Let's go."];
 
-async function generateShareCard({ workoutTitle, duration, calories, rating, difficulty }) {
+function generateShareCard({ workoutTitle, duration, calories, rating, difficulty }) {
   const size = 1080;
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
@@ -690,24 +691,27 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     setSharing(true);
     try {
       const calories = caloriesFor(totalTime);
-      const dataUrl = await generateShareCard({
-        workoutTitle: workout?.title || workout?.name || 'Workout',
-        duration: formatTime(totalTime),
+      const title = workout?.title || workout?.name || 'Workout';
+      const duration = formatTime(totalTime);
+      const dataUrl = generateShareCard({
+        workoutTitle: title,
+        duration,
         calories,
         rating,
         difficulty: logDifficulty,
       });
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'uttar-workout.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Uttar Fitness Workout Complete!', text: `Just finished a workout on Uttar Fitness.` });
-      } else {
-        const a = document.createElement('a');
-        a.href = dataUrl; a.download = 'uttar-workout.png'; a.click();
-        toast.success('Image saved!');
-      }
-    } catch(e) {
-      if (e?.name !== 'AbortError') toast.error('Could not share');
+      const result = await shareContent({
+        title: 'Uttar Fitness Workout Complete!',
+        text: `Just finished ${title} on Uttar Fitness — ${duration}, ${calories} calories.${rating ? ` ${rating}/5 stars.` : ''}`,
+        url: `${window.location.origin}/`,
+        files: [dataUrlToFile(dataUrl)].filter(Boolean),
+        downloadDataUrl: dataUrl,
+        downloadName: 'uttar-workout.png',
+      });
+      if (result === 'copied') toast.success('Workout details copied — paste to share');
+      else if (result === 'failed') toast.error('Could not share');
+    } catch {
+      toast.error('Could not share');
     } finally {
       setSharing(false);
     }

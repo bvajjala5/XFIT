@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { db } from '@/lib/firestore';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore/lite';
@@ -6,12 +7,24 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Users, Dumbbell, Download, Clock, CheckCircle2 } from 'lucide-react';
 import { importWorkout } from '@/lib/shareWorkout';
+import { decodeSharedWorkout } from '@/lib/workoutShareLink';
 import { toast } from 'sonner';
 
 export default function Community() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [importing, setImporting] = useState(null);
+
+  const shareToken = searchParams.get('share');
+  const sharedLinkWorkout = useMemo(() => {
+    if (!shareToken) return null;
+    try {
+      return { workout: decodeSharedWorkout(shareToken) };
+    } catch {
+      return { invalid: true };
+    }
+  }, [shareToken]);
 
   const { data: sharedWorkouts = [], isLoading } = useQuery({
     queryKey: ['shared-workouts'],
@@ -57,6 +70,44 @@ export default function Community() {
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">Workouts shared by Uttar Fitness users</p>
       </div>
+
+      {sharedLinkWorkout?.invalid && (
+        <div className="bg-card border border-border/60 rounded-2xl p-4 text-sm text-muted-foreground">
+          This workout link isn’t valid. Ask the sender to share it again.
+        </div>
+      )}
+
+      {sharedLinkWorkout?.workout && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border border-primary/40 rounded-2xl p-4 flex items-start gap-3"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Dumbbell className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-primary">Shared with you</p>
+            <p className="font-semibold text-sm truncate mt-0.5">{sharedLinkWorkout.workout.name}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {sharedLinkWorkout.workout.exercises?.length ?? 0} exercises
+              {sharedLinkWorkout.workout.estimated_duration ? ` · ${sharedLinkWorkout.workout.estimated_duration} min` : ''}
+            </p>
+            <button
+              onClick={() => handleImport({
+                ...sharedLinkWorkout.workout,
+                id: sharedLinkWorkout.workout.id || `link_${shareToken.slice(0, 12)}`,
+                sharedByName: 'Shared link',
+              })}
+              disabled={importing === sharedLinkWorkout.workout.id || !user}
+              className="mt-2 flex items-center gap-1 text-xs font-semibold bg-primary/15 text-primary px-3 py-1.5 rounded-xl hover:bg-primary/25 transition-colors disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {importing === sharedLinkWorkout.workout.id ? '…' : 'Add to my workouts'}
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {isLoading && (
         <div className="space-y-3">
