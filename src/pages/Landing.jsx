@@ -539,7 +539,7 @@ export default function Landing() {
                     Kick the tires. No account needed.
                   </h2>
                   <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    Open the live demo and tap through a sample day: complete a workout, switch training days, log water, and see how the week fits together. Nothing is saved until you create an account.
+                    Open the live demo and tap through a sample day: complete a workout, browse the workout library, flip between health and stats, and switch wallpapers. Nothing is saved until you create an account.
                   </p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Link to="/demo" className={`group ${PRIMARY_BUTTON}`}>

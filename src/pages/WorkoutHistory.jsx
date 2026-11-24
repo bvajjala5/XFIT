@@ -18,7 +18,7 @@ export default function WorkoutHistory() {
   const { user } = useAuth();
   const [filter, setFilter] = useState("All");
 
-  const { data: logs = [] } = useQuery({
+  const { data: logs = [], isLoading } = useQuery({
     queryKey: ["workout-history", user?.uid],
     queryFn: async () => {
       const q = query(collection(db, "users", user.uid, "workouts"), orderBy("completedAt", "desc"));
@@ -42,7 +42,7 @@ export default function WorkoutHistory() {
     <div className="max-w-2xl mx-auto pb-28 px-4 pt-6 space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center"><Dumbbell className="w-5 h-5 text-primary" /></div>
-        <div><h1 className="text-xl font-black">Workout History</h1><p className="text-xs text-muted-foreground">{logs.length} workouts completed</p></div>
+        <div><h1 className="text-xl font-black">Workout History</h1><p className="text-xs text-muted-foreground">{isLoading ? 'Loading workouts…' : `${logs.length} workouts completed`}</p></div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -54,7 +54,13 @@ export default function WorkoutHistory() {
         ))}
       </div>
 
-      {Object.entries(grouped).length === 0 && (
+      {isLoading ? (
+        <GlassCard className="py-12" aria-label="Loading workout history">
+          <div className="mx-auto h-3 w-40 animate-pulse rounded-full bg-secondary/60" />
+          <div className="mx-auto mt-3 h-3 w-24 animate-pulse rounded-full bg-secondary/40" />
+          <span className="sr-only">Loading workout history…</span>
+        </GlassCard>
+      ) : Object.entries(grouped).length === 0 && (
         <GlassCard className="text-center py-12">
           <Dumbbell className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="font-semibold">No workouts yet</p>

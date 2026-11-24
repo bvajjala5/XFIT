@@ -70,6 +70,21 @@ const TABS = [
   },
 ]
 
+// The player opens from a workout card, not from the main tab bar, so it needs
+// its own sidebar copy without appearing as a fifth tab.
+const PLAYER_TAB = {
+  key: 'player',
+  label: 'Workout',
+  icon: Dumbbell,
+  title: 'Inside a workout',
+  copy: 'The player keeps the current set, timer, and form cues on one screen, so you can train without hunting for controls.',
+  bullets: [
+    'Follow the set and rest timer',
+    'Hide or show the movement demo',
+    'Exit returns to the sample home screen',
+  ],
+}
+
 // Keys the in-phone bottom bar can send, mapped to demo tabs.
 const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', profile: 'profile' }
 
@@ -133,7 +148,7 @@ export default function Demo() {
     }
   }
 
-  const active = TABS.find((item) => item.key === tab) ?? TABS[0]
+  const active = TABS.find((item) => item.key === tab) ?? (tab === 'player' ? PLAYER_TAB : TABS[0])
   const ActiveIcon = active.icon
 
   const handleTabKeyDown = (event) => {

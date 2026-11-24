@@ -28,7 +28,15 @@ export default function Login() {
   const handleLogin = async () => {
     setLoading(true); setError('');
     try { await signInWithGoogle(); }
-    catch { setError('Could not sign in. Please try again.'); setLoading(false); }
+    catch (err) {
+      // Closing or cancelling the Google popup is a choice, not a failure.
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        setLoading(false);
+        return;
+      }
+      setError('Could not sign in. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +92,7 @@ export default function Login() {
           <p className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Sign in to track your journey</p>
         </div>
 
-        {error && <div className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error}</div>}
+        {error && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error}</div>}
 
         <button onClick={handleLogin} disabled={loading}
           className="w-full h-14 rounded-2xl bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-60">

@@ -10,6 +10,7 @@ import { clearAppCaches } from '@/lib/cache';
 import { getThemeMode, setThemeMode } from '@/lib/theme';
 import { localDateStr } from '@/lib/utils';
 import { buildUserDataExport, downloadJson, serializeDocument } from '@/lib/dataExport';
+import { avatarImageUrl } from '@/lib/avatarUrl';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
@@ -135,7 +136,7 @@ export default function Profile() {
     } catch(e) {
       console.error('Account deletion failed:', e);
       toast.error(e?.code === 'auth/requires-recent-login'
-        ? 'Your data was deleted, but signing out failed for security reasons. Sign in again to finish removing the account.'
+        ? 'Your app data was cleared, but Google needs you to sign in again before the account itself can be deleted. You’ve been signed out; please sign back in and retry.'
         : 'Could not finish deleting your account. Please sign in again and retry.');
       await logout();
       navigate('/', { replace: true });
@@ -176,7 +177,7 @@ export default function Profile() {
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
       <div className="text-center space-y-3">
         <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto overflow-hidden">
-          {userData?.profile_picture ? <img src={userData.profile_picture} alt="Profile" className="w-full h-full object-cover"/> : <User className="w-8 h-8 text-primary"/>}
+          {userData?.profile_picture ? <img src={avatarImageUrl(userData.profile_picture)} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer"/> : <User className="w-8 h-8 text-primary"/>}
         </div>
         <div>
           <h1 className="text-2xl font-bold">{userData?.full_name||'Athlete'}</h1>

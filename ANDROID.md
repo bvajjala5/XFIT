@@ -19,6 +19,11 @@ thing that becomes effectively permanent once the app is published.
 | Support email | the Google account already used for sign-in |
 | Privacy policy | `https://xfit-bpe.pages.dev/privacy` |
 | Data deletion URL | `https://xfit-bpe.pages.dev/privacy` |
+| Target API | 36 (Android 16), required for new Play submissions since Aug 31, 2026 |
+
+The Gradle plugin is 8.9.1 and the wrapper is Gradle 8.11.1, which support API 36.
+Those values are set in `android/build.gradle` and `android/variables.gradle`;
+they have not been compiled here because no Android SDK is installed in this repo.
 
 The wrapper loads the live PWA URL instead of a bundled copy of `dist`. That keeps
 Google sign-in on the Firebase-authorized domain. It also means the app needs a
@@ -53,7 +58,9 @@ The OAuth domains are already in the `capacitor.config.json` allowlist.
 
 ## Before building a release
 
-1. Install Android Studio with an Android SDK and accept its licenses.
+1. Install Android Studio (Meerkat 2024.3.1 Patch 1 or newer) with the Android
+   16 / API 36 SDK and accept its licenses. The project is already set to
+   compile and target API 36.
 2. Create a Play Console account and a new app using `com.uttar.fitness`.
 3. Generate an upload key (keep this file safe; you cannot update the app without it):
 
@@ -84,6 +91,25 @@ The OAuth domains are already in the `capacitor.config.json` allowlist.
   used only while the user runs and the app is open.
 - Note that Form Check needs camera access and runs need location access. Neither
   permission is required to use the rest of the app.
+
+## Getting production access
+
+New personal Play Console accounts created after November 13, 2023 cannot publish
+to production until they pass a testing gate:
+
+1. Complete the app setup (store listing, content rating, data safety, target
+   audience, and pricing).
+2. Publish a **closed testing** release to at least **12 testers** who stay opted
+   in continuously for **14 days**. Internal testing does not count.
+3. Collect feedback through Play Console and fix what testers report.
+4. On the Play Console dashboard, choose **Apply for production** and answer the
+   questions about your test, audience, and readiness. Google usually responds
+   within about a week.
+5. Provide a working Google sign-in test account in Play Console so reviewers can
+   reach the signed-in screens.
+
+Keep the closed test running while you iterate; updates to an app that already
+has production access do not repeat this gate.
 
 ## Later: native health data
 
