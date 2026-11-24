@@ -3,7 +3,7 @@
 Everything here can be pasted into Play Console as-is. Nothing has been submitted.
 The signed AAB is built at
 `android/app/build/outputs/bundle/release/app-release.aab`. Still needed: a Play
-Console account, store screenshots/feature graphic, and a reviewer test account.
+Console account, store screenshots, and a reviewer test account. The 1024×500 feature graphic and 512×512 launcher icon are already in the repo.
 
 ## App details
 
