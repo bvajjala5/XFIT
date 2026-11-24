@@ -121,7 +121,7 @@ function AppScreen({ children, active = 'home', onNavigate }) {
     <div className="flex h-full flex-col">
       <StatusBar />
       <TopBar />
-      <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {children}
       </div>
       <BottomNav active={active} onNavigate={onNavigate} />
@@ -133,12 +133,12 @@ function AppScreen({ children, active = 'home', onNavigate }) {
 export function PhoneFrame({ children, className = '', label, active = 'home', onNavigate }) {
   return (
     <div
-      className={`relative mx-auto w-full max-w-[300px] ${className}`}
+      className={`relative mx-auto w-full max-w-[320px] ${className}`}
       role={label ? 'img' : undefined}
       aria-label={label}
     >
       <div className="relative overflow-hidden rounded-[2.4rem] border border-border/70 bg-card/80 p-1.5 shadow-[0_35px_90px_-35px_rgba(0,0,0,0.75)] backdrop-blur-xl">
-        <div className="h-[470px] overflow-hidden rounded-[2rem] border border-border/50 bg-background/90">
+        <div className="h-[500px] overflow-hidden rounded-[2rem] border border-border/50 bg-background/90">
           <AppScreen active={active} onNavigate={onNavigate}>{children}</AppScreen>
         </div>
       </div>
@@ -196,7 +196,7 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
   ]
 
   return (
-    <div className="space-y-3 p-3.5">
+    <div className="space-y-3 px-4 py-3.5">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0 shrink-0">
           <p className="text-[10px] text-muted-foreground">Good morning</p>
@@ -209,60 +209,64 @@ export function HomeMock({ done = false, onToggleDone, onNavigate }) {
         </figure>
       </div>
 
-      <div className={`${CARD} flex items-center gap-2 p-3`}>
-        {done
-          ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
-          : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold">Today</p>
-          <p className="truncate text-[9px] leading-snug text-muted-foreground">
-            {done ? 'Workout done. Rest up and recover.' : 'Core Focus · 39 min'}
-          </p>
+      <div className={`${CARD} flex items-center justify-between gap-2 p-3`}>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {done
+            ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
+            : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold leading-tight">Today</p>
+            <p className="truncate text-[9px] leading-snug text-muted-foreground">
+              {done ? 'Workout done. Rest up and recover.' : 'Core Focus · 39 min'}
+            </p>
+          </div>
         </div>
-        {!done && (interactive ? (
-          <button
-            type="button"
-            onClick={onToggleDone}
-            aria-label="Complete the sample workout"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full primary-gradient transition-transform hover:scale-105 active:scale-95"
-          >
-            <Play className="h-3 w-3 fill-white text-white" />
-          </button>
-        ) : (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full primary-gradient" aria-hidden="true">
-            <Play className="h-3 w-3 fill-white text-white" />
+        <div className="flex shrink-0 items-center gap-2">
+          {!done && (interactive ? (
+            <button
+              type="button"
+              onClick={onToggleDone}
+              aria-label="Complete the sample workout"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full primary-gradient transition-transform hover:scale-105 active:scale-95"
+            >
+              <Play className="h-3 w-3 fill-white text-white" />
+            </button>
+          ) : (
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full primary-gradient" aria-hidden="true">
+              <Play className="h-3 w-3 fill-white text-white" />
+            </span>
+          ))}
+          <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[9px] leading-tight text-muted-foreground">
+            <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> Check-in
           </span>
-        ))}
-        <span className="flex shrink-0 items-center gap-1 text-[9px] text-muted-foreground">
-          <ClipboardCheck className="h-3.5 w-3.5" /> Check-in
-        </span>
+        </div>
       </div>
 
       <div className={`${CARD} p-3`}>
-        <div className="flex items-baseline justify-between">
-          <p className="text-[11px] font-semibold">This week</p>
-          <p className="text-[9px] text-muted-foreground">{done ? 5 : 4} day streak</p>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[11px] font-semibold leading-tight">This week</p>
+          <p className="whitespace-nowrap text-[9px] leading-tight text-muted-foreground">{done ? 5 : 4} day streak</p>
         </div>
-        <div className="mt-2.5 grid grid-cols-3 divide-x divide-border/40">
-          {stats.map(({ label, value, goal }, i) => (
-            <div key={label} className={i === 0 ? 'pr-2.5' : 'px-2.5'}>
-              <p className="text-base font-bold leading-none tabular-nums">{value.toLocaleString()}</p>
-              <p className="mt-1 text-[8px] text-muted-foreground">{label}</p>
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
+          {stats.map(({ label, value, goal }) => (
+            <div key={label} className="min-w-0 rounded-xl border border-border/40 bg-background/40 p-2 text-center">
+              <p className="text-sm font-bold leading-none tabular-nums">{value.toLocaleString()}</p>
+              <p className="mt-1 truncate text-[8px] font-medium leading-tight text-muted-foreground">{label}</p>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-secondary">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-500"
                   style={{ width: `${Math.min(100, (value / goal) * 100)}%` }}
                 />
               </div>
-              <p className="mt-1 text-[7px] text-muted-foreground">of {goal.toLocaleString()}</p>
+              <p className="mt-1 truncate text-[7px] leading-none text-muted-foreground">of {goal.toLocaleString()}</p>
             </div>
           ))}
         </div>
       </div>
 
       <div className={`${CARD} overflow-hidden`}>
-        <div className="flex items-center justify-between px-3 pb-1 pt-2.5">
-          <p className="text-[11px] font-semibold">Start a workout</p>
+        <div className="flex items-center justify-between gap-2 px-3 pb-1 pt-2.5">
+          <p className="text-[11px] font-semibold leading-tight">Start a workout</p>
           {go ? (
             <button
               type="button"
@@ -464,34 +468,31 @@ export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
 
 // ── Insights (Health + Stats share one tab) ───────────────────────────────
 const INSIGHTS_VIEWS = [
-  { key: 'health', label: 'Health', blurb: 'Metrics & food log', icon: Heart },
-  { key: 'stats', label: 'Stats', blurb: 'Totals & trends', icon: BarChart2 },
+  { key: 'health', label: 'Health', icon: Heart },
+  { key: 'stats', label: 'Stats', icon: BarChart2 },
 ]
 
 function InsightsHeader({ view, onView }) {
   return (
-    <div className="px-3.5 pt-3">
+    <div className="px-4 pt-3">
       <div className="text-lg font-bold leading-tight">Insights</div>
-      <p className="text-[10px] text-muted-foreground">Your health and training, in one place.</p>
+      <p className="text-[10px] leading-tight text-muted-foreground">Your health and training, in one place.</p>
 
       <div
         {...(onView ? { role: 'tablist', 'aria-label': 'Insights sections' } : {})}
-        className="mt-2.5 grid grid-cols-2 gap-1.5 rounded-2xl border border-border/60 bg-secondary/40 p-1.5"
+        className="mt-2.5 grid grid-cols-2 gap-1.5 rounded-2xl border border-border/60 bg-secondary/40 p-1"
       >
-        {INSIGHTS_VIEWS.map(({ key, label, blurb, icon: Icon }) => {
+        {INSIGHTS_VIEWS.map(({ key, label, icon: Icon }) => {
           const active = view === key
           const inner = (
             <>
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-primary/15 text-primary' : 'bg-secondary/70 text-muted-foreground'}`}>
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-primary/15 text-primary' : 'bg-secondary/70 text-muted-foreground'}`}>
                 <Icon className="h-3.5 w-3.5" />
               </span>
-              <span className="min-w-0 text-left">
-                <span className={`block text-[11px] font-bold leading-tight ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
-                <span className="block truncate text-[9px] leading-tight text-muted-foreground">{blurb}</span>
-              </span>
+              <span className={`min-w-0 truncate text-xs font-bold leading-tight ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
             </>
           )
-          const cls = `flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors ${active ? 'bg-card shadow-sm ring-1 ring-border/60' : ''}`
+          const cls = `flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-1.5 transition-colors ${active ? 'bg-card shadow-sm ring-1 ring-border/60' : ''}`
           return onView ? (
             <button
               key={key}
@@ -514,12 +515,12 @@ function InsightsHeader({ view, onView }) {
 
 function MetricCard({ icon: Icon, label, value, sub, pct, tone = 'text-primary' }) {
   return (
-    <div className={`${CARD} p-2.5`}>
-      <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
-        <Icon className={`h-3 w-3 ${tone}`} /> {label}
+    <div className={`${CARD} min-w-0 p-2.5`}>
+      <div className="flex items-center gap-1.5 truncate text-[9px] leading-tight text-muted-foreground">
+        <Icon className={`h-3 w-3 shrink-0 ${tone}`} /> <span className="truncate">{label}</span>
       </div>
       <p className="mt-1 text-base font-bold leading-none tabular-nums">{value}</p>
-      {sub && <p className="mt-0.5 text-[8px] text-muted-foreground">{sub}</p>}
+      {sub && <p className="mt-0.5 truncate text-[8px] leading-tight text-muted-foreground">{sub}</p>}
       <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-secondary">
         <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
       </div>
@@ -545,17 +546,17 @@ export function InsightsHealthMock({
     <>
       <InsightsHeader view={view} onView={onView} />
 
-      <div className="space-y-3 p-3.5">
+      <div className="space-y-3 px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex min-w-0 flex-1 gap-1 rounded-2xl bg-secondary/50 p-1">
+          <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-2xl bg-secondary/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {HEALTH_SUB_TABS.map(({ key, label, icon: Icon }) => {
               const active = tab === key
               const inner = (
                 <>
-                  <Icon className="h-3 w-3" /> {label}
+                  <Icon className="h-3 w-3 shrink-0" /> {label}
                 </>
               )
-              const cls = `flex flex-1 items-center justify-center gap-1 rounded-xl py-1.5 text-[9px] font-semibold transition-all ${active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'}`
+              const cls = `flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-2 py-1.5 text-[10px] font-semibold leading-tight transition-all ${active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'}`
               return onTab ? (
                 <button key={key} type="button" aria-pressed={active} onClick={() => onTab(key)} className={cls}>{inner}</button>
               ) : (
@@ -567,13 +568,13 @@ export function InsightsHealthMock({
             <button
               type="button"
               onClick={onLog}
-              className="flex shrink-0 items-center gap-1 rounded-xl bg-primary px-2.5 py-2 text-[10px] font-semibold text-primary-foreground"
+              className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-primary px-2 py-2 text-[10px] font-semibold text-primary-foreground"
             >
-              <Plus className="h-3 w-3" /> Log
+              <Plus className="h-3 w-3 shrink-0" /> Log
             </button>
           ) : (
-            <span className="flex shrink-0 items-center gap-1 rounded-xl bg-primary px-2.5 py-2 text-[10px] font-semibold text-primary-foreground">
-              <Plus className="h-3 w-3" /> Log
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-primary px-2 py-2 text-[10px] font-semibold text-primary-foreground">
+              <Plus className="h-3 w-3 shrink-0" /> Log
             </span>
           ))}
         </div>
@@ -589,9 +590,9 @@ export function InsightsHealthMock({
 
         {tab === 'weight' && (
           <div className={`${CARD} p-3`}>
-            <div className="flex items-baseline justify-between">
-              <p className="text-[11px] font-semibold">Weight trend</p>
-              <p className="text-[9px] text-muted-foreground">Last 30 days</p>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[11px] font-semibold leading-tight">Weight trend</p>
+              <p className="whitespace-nowrap text-[9px] leading-tight text-muted-foreground">Last 30 days</p>
             </div>
             <p className="mt-2 text-2xl font-black leading-none tabular-nums">
               78.4 <span className="text-[11px] font-semibold text-muted-foreground">kg</span>
@@ -605,11 +606,11 @@ export function InsightsHealthMock({
 
         {tab === 'nutrition' && (
           <div className={`${CARD} p-3`}>
-            <div className="flex items-baseline justify-between">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold">
-                <Utensils className="h-3 w-3 text-[hsl(var(--accent-text))]" /> Nutrition
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold leading-tight">
+                <Utensils className="h-3 w-3 shrink-0 text-[hsl(var(--accent-text))]" /> Nutrition
               </p>
-              <p className="text-[9px] text-muted-foreground">
+              <p className="whitespace-nowrap text-[9px] leading-tight text-muted-foreground">
                 <span className="font-semibold text-foreground">1,840</span> / 2,300 kcal
               </p>
             </div>
@@ -651,17 +652,17 @@ export function InsightsStatsMock({ view = 'stats', onView, range = '1M', onRang
     <>
       <InsightsHeader view={view} onView={onView} />
 
-      <div className="space-y-3 p-3.5">
+      <div className="space-y-3 px-4 py-3.5">
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: 'Workouts', value: 48, tone: 'text-primary', icon: Calendar },
             { label: 'Streak', value: 7, tone: 'text-orange-400', icon: Flame },
             { label: 'Best Week', value: 28, tone: 'text-green-400', icon: Trophy },
           ].map(({ label, value, tone, icon: Icon }) => (
-            <div key={label} className={`${CARD} p-2.5`}>
+            <div key={label} className={`${CARD} min-w-0 p-2.5`}>
               <Icon className={`h-3.5 w-3.5 ${tone}`} />
               <p className={`mt-1 text-xl font-black leading-none tabular-nums ${tone}`}>{value}</p>
-              <p className="mt-1 text-[8px] font-medium text-muted-foreground">{label}</p>
+              <p className="mt-1 truncate text-[8px] font-medium leading-tight text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
@@ -671,24 +672,24 @@ export function InsightsStatsMock({ view = 'stats', onView, range = '1M', onRang
             { label: 'Total Minutes', value: 10, tone: 'text-blue-400', icon: Clock },
             { label: 'Total Calories', value: 93, tone: 'text-orange-400', icon: TrendingUp },
           ].map(({ label, value, tone, icon: Icon }) => (
-            <div key={label} className={`${CARD} p-2.5`}>
+            <div key={label} className={`${CARD} min-w-0 p-2.5`}>
               <Icon className={`h-3.5 w-3.5 ${tone}`} />
               <p className={`mt-1 text-xl font-black leading-none tabular-nums ${tone}`}>{value}</p>
-              <p className="mt-1 text-[8px] font-medium text-muted-foreground">{label}</p>
+              <p className="mt-1 truncate text-[8px] font-medium leading-tight text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
 
         <div className={`${CARD} p-3`}>
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[11px] font-bold">Activity</p>
-              <p className="text-[9px] text-muted-foreground">Workouts per day</p>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold leading-tight">Activity</p>
+              <p className="truncate text-[9px] leading-tight text-muted-foreground">Workouts per day</p>
             </div>
-            <div className="flex gap-0.5 rounded-xl bg-secondary/50 p-0.5">
+            <div className="flex shrink-0 gap-0.5 rounded-xl bg-secondary/50 p-0.5">
               {Object.keys(STATS_RANGES).map((key) => {
                 const active = range === key
-                const cls = `rounded-lg px-1.5 py-1 text-[9px] font-semibold transition-all ${active ? 'bg-primary text-white' : 'text-muted-foreground'}`
+                const cls = `whitespace-nowrap rounded-lg px-1.5 py-1 text-[9px] font-semibold leading-tight transition-all ${active ? 'bg-primary text-white' : 'text-muted-foreground'}`
                 return onRange ? (
                   <button key={key} type="button" aria-pressed={active} onClick={() => onRange(key)} className={cls}>{key}</button>
                 ) : (
@@ -759,7 +760,7 @@ export function WorkoutsMock({
   const resetFilters = () => { onSearch?.(''); onType?.('All'); onDifficulty?.('All'); onMuscle?.('All') }
 
   const chip = (label, active, onClick, key) => {
-    const cls = `flex-shrink-0 rounded-full px-2.5 py-1 text-[9px] font-semibold capitalize transition-all ${
+    const cls = `shrink-0 whitespace-nowrap rounded-full px-2 py-1 text-[9px] font-semibold capitalize leading-tight transition-all ${
       active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
     }`
     return onClick ? (
@@ -770,7 +771,7 @@ export function WorkoutsMock({
   }
 
   return (
-    <div className="space-y-3 p-3.5">
+    <div className="space-y-3 px-4 py-3.5">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-1.5 text-lg font-black leading-tight">
@@ -781,8 +782,8 @@ export function WorkoutsMock({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className="rounded-lg bg-secondary/60 px-2 py-1 text-[9px] font-semibold">Plan</span>
-          <span className="rounded-lg bg-primary/10 px-2 py-1 text-[9px] font-semibold text-[hsl(var(--accent-text))]">+ Build</span>
+          <span className="whitespace-nowrap rounded-lg bg-secondary/60 px-2 py-1 text-[9px] font-semibold leading-tight">Plan</span>
+          <span className="whitespace-nowrap rounded-lg bg-primary/10 px-2 py-1 text-[9px] font-semibold leading-tight text-[hsl(var(--accent-text))]">+ Build</span>
         </div>
       </div>
 
@@ -830,15 +831,15 @@ export function WorkoutsMock({
         </div>
       )}
 
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex flex-wrap gap-1.5">
         {WORKOUT_TYPES.map((t) => chip(t, type === t, onType ? () => onType(t) : null, t))}
       </div>
 
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         {WORKOUT_DIFFICULTIES.map((d) => chip(d, difficulty === d, onDifficulty ? () => onDifficulty(d) : null, d))}
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex flex-wrap gap-1.5">
         {MUSCLE_GROUPS.map((m) => chip(m, muscle === m, onMuscle ? () => onMuscle(m) : null, m))}
       </div>
 
@@ -848,16 +849,16 @@ export function WorkoutsMock({
           No workouts found
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           {filtered.map((w) => (
-            <div key={w.title} className="rounded-2xl border border-border/50 bg-card/75 p-3">
-              <p className="text-[8px] uppercase tracking-wider text-muted-foreground">{w.type}</p>
-              <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug">{w.title}</p>
-              <div className="mt-2 flex items-center gap-2.5 text-[9px] text-muted-foreground">
-                <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" />{w.minutes}m</span>
-                <span className="flex items-center gap-1"><Flame className="h-2.5 w-2.5" />{w.calories}</span>
+            <div key={w.title} className="min-w-0 overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-2.5">
+              <p className="truncate text-[8px] uppercase tracking-wider leading-tight text-muted-foreground">{w.type}</p>
+              <p className="mt-0.5 line-clamp-2 text-[10px] font-semibold leading-tight">{w.title}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap text-[8px] leading-tight text-muted-foreground">
+                <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5 shrink-0" />{w.minutes}m</span>
+                <span className="flex items-center gap-1"><Flame className="h-2.5 w-2.5 shrink-0" />{w.calories}</span>
               </div>
-              <p className="mt-1 text-[9px] capitalize text-muted-foreground">{w.difficulty}</p>
+              <p className="mt-1 truncate text-[9px] capitalize leading-tight text-muted-foreground">{w.difficulty}</p>
             </div>
           ))}
         </div>
@@ -884,7 +885,7 @@ function ThemeSwatch({ mode }) {
 
 export function ProfileMock({ theme = 'cosmic', onTheme }) {
   return (
-    <div className="space-y-3 p-3.5">
+    <div className="space-y-3 px-4 py-3.5">
       <div className="flex flex-col items-center gap-1.5 text-center">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20">
           <User className="h-6 w-6 text-primary" />
@@ -914,22 +915,22 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
       </div>
 
       <div className={`${CARD} p-3`}>
-        <div className="flex items-center justify-between">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold">
-            <Settings className="h-3.5 w-3.5" /> Profile Settings
+        <div className="flex items-center justify-between gap-2">
+          <p className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold leading-tight">
+            <Settings className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">Profile Settings</span>
           </p>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-[9px] font-semibold text-secondary-foreground">Edit</span>
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-[9px] font-semibold text-secondary-foreground">Edit</span>
         </div>
-        <div className="mt-2.5 space-y-1.5 text-[10px]">
+        <div className="mt-2.5 space-y-1.5 text-[10px] leading-tight">
           {[
             ['Goal', 'Build Muscle'],
             ['Level', 'Advanced'],
             ['Preferred', 'Strength'],
             ['Distance Unit', 'Miles'],
           ].map(([label, value]) => (
-            <div key={label} className="flex justify-between">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="font-medium capitalize">{value}</span>
+            <div key={label} className="flex items-center justify-between gap-2">
+              <span className="truncate text-muted-foreground">{label}</span>
+              <span className="truncate font-medium capitalize">{value}</span>
             </div>
           ))}
         </div>
@@ -950,10 +951,10 @@ export function ProfileMock({ theme = 'cosmic', onTheme }) {
                   </span>
                 )}
                 <ThemeSwatch mode={key} />
-                <span className={`mt-1.5 flex items-center gap-1 text-[9px] font-semibold ${selected ? 'text-primary' : 'text-foreground'}`}>
-                  <Icon className="h-2.5 w-2.5" /> {label}
+                <span className={`mt-1.5 flex items-center gap-1 truncate text-[9px] font-semibold leading-tight ${selected ? 'text-primary' : 'text-foreground'}`}>
+                  <Icon className="h-2.5 w-2.5 shrink-0" /> {label}
                 </span>
-                <span className="block text-[8px] text-muted-foreground">{desc}</span>
+                <span className="block truncate text-[8px] leading-tight text-muted-foreground">{desc}</span>
               </>
             )
             const cls = `relative rounded-xl border p-1.5 text-left transition-all ${

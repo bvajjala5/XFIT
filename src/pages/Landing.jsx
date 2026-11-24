@@ -262,7 +262,7 @@ export default function Landing() {
       <main id="main" className="relative z-10">
         {/* ── Hero ─────────────────────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-36 lg:pb-28">
-          <div className="relative max-w-3xl">
+          <div className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
               Built for real life
@@ -275,11 +275,11 @@ export default function Landing() {
               <span className="mt-1 block text-[hsl(var(--accent-text))]">fitness app.</span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
               The reason to come back is the guided workout player — timers, sets, rest, and voice cues so you&rsquo;re not counting reps in your head. Food, sleep, recovery, and Uttar AI all feed into it.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:items-center">
               <Link to="/demo" className={`group ${PRIMARY_BUTTON}`}>
                 Try the 2-minute demo
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -287,11 +287,11 @@ export default function Landing() {
               <GoogleSignInButton className="sm:w-auto" label="Continue with Google" variant="outline" />
             </div>
 
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="mx-auto mt-4 text-xs text-muted-foreground">
               No account needed for the demo · Free to start · No credit card
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground">
               {['Workouts', 'Weekly plan', 'Nutrition', 'Sleep & recovery', 'Uttar AI'].map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-[hsl(var(--accent-text))]" /> {item}
@@ -429,7 +429,7 @@ export default function Landing() {
         </section>
 
         {/* ── Screens ───────────────────────────────────────────── */}
-        <section id="screens" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6 sm:py-24">
+        <section id="screens" className="mx-auto max-w-[1440px] scroll-mt-24 px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--accent-text))]">Inside the app</p>
             <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -445,15 +445,13 @@ export default function Landing() {
             </p>
           </Reveal>
 
-          <div className="mt-10 flex snap-x gap-5 overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:pb-0">
+          <div className="mt-10 flex snap-x gap-5 overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-6">
             {PREVIEW_SCREENS.map(({ key, label, caption, Component, active }, index) => (
-              <Reveal key={key} delay={index * 0.06} className="min-w-[248px] snap-center lg:min-w-0">
-                <div className="mx-auto w-full max-w-[260px]">
-                  <PhoneFrame label={`${PREVIEW_LABELS[key] ?? label} screen preview`} active={active}>
-                    <Component />
-                  </PhoneFrame>
-                </div>
-                <div className="mt-3 text-center">
+              <Reveal key={key} delay={index * 0.06} className="w-[280px] shrink-0 snap-center sm:w-[300px]">
+                <PhoneFrame label={`${PREVIEW_LABELS[key] ?? label} screen preview`} active={active}>
+                  <Component />
+                </PhoneFrame>
+                <div className="mx-auto mt-3 max-w-[280px] text-center">
                   <p className="text-sm font-semibold">{label}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{caption}</p>
                 </div>
