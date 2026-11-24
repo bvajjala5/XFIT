@@ -4,8 +4,10 @@ import {
   STORAGE_KEY,
   GOALS_CHANGED,
   RULE_HINTS,
+  RULE_PRIORITY,
   inferRule,
   evaluateGoal,
+  autoSatisfied,
   computeContext,
   computeProgress,
   loadLocal,
@@ -24,12 +26,20 @@ test('inferRule maps all auto patterns', () => {
   assert.equal(inferRule('train 3 times'), 'workout')
   assert.equal(inferRule('complete daily check-in'), 'checkin')
   assert.equal(inferRule('Check In today'), 'checkin')
-  assert.equal(inferRule('checkin streak alive'), 'checkin')
+  assert.equal(inferRule('checkin streak alive'), 'streak') // specific rule wins
   assert.equal(inferRule('keep a 7 day streak'), 'streak')
   assert.equal(inferRule('150 minutes per week'), 'minutes')
   assert.equal(inferRule('20 mins of stretching'), 'minutes')
   assert.equal(inferRule('burn 2000 calories'), 'calories')
   assert.equal(inferRule('eat 500 kcal'), 'calories')
+})
+
+test('numeric rules beat the generic workout catch-all', () => {
+  assert.equal(inferRule('30 min workout'), 'minutes')
+  assert.equal(inferRule('workout for 45 minutes'), 'minutes')
+  assert.equal(inferRule('burn 500 calories during workout'), 'calories')
+  assert.equal(inferRule('3 workouts this week'), 'workout')
+  assert.deepEqual(RULE_PRIORITY, ['streak', 'minutes', 'calories', 'checkin', 'workout'])
 })
 
 test('inferRule is case-insensitive', () => {
@@ -125,6 +135,33 @@ test('evaluateGoal: manual items use !!item.done', () => {
   assert.equal(evaluateGoal(null, richCtx), false)
   // empty text has no rule -> manual -> done is undefined -> false
   assert.equal(evaluateGoal({ id: '10', text: '' }, richCtx), false)
+})
+
+test('autoSatisfied ignores manual checks', () => {
+  const item = { id: 'a', text: 'finish a workout', done: true }
+  assert.equal(autoSatisfied(item, { ...emptyCtx, weekWorkouts: 0 }), false)
+  assert.equal(autoSatisfied(item, { ...emptyCtx, weekWorkouts: 1 }), true)
+  assert.equal(autoSatisfied({ text: 'drink water', done: true }, richCtx), false)
+})
+
+test('manual checks reset on a new day', () => {
+  const checked = toggleDone([{ id: 'a', text: 'drink water', done: false }], 'a', '2026-11-20')[0]
+  assert.equal(checked.done, true)
+  assert.equal(checked.doneOn, '2026-11-20')
+  const ctx = { ...emptyCtx, todayStr: '2026-11-20' }
+  assert.equal(evaluateGoal(checked, ctx), true)
+  assert.equal(evaluateGoal(checked, { ...ctx, todayStr: '2026-11-21' }), false)
+  // Ticking it again on the new day stores the new date.
+  const rechecked = toggleDone([checked], 'a', '2026-11-21')[0]
+  assert.equal(rechecked.doneOn, '2026-11-21')
+  assert.equal(evaluateGoal(rechecked, { ...ctx, todayStr: '2026-11-21' }), true)
+  // Unticking clears the date.
+  assert.equal(toggleDone([rechecked], 'a', '2026-11-21')[0].doneOn, null)
+})
+
+test('legacy manual checks without doneOn keep working', () => {
+  const legacy = { id: 'a', text: 'drink water', done: true }
+  assert.equal(evaluateGoal(legacy, { ...emptyCtx, todayStr: '2026-11-21' }), true)
 })
 
 // ---- computeContext --------------------------------------------------------

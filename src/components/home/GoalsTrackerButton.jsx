@@ -12,6 +12,7 @@ import {
   RULE_HINTS,
   inferRule,
   evaluateGoal,
+  autoSatisfied,
   computeContext,
   computeProgress,
   loadGoals,
@@ -32,12 +33,16 @@ function GoalRow({ item, ctx, onToggle, onDelete }) {
   const rule = inferRule(item.text)
   const auto = !!rule
   const done = evaluateGoal(item, ctx)
+  const autoDone = autoSatisfied(item, ctx)
+  const toggleLabel = autoDone
+    ? `"${item.text}" completed automatically`
+    : done ? `Mark "${item.text}" not done` : `Mark "${item.text}" done`
   return (
     <div className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 min-h-[44px] transition-colors ${done ? 'bg-green-500/5' : 'bg-secondary/40'}`}>
-      <button type="button" role="checkbox" aria-checked={done}
-        onClick={() => onToggle(item.id)} aria-label={done ? `Mark "${item.text}" not done` : `Mark "${item.text}" done`}
-        title={auto ? 'Auto-checks from your activity — tap to check it yourself' : undefined}
-        className="w-11 h-11 -my-2 -ml-1 shrink-0 flex items-center justify-center text-left rounded-lg hover:bg-foreground/5 active:scale-95 transition-all">
+      <button type="button" role="checkbox" aria-checked={done} aria-disabled={autoDone || undefined}
+        onClick={() => { if (!autoDone) onToggle(item.id) }} aria-label={toggleLabel}
+        title={autoDone ? 'Completed from your activity — no need to tap' : auto ? 'Auto-checks from your activity — tap to check it yourself' : undefined}
+        className={`w-11 h-11 -my-2 -ml-1 shrink-0 flex items-center justify-center text-left rounded-lg active:scale-95 transition-all ${autoDone ? 'cursor-default' : 'hover:bg-foreground/5'}`}>
         {done
           ? <CheckCircle2 className="w-5 h-5 text-green-500" />
           : <Circle className={`w-5 h-5 ${auto ? 'text-muted-foreground/60' : 'text-muted-foreground'}`} />}
@@ -47,7 +52,7 @@ function GoalRow({ item, ctx, onToggle, onDelete }) {
         {auto && (
           <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
             <Zap className="w-3 h-3 text-primary shrink-0" />
-            {RULE_HINTS[inferRule(item.text)]?.hint || 'Auto-checked from your activity'}
+            {autoDone ? 'Done automatically from your activity' : RULE_HINTS[rule]?.hint}
           </p>
         )}
       </div>
@@ -108,6 +113,7 @@ export default function GoalsTrackerButton({ logs }) {
   const persist = async (next, okMsg) => {
     reqIdRef.current += 1 // drop any in-flight load so it can't revert this save
     savingRef.current = true
+    itemsRef.current = next // keep rapid successive taps from acting on a stale list
     setItems(next)
     setSaving(true)
     try {
@@ -143,7 +149,7 @@ export default function GoalsTrackerButton({ logs }) {
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Goals tracker"
+        aria-label={progress.total ? `Goals tracker, ${progress.done} of ${progress.total} done` : 'Goals tracker, no goals yet'}
         title={progress.total ? `${progress.done} of ${progress.total} done` : 'Goals tracker'}
         className={`relative w-10 h-10 min-h-[44px] min-w-[44px] rounded-full bg-card/75 backdrop-blur-md border flex items-center justify-center transition-colors duration-500 ${level.ring} ${level.text}`}
         animate={animating

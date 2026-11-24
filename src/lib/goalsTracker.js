@@ -32,6 +32,10 @@ export const RULE_HINTS = {
   },
 }
 
+// Specific/numeric rules are checked before the generic "workout" catch-all,
+// so "30 min workout" is a minutes goal rather than 30 workouts.
+export const RULE_PRIORITY = ['streak', 'minutes', 'calories', 'checkin', 'workout']
+
 const hasWord = (text, word) => new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}s?\\b`, 'i').test(text)
 
 // Returns a rule name ('workout' | 'checkin' | 'streak' | 'minutes' | 'calories')
@@ -39,8 +43,8 @@ const hasWord = (text, word) => new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\
 export function inferRule(text) {
   if (typeof text !== 'string' || !text.trim()) return null
   const t = text.toLowerCase()
-  for (const [rule, { patterns }] of Object.entries(RULE_HINTS)) {
-    for (const p of patterns) {
+  for (const rule of RULE_PRIORITY) {
+    for (const p of RULE_HINTS[rule].patterns) {
       if (hasWord(t, p)) return rule
     }
   }
@@ -55,13 +59,27 @@ function targetNumber(text, fallback = 1) {
   return Number.isFinite(n) && n > 0 ? n : fallback
 }
 
+// A manual check is tied to the day it was made, so daily goals untick
+// themselves the next day. Goals saved before doneOn existed keep working.
+function manualDone(item, ctx) {
+  if (!item?.done) return false
+  return !item.doneOn || item.doneOn === ctx?.todayStr
+}
+
+// True when activity alone satisfies an auto goal (ignores manual checks).
+// Used to show an "automatic" state that can't be unticked by tapping.
+export function autoSatisfied(item, ctx) {
+  if (!item || !inferRule(item.text)) return false
+  return evaluateGoal({ ...item, done: false, doneOn: null }, ctx)
+}
+
 // Returns true if the goal should currently count as done.
 // Auto rules are satisfied by the matching activity OR by a manual check
 // (so users can always tick a goal they've completed themselves).
 export function evaluateGoal(item, ctx) {
   if (!item) return false
   const rule = inferRule(item.text)
-  if (!rule) return !!item.done
+  if (!rule) return manualDone(item, ctx)
   let auto = false
   switch (rule) {
     case 'workout':
@@ -80,9 +98,9 @@ export function evaluateGoal(item, ctx) {
       auto = (ctx.weekCalories || 0) >= targetNumber(item.text, 500)
       break
     default:
-      return !!item.done
+      return manualDone(item, ctx)
   }
-  return auto || !!item.done
+  return auto || manualDone(item, ctx)
 }
 
 // Derive the data context (today, streak, weekly totals) from workout logs.
@@ -216,8 +234,12 @@ export function removeItem(items, id) {
   return (Array.isArray(items) ? items : []).filter((i) => i?.id !== id)
 }
 
-export function toggleDone(items, id) {
-  return (Array.isArray(items) ? items : []).map((i) =>
-    i?.id === id ? { ...i, done: !i.done } : i
-  )
+export function toggleDone(items, id, today = localDateStr()) {
+  return (Array.isArray(items) ? items : []).map((i) => {
+    if (i?.id !== id) return i
+    // A check from a previous day already shows as unticked, so one tap should
+    // tick it for today rather than clearing the old value first.
+    const checked = !!i.done && (!i.doneOn || i.doneOn === today)
+    return { ...i, done: !checked, doneOn: checked ? null : today }
+  })
 }
