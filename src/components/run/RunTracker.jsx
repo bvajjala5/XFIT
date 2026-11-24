@@ -34,7 +34,7 @@ function getPaceColor(pace) {
   return '#60a5fa'                              // fast - blue
 }
 
-export default function RunTracker({ onComplete, fullScreen = false, unit = 'miles' }) {
+export default function RunTracker({ onComplete, onStatusChange, fullScreen = false, unit = 'miles' }) {
   const distanceUnit = normalizeDistanceUnit(unit)
   const splitDist = splitMeters(distanceUnit)
 
@@ -58,6 +58,11 @@ export default function RunTracker({ onComplete, fullScreen = false, unit = 'mil
   const distanceRef = useRef(0)
   const caloriesRef = useRef(0)
   const elapsedRef = useRef(0)
+
+  // Keep the page header in sync with the tracker: it is only shown while idle.
+  useEffect(() => {
+    if (onStatusChange) onStatusChange(status)
+  }, [status, onStatusChange])
 
   // Format elapsed time
   const formatTime = (s) => {
