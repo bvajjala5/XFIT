@@ -16,6 +16,8 @@ const RELEASES = [
       'Small fixes: closing the Google sign-in popup no longer shows an error, workout history shows a loading state, and demo/privacy copy matches what the app actually does.',
       'The installable app now uses a pure black splash colour instead of a leftover blue tint.',
       'The Run Tracker title is readable in Light mode and now clears off the screen once a run starts.',
+      'Tempo cues now live in the workout gear menu, and hiding the demo no longer leaves an “exercise demo is hidden” message.',
+      'The small input button now says “Apply” so it is clear it changes the typed reps or time without ending the set.',
     ],
   },
   {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Camera, Dumbbell, Minus, Pause, Play, Plus, SkipForward, Timer, Vibrate, Zap } from 'lucide-react'
+import { Activity, Camera, Dumbbell, Minus, Pause, Play, Plus, SkipForward, Timer, Zap } from 'lucide-react'
 import { MODE_REPS, MODE_TIME, adjust, parseQuantity } from '@/lib/workoutTracking'
 import { MOVEMENTS } from '@/lib/poseCounter'
 import PoseRepCounter from './PoseRepCounter'
@@ -28,8 +28,8 @@ function SegmentedButton({ active, onClick, icon: Icon, children }) {
  */
 export default function HybridTracker({
   exercise, phase, restLeft, elapsed, actual, weight, paused,
-  poseEnabled, movement, tempoEnabled,
-  onPoseToggle, onTempoToggle, onAdjust, onQuickInput,
+  poseEnabled, movement,
+  onPoseToggle, onAdjust, onQuickInput,
   onWeightChange, onModeChange, onCompleteSet, onSkipRest, onCameraReps,
   onRestAdjust, onRestInput, onPauseToggle, onSkip,
 }) {
@@ -85,7 +85,7 @@ export default function HybridTracker({
                 placeholder={formatClock(restLeft)}
                 className="h-12 w-full min-w-0 rounded-2xl border border-green-500/30 bg-background/70 px-2 text-center text-base font-bold tabular-nums outline-none focus:border-green-500"
               />
-              <button type="submit" className="h-12 shrink-0 rounded-2xl bg-green-500/15 px-3 text-xs font-bold text-green-500 active:scale-95">Set</button>
+              <button type="submit" aria-label="Apply rest time" className="h-12 shrink-0 rounded-2xl bg-green-500/15 px-3 text-xs font-bold text-green-500 active:scale-95">Apply</button>
             </form>
             <button
               type="button"
@@ -142,7 +142,7 @@ export default function HybridTracker({
                 placeholder={isReps ? 'Reps' : '0:30'}
                 className="h-14 w-full min-w-0 rounded-2xl border border-border/60 bg-background/70 px-3 text-center text-lg font-bold tabular-nums outline-none focus:border-primary"
               />
-              <button type="submit" className="h-14 shrink-0 rounded-2xl bg-secondary/60 px-3 text-xs font-bold active:scale-95">Set</button>
+              <button type="submit" aria-label={isReps ? 'Apply reps' : 'Apply seconds'} className="h-14 shrink-0 rounded-2xl bg-secondary/60 px-3 text-xs font-bold active:scale-95">Apply</button>
             </form>
             <button
               type="button"
@@ -177,16 +177,6 @@ export default function HybridTracker({
                 className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-colors ${poseEnabled ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground'}`}
               >
                 <Camera className="h-3.5 w-3.5" /> {poseEnabled ? 'Camera on' : `Count ${cameraLabel.toLowerCase()}`}
-              </button>
-            )}
-            {!isReps && (
-              <button
-                type="button"
-                onClick={onTempoToggle}
-                aria-pressed={tempoEnabled}
-                className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-colors ${tempoEnabled ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground'}`}
-              >
-                <Vibrate className="h-3.5 w-3.5" /> Tempo cues
               </button>
             )}
           </div>

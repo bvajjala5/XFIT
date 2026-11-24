@@ -1,15 +1,16 @@
 import { useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronRight, Eye, EyeOff, RotateCcw, ScanFace, Volume2, VolumeX, X } from 'lucide-react';
+import { ChevronRight, Eye, EyeOff, RotateCcw, ScanFace, Vibrate, Volume2, VolumeX, X } from 'lucide-react';
 import useFocusTrap from '@/hooks/useFocusTrap';
 
-function SettingRow({ icon: Icon, title, detail, onClick, pressed, trailing }) {
+function SettingRow({ icon: Icon, title, detail, onClick, pressed, disabled = false, trailing }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={pressed}
-      className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      disabled={disabled}
+      className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-secondary/60'}`}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/60 text-primary">
         <Icon className="h-4 w-4" />
@@ -43,6 +44,9 @@ export default function PlayerSettingsMenu({
   voiceOptions,
   voiceName,
   onVoiceChange,
+  tempoEnabled,
+  onToggleTempo,
+  tempoIntervalSeconds = 0,
   onRestart,
 }) {
   const contentRef = useRef(null);
@@ -109,6 +113,17 @@ export default function PlayerSettingsMenu({
               onClick={onToggleVoice}
               pressed={voiceEnabled}
               trailing={<StatePill active={voiceEnabled} />}
+            />
+            <SettingRow
+              icon={Vibrate}
+              title="Tempo cues"
+              detail={tempoIntervalSeconds > 0
+                ? (tempoEnabled ? `Beep + vibrate every ${tempoIntervalSeconds}s` : `Off (interval: ${tempoIntervalSeconds}s)`)
+                : 'Not available for this exercise'}
+              onClick={onToggleTempo}
+              pressed={tempoEnabled}
+              disabled={tempoIntervalSeconds <= 0}
+              trailing={<StatePill active={tempoEnabled} />}
             />
 
             {voiceOptions.length > 1 && (

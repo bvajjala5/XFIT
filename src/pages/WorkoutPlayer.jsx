@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, X, ArrowRight, Star, Share2, Loader2, ChevronRight, AlertTriangle, Eye, Settings2 } from 'lucide-react';
+import { Trophy, X, ArrowRight, Star, Share2, Loader2, ChevronRight, AlertTriangle, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '@/components/shared/GlassCard';
 import NotFound from '@/components/shared/NotFound';
@@ -986,6 +986,9 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
           voiceOptions={voiceOptions}
           voiceName={voiceName}
           onVoiceChange={selectVoice}
+          tempoEnabled={tempoEnabled}
+          onToggleTempo={() => setTempoEnabled((value) => !value)}
+          tempoIntervalSeconds={Number(exState?.intervalSeconds) || 0}
           onRestart={restartFromSettings}
         />
       </div>
@@ -1018,9 +1021,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               paused={isPaused}
               poseEnabled={poseEnabled}
               movement={movement}
-              tempoEnabled={tempoEnabled}
               onPoseToggle={() => setPoseEnabled((value) => !value)}
-              onTempoToggle={() => setTempoEnabled((value) => !value)}
               onAdjust={handleAdjust}
               onQuickInput={setPrimaryValue}
               onWeightChange={handleWeight}
@@ -1037,20 +1038,9 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
             <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
           )}
 
-          {showMedia ? (
+          {showMedia && (
             <div className="mx-auto mt-3 w-full max-w-[260px] sm:max-w-[300px]">
               <WorkoutDemo compact exerciseName={currentExercise?.name} nextExerciseName={exercises[exIndex + 1]?.name} />
-            </div>
-          ) : (
-            <div className="mx-auto mt-3 flex w-full max-w-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-card/30 px-3 py-3 text-center sm:max-w-[300px]">
-              <p className="text-[11px] font-medium text-muted-foreground">Exercise demo is hidden</p>
-              <button
-                type="button"
-                onClick={toggleMedia}
-                className="mt-1.5 flex min-h-[36px] items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 text-[11px] font-semibold text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <Eye className="h-3.5 w-3.5" /> Show exercise demo
-              </button>
             </div>
           )}
         </div>
