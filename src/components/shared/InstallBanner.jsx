@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download } from 'lucide-react';
 import BrandMark from '@/components/brand/BrandMark';
+import { track } from '@/lib/usageAnalytics';
 
 export default function InstallBanner() {
   const [prompt, setPrompt] = useState(null);
@@ -18,6 +19,12 @@ export default function InstallBanner() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [dismissed]);
 
+  useEffect(() => {
+    const onInstalled = () => track('pwa_app_installed');
+    window.addEventListener('appinstalled', onInstalled);
+    return () => window.removeEventListener('appinstalled', onInstalled);
+  }, []);
+
   // Keep the floating AI button clear of the install prompt on small screens.
   useEffect(() => {
     if (show) document.body.dataset.installBanner = 'true';
@@ -27,12 +34,19 @@ export default function InstallBanner() {
 
   const handleInstall = async () => {
     if (!prompt) return;
+    track('pwa_install_prompted');
     prompt.prompt();
     const { outcome } = await prompt.userChoice;
-    if (outcome === 'accepted') setShow(false);
+    if (outcome === 'accepted') {
+      track('pwa_install_accepted');
+      setShow(false);
+    } else {
+      track('pwa_install_dismissed');
+    }
   };
 
   const handleDismiss = () => {
+    track('pwa_install_dismissed');
     setShow(false);
     setDismissed(true);
     localStorage.setItem('xfit_install_dismissed', 'true');

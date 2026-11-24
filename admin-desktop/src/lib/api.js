@@ -18,6 +18,7 @@ async function unwrap(promise) {
 export const api = {
   config: () => unwrap(bridge.config()),
   overview: () => unwrap(bridge.overview()),
+  analytics: () => unwrap(bridge.analytics()),
   listUsers: (params) => unwrap(bridge.listUsers(params)),
   getUser: (uid) => unwrap(bridge.getUser(uid)),
   setRole: (uid, role) => unwrap(bridge.setRole(uid, role)),

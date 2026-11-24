@@ -9,9 +9,22 @@ import { Plus, Trash2, ChevronDown, Apple, Sunrise, Sun, Moon } from 'lucide-rea
 import FoodPicker from '@/components/nutrition/FoodPicker'
 import { localDateStr } from '@/lib/utils'
 import { foodSourceLabel } from '@/lib/foodCorrections'
+import { track } from '@/lib/usageAnalytics'
 import { toast } from 'sonner'
 
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack']
+
+// Turn the friendly source badge into a small analytics bucket. No food names,
+// nutrition numbers or brand text are ever recorded.
+function foodSourceBucket(food) {
+  const label = foodSourceLabel(food).toLowerCase()
+  if (label.includes('usda')) return 'usda'
+  if (label.includes('open food')) return 'online'
+  if (label.includes('your meal')) return 'meal'
+  if (label.includes('your food')) return 'custom'
+  return 'builtin'
+}
+
 function getGoals() {
   try {
     const stored = localStorage.getItem('xfit_nutrition_goals');
@@ -65,6 +78,7 @@ export default function MealTracker({ userId }) {
   async function addFood(food) {
     try {
       await addDoc(collection(db,'users',userId,'foodLogs',dateKey,'entries'), food)
+      track('food_logged', { source: foodSourceBucket(food) })
       queryClient.invalidateQueries({ queryKey: ['food-logs', userId, dateKey] })
       toast.success(`${food.name.slice(0,30)} added!`)
     } catch { toast.error('Failed to add food') }

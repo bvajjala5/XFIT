@@ -10,6 +10,7 @@ import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { shareCustomWorkout } from '@/lib/workoutShareLink';
+import { track } from '@/lib/usageAnalytics';
 
 const TYPES = ['All','hiit','strength','cardio','yoga','mobility'];
 const DIFFICULTIES = ['All','beginner','intermediate','advanced'];
@@ -98,6 +99,8 @@ export default function WorkoutsAndRun() {
     setSharingId(workout.id);
     try {
       const result = await shareCustomWorkout(workout);
+      // Only `channel` is allowlisted; the raw share result is never recorded.
+      track('custom_workout_shared', { channel: 'link' });
       if (result === 'copied') toast.success('Workout link copied — send it to anyone');
       else if (result === 'failed') toast.error('Could not share workout');
     } finally {

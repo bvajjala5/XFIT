@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance as queryClient } from '@/lib/query-client'
-import { AuthProvider } from '@/lib/AuthContext'
+import { AuthProvider, useAuth } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
@@ -36,6 +36,22 @@ if (import.meta.env.PROD) {
 const container = document.getElementById('root')
 const boot = document.getElementById('boot')
 
+// One app-open count per page load, emitted once the restored session is
+// available. The analytics module is imported lazily so anonymous visitors do
+// not download the Auth/Firestore SDKs just to render the landing page.
+let appOpenedTracked = false
+function AppOpenTracker() {
+  const { user, loading } = useAuth()
+  useEffect(() => {
+    if (appOpenedTracked || loading || !user) return
+    appOpenedTracked = true
+    void import('@/lib/usageAnalytics')
+      .then(({ track }) => track('app_opened'))
+      .catch(() => {})
+  }, [user, loading])
+  return null
+}
+
 function hideBoot() {
   if (!boot) return
   // Keep the node in the document: it already painted the first frame and is
@@ -50,6 +66,7 @@ ReactDOM.createRoot(container).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <AppOpenTracker />
           <ErrorBoundary>
             <App />
           </ErrorBoundary>

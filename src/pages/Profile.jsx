@@ -17,12 +17,13 @@ import GlassCard from '@/components/shared/GlassCard';
 import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download, Database, FileSpreadsheet } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { track } from '@/lib/usageAnalytics';
 
 const goalLabels = {lose_weight:'Lose Weight',build_muscle:'Build Muscle',improve_endurance:'Improve Endurance',flexibility:'Flexibility'};
 
 // One inventory for export and account deletion so the two stay in sync.
 const USER_DATA_COLLECTIONS = ['workouts','customWorkouts','goals','healthLogs','messages','schedule','foodLogs','runs','journal','preferences',
-  'personalRecords','fcmTokens','customFoods','weightLogs','checkins','followers'];
+  'personalRecords','fcmTokens','customFoods','weightLogs','checkins','followers','analyticsDays'];
 
 async function readUserDataCollection(uid, name) {
   if (name === 'foodLogs') {
@@ -126,6 +127,7 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
+    track('deletion_requested');
     try {
       for (const c of USER_DATA_COLLECTIONS) { const snap = await getDocs(collection(db,'users',user.uid,c)); for (const d of snap.docs) await deleteDoc(d.ref); }
       // Remove public community workouts this user published, so deletion is complete.
@@ -146,6 +148,7 @@ export default function Profile() {
 
   const handleExportData = async () => {
     if (!user || exporting) return;
+    track('export_requested');
     setExporting(true);
     try {
       const profileSnap = await getDoc(doc(db, 'users', user.uid));
@@ -162,8 +165,10 @@ export default function Profile() {
       });
       const filename = `uttar-fitness-data-${localDateStr()}.json`;
       if (!downloadJson(filename, payload)) throw new Error('Download unavailable');
+      track('export_succeeded');
       toast.success('Your data export is downloading');
     } catch (error) {
+      track('export_failed');
       console.error('Data export failed:', error);
       toast.error("Couldn't export your data. Please try again.");
     } finally {
@@ -308,6 +313,11 @@ export default function Profile() {
             <Link to="/changelog" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Changelog</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
             <Link to="/status" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Status &amp; reliability</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <div className="border-t border-border/30" />
+            <a href="mailto:bhanu.charan.vajjala@gmail.com" onClick={() => track('support_contacted', { destination: 'email' })}
+              className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors">
+              <span>Contact Support</span><ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </a>
           </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={handleSignOut}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
       <AlertDialog>

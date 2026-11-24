@@ -35,9 +35,9 @@ Console account, store screenshots, and a reviewer test account. The 1024×500 f
 > - Offline workout logging and a one-tap JSON data export
 > - Dark, light, and automatic wallpapers
 >
-> Free to use. No ads, no subscription, no credit card. Sign in with Google to keep your data across devices.
+> Core fitness tools are free to use, with no ads. Optional Uttar AI credit upgrades are available on the web; this Android build does not process payments. Sign in with Google to keep your data across devices.
 >
-> This version does not include Health Connect, Apple Health, or automatic Strava sync. You can import run files instead. Location is used only while a run is being recorded. Form-check camera frames are processed on your device and are never stored.
+> This version does not include Health Connect, Apple Health, or automatic Strava sync. You can import run files instead. Location is used only while a run is being recorded. Form-check camera frames are sent securely to the AI provider for analysis and are not stored by Uttar Fitness.
 >
 > Privacy policy: https://xfit-bpe.pages.dev/privacy
 
@@ -53,7 +53,8 @@ Use these as the starting point, then check each answer against the shipped buil
 - **Sensitive data:** health and fitness data; precise location only while a run is active.
 - **Purpose:** app functionality and personalization. Not used for advertising, not sold.
 - **Processing:** data is transmitted over HTTPS and stored in Firebase. Run files are parsed on the device before any confirmed rows are saved.
-- **Camera:** frames are used for on-device form feedback and are not uploaded or retained.
+- **Camera:** frames are sent over HTTPS to the AI provider for form feedback and are not retained by Uttar Fitness.
+- **Purchases:** optional Uttar AI upgrades use Stripe hosted checkout on the web only. The Android build shows an informational screen and does not process payments.
 - **Deletion:** in-app account deletion plus the privacy policy URL.
 
 ## Assets still to produce
@@ -70,6 +71,6 @@ Play Console and give them working credentials:
 
 > Email: `<fill in>`  
 > Password: `<fill in>`  
-> Notes: Sign in with Google. Sample data is fine; no payment is required.
+> Notes: Sign in with Google. Sample data is fine; no payment is required. Uttar AI upgrades are informational in this Android build.
 
 Do not use a personal account with real training history.

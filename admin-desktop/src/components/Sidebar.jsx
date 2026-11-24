@@ -1,9 +1,10 @@
-import { LayoutDashboard, Users } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart3 } from 'lucide-react'
 import emblemBlack from '../assets/emblem-black.png'
 
 const NAV = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'users', label: 'Users', icon: Users },
+  { key: 'analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
 export default function Sidebar({ view, onView, projectId, configured }) {

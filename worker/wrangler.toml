@@ -12,4 +12,35 @@ GEMINI_MODEL = "gemini-3.5-flash"
 ALLOWED_ORIGINS = "https://xfit-bpe.pages.dev,https://xfit-723dd.web.app"
 # GEMINI_MODEL = "gemini-2.0-flash"
 
+# Uttar AI allowances. These are safe, non-secret defaults. If KV is not bound,
+# the proxy still works and the app shows quota as informational only.
+FREE_MONTHLY_REQUESTS = "60"
+FREE_MONTHLY_TOKENS = "60000"
+PRO_MONTHLY_REQUESTS = "600"
+PRO_MONTHLY_TOKENS = "600000"
+TOPUP_SMALL_REQUESTS = "50"
+TOPUP_SMALL_TOKENS = "50000"
+TOPUP_LARGE_REQUESTS = "200"
+TOPUP_LARGE_TOKENS = "250000"
+
 # Secret (NOT stored in this file) — set with:  npx wrangler secret put GEMINI_API_KEY
+#
+# Optional server-side quota. Create two KV namespaces with:
+#   npx wrangler kv namespace create AI_USAGE
+#   npx wrangler kv namespace create AI_ENTITLEMENTS
+# then uncomment and paste the returned IDs:
+# [[kv_namespaces]]
+# binding = "AI_USAGE"
+# id = "replace-with-usage-kv-id"
+# [[kv_namespaces]]
+# binding = "AI_ENTITLEMENTS"
+# id = "replace-with-entitlements-kv-id"
+#
+# Optional Stripe hosted checkout. Set secrets with:
+#   npx wrangler secret put STRIPE_SECRET_KEY
+#   npx wrangler secret put STRIPE_WEBHOOK_SECRET
+# Price IDs may be vars or secrets. Configure the webhook endpoint to:
+#   https://xfit-ai-proxy.<your-subdomain>.workers.dev/stripe/webhook
+# STRIPE_PRO_PRICE_ID = "price_replace_me"
+# STRIPE_TOPUP_SMALL_PRICE_ID = "price_replace_me"
+# STRIPE_TOPUP_LARGE_PRICE_ID = "price_replace_me"

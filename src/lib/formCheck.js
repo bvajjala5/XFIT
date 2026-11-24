@@ -25,5 +25,6 @@ export async function analyzeForm(exerciseName, imageDataUrl) {
     image: { mimeType: match[1], data: match[2] },
     maxTokens: 320,
     allowMock: false,
+    mode: 'formcheck',
   })
 }

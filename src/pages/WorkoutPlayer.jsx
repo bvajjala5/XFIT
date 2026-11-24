@@ -24,6 +24,7 @@ import HybridTracker from '@/components/workout/HybridTracker';
 import PlayerSettingsMenu from '@/components/workout/PlayerSettingsMenu';
 import { movementFromExercise } from '@/lib/poseCounter';
 import { shareContent, dataUrlToFile } from '@/lib/shareContent';
+import { track, flushAnalytics } from '@/lib/usageAnalytics';
 import {
   MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
   recordSet, nextPosition, setExerciseMode, adjust, sessionProgress, flattenSets,
@@ -282,6 +283,12 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     setTimeout(() => setFlash(false), 500);
   };
 
+  // Count-only session guards: one start/resume and at most one drop-off per run.
+  const trackedSessionKeyRef = useRef(null);
+  const dropOffTrackedRef = useRef(false);
+  const dropOffReadyRef = useRef(false);
+  const completedRef = useRef(false);
+
 
   useEffect(() => {
     const on = () => { unlockSpeech(); window.removeEventListener('pointerdown', on); };
@@ -376,13 +383,16 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   // arrives. Adjusting state during render avoids a frame with no active set;
   // this is the same pattern the old timer bootstrap used.
   const [sessionKey, setSessionKey] = useState(null);
+  const [sessionOrigin, setSessionOrigin] = useState(null);
   const nextSessionKey = exercises.length ? signatureFor(exercises) : null;
   if (nextSessionKey && nextSessionKey !== sessionKey) {
     setSessionKey(nextSessionKey);
     const saved = restoreSession(exercises);
     const resume = saved ? firstIncomplete(saved) : null;
-    const next = resume && !resume.done ? saved : createSession(exercises);
-    const start = resume && !resume.done ? resume : { exIndex: 0, setIndex: 0 };
+    const resuming = Boolean(resume && !resume.done);
+    const next = resuming ? saved : createSession(exercises);
+    const start = resuming ? resume : { exIndex: 0, setIndex: 0 };
+    setSessionOrigin(resuming ? 'resumed' : 'started');
     persistSession(next);
     setSession(next);
     setExIndex(start.exIndex);
@@ -401,6 +411,19 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     cameraRepsRef.current = 0;
     lastCueRef.current = -1;
   }, [sessionKey]);
+
+  // A restored session counts as resumed; a fresh one as started. The ref guard
+  // keeps StrictMode double-renders/effects from double-counting.
+  useEffect(() => {
+    if (!sessionKey || trackedSessionKeyRef.current === sessionKey) return;
+    trackedSessionKeyRef.current = sessionKey;
+    dropOffTrackedRef.current = false;
+    completedRef.current = false;
+    track(
+      sessionOrigin === 'resumed' ? 'workout_resumed' : 'workout_started',
+      { workoutType: isCustom ? 'custom' : 'builtin' },
+    );
+  }, [sessionKey, sessionOrigin, isCustom]);
 
   // Announce the exercise whenever it changes.
   useEffect(() => {
@@ -434,11 +457,43 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     return () => { mountedRef.current = false; };
   }, []);
 
+  const trackCompleted = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    track('workout_completed', { workoutType: isCustom ? 'custom' : 'builtin' });
+  }, [isCustom]);
+
+  const trackDropOff = useCallback((reason) => {
+    if (dropOffTrackedRef.current) return;
+    dropOffTrackedRef.current = true;
+    track('workout_drop_off', { reason });
+  }, []);
+
+  // Leaving an unfinished run counts once. pagehide needs an explicit flush:
+  // the analytics module's own pagehide listener registers before this one.
+  useEffect(() => {
+    // Ignore StrictMode's synchronous mount/unmount rehearsal in development.
+    const readyTimer = window.setTimeout(() => { dropOffReadyRef.current = true; }, 0);
+    const onPageHide = () => {
+      if (!sessionRef.current || completedRef.current) return;
+      trackDropOff('pagehide');
+      void flushAnalytics();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.clearTimeout(readyTimer);
+      window.removeEventListener('pagehide', onPageHide);
+      if (dropOffReadyRef.current && sessionRef.current && !completedRef.current) trackDropOff('unmount');
+      dropOffReadyRef.current = false;
+    };
+  }, [trackDropOff]);
+
   // Move to the next set (or exercise) after the current set has been recorded.
   const goNext = useCallback((nextSession, fromEx, fromSet) => {
     const pos = nextPosition(nextSession, fromEx, fromSet);
     persistSession(nextSession);
     if (pos.done) {
+      trackCompleted();
       speakText('Workout complete. You crushed it today.', voiceEnabled);
       setIsComplete(true);
       setPoseEnabled(false);
@@ -464,7 +519,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     const nextName = nextSession.exercises[pos.exIndex]?.name;
     if (pos.exIndex !== fromEx) speakText(`${pick(PRAISE)} Next, ${nextName}.`, voiceEnabled);
     else speakText(`Set ${pos.setIndex + 1}`, voiceEnabled);
-  }, [voiceEnabled]);
+  }, [voiceEnabled, trackCompleted]);
 
   const finishSet = useCallback((source = 'manual') => {
     const current = sessionRef.current;
@@ -601,10 +656,11 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       setPoseEnabled(false);
       cameraRepsRef.current = 0;
     } else {
+      trackCompleted();
       setIsComplete(true);
       setPoseEnabled(false);
     }
-  }, []);
+  }, [trackCompleted]);
 
   // Re-entering a workout resumes its saved session. This is the explicit way
   // back to set one: clear the saved progress and rebuild every timer/ref so a
@@ -631,6 +687,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     cameraRepsRef.current = 0;
     lastCueRef.current = -1;
     announcedRef.current = { exIndex: -1, countdown: false };
+    dropOffTrackedRef.current = false;
+    completedRef.current = false;
     toast.success('Workout restarted from the first set.');
   }, [exercises]);
 
@@ -655,6 +713,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
         difficulty: logDifficulty || null,
         notes: workoutNotes.trim() || null,
       });
+      const workoutType = isCustom ? 'custom' : 'builtin';
+      track('workout_logged', { workoutType, queued });
       if (queued) toast.success('Saved on this device — it will sync when you’re back online.');
       else toast.success('Workout logged');
       ['workout-logs', 'workout-logs-stats', 'workout-logs-profile'].forEach((key) => {
@@ -795,7 +855,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               {sharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
             </Button>
           </div>
-          <Button variant="ghost" className="w-full" onClick={() => { persistSession(null); navigate('/home') }}>Skip</Button>
+          <Button variant="ghost" className="w-full" onClick={() => { trackDropOff('skip'); persistSession(null); navigate('/home') }}>Skip</Button>
         </motion.div>
 
         {/* ── LOG MODAL ── */}
@@ -954,7 +1014,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       </AnimatePresence>
       <div className="relative z-30 flex items-center justify-center px-4 py-2">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => { if (sessionRef.current) trackDropOff('back'); navigate(-1); }}
           className="glass absolute left-4 flex h-11 w-11 items-center justify-center rounded-full"
           aria-label="Back"
         >

@@ -6,6 +6,7 @@ const SERVICES = [
   { name: 'Uttar Fitness hosting', detail: 'Cloudflare Pages serves the app and installable PWA.', url: 'https://www.cloudflarestatus.com/' },
   { name: 'Accounts and storage', detail: 'Firebase handles Google sign-in and your saved data.', url: 'https://status.firebase.google.com/' },
   { name: 'Uttar AI', detail: 'Google Cloud powers AI-generated plans and chat.', url: 'https://status.cloud.google.com/' },
+  { name: 'AI payments', detail: 'Stripe hosts optional Uttar AI checkout on the web.', url: 'https://status.stripe.com/' },
   { name: 'Food and barcode data', detail: 'Open Food Facts supplies product and barcode information.', url: 'https://status.openfoodfacts.org/' },
 ];
 

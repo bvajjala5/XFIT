@@ -123,7 +123,7 @@ const WEEK_STYLES = {
 const FAQS = [
   {
     q: 'Is Uttar Fitness free?',
-    a: 'Yes. You can explore the live demo without an account, and creating an account is free. No credit card required.',
+    a: 'Yes. The live demo, account creation, and the core fitness tools are free with no credit card required. Optional Uttar AI monthly plans and top-up packs are available on the web if you want a larger AI allowance.',
   },
   {
     q: 'Do I need a gym or equipment?',

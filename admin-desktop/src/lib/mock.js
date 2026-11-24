@@ -82,6 +82,7 @@ function subcollectionCounts(user) {
     checkins: seed % 45,
     followers: seed % 15,
     customFoods: seed % 12,
+    analyticsDays: 3 + (seed % 25),
   }
 }
 
@@ -98,6 +99,196 @@ function recentWorkouts(user) {
       calories_burned: minutes * (6 + (i % 4)),
     }
   })
+}
+
+// Sample-only aggregate analytics. The shape mirrors the real `admin:analytics`
+// IPC response exactly, but every number below is invented for browser previews.
+function analytics() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const activeUsersSeries = []
+  for (let i = 13; i >= 0; i -= 1) {
+    const day = new Date(today)
+    day.setDate(day.getDate() - i)
+    activeUsersSeries.push({
+      date: day.toISOString(),
+      count: 6 + ((i * 3) % 11),
+    })
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    projectId: 'xfit-723dd',
+    sample: true,
+    limits: { docsPerCollection: 20000 },
+    scanned: {
+      analyticsDays: 412,
+      workouts: 1186,
+      runs: 274,
+      entries: 903,
+      authUsers: users.length,
+    },
+    warnings: [],
+    sections: {
+      uttarAi: {
+        available: true,
+        instrumented: true,
+        requests: 1842,
+        successes: 1607,
+        failures: 235,
+        rateLimits: 58,
+        limitReached: 96,
+        successRate: 87.2,
+        estimatedTokens: 2_438_400,
+        estimatedCostUsd: 0.18288,
+        tokenRatePerMillion: 0.075,
+        modeTokens: { chat: 1_238_400, workout: 1_080_000, formcheck: 96_000, other: 24_000 },
+        upgradeViews: 314,
+        checkoutStarts: 41,
+        planGrants: 29,
+        billingNote:
+          'Exact billing and quota live in Stripe/Gemini. KV-backed server entitlements are not readable by this desktop app.',
+      },
+      engagement: {
+        available: true,
+        instrumented: true,
+        workoutsStarted: 4920,
+        workoutsCompleted: 3716,
+        completionRate: 75.5,
+        dropOffs: 412,
+        avgWorkoutDurationSeconds: 2460,
+        workoutDocuments: 1186,
+        topWorkouts: [
+          { name: 'Upper Body Strength', count: 214 },
+          { name: 'Morning HIIT', count: 186 },
+          { name: 'Leg Day', count: 153 },
+          { name: 'Core & Mobility', count: 121 },
+          { name: 'Push Day', count: 98 },
+          { name: 'Full Body Circuit', count: 76 },
+        ],
+        customCreated: 187,
+        customShared: 42,
+        customImported: 63,
+        prsLogged: 329,
+        dropOffReasons: [
+          { label: 'time', count: 184 },
+          { label: 'interrupted', count: 131 },
+          { label: 'equipment', count: 97 },
+        ],
+      },
+      retention: {
+        available: true,
+        instrumented: true,
+        dau: 17,
+        wau: 24,
+        mau: 29,
+        signups: users.length,
+        signups7d: 6,
+        signups24h: 1,
+        returningUsers: 22,
+        streakBuckets: [
+          { label: '1', count: 8 },
+          { label: '2-3', count: 7 },
+          { label: '4-6', count: 6 },
+          { label: '7+', count: 9 },
+        ],
+        zeroActivityUsers: 3,
+        zeroActivityAfterSignup7d: 2,
+        activeUsersSeries,
+      },
+      runsImports: {
+        available: true,
+        instrumented: true,
+        runsStarted: 612,
+        runsCompleted: 548,
+        runsCount: 274,
+        avgDistanceMeters: 5210,
+        avgDurationSeconds: 1810,
+        avgPaceMinPerKm: 5.78,
+        importsSaved: 163,
+        importsFailed: 21,
+        importsDuplicate: 34,
+        importSources: [
+          { label: 'gpx', count: 74 },
+          { label: 'csv', count: 51 },
+          { label: 'tcx', count: 23 },
+          { label: 'strava', count: 15 },
+        ],
+      },
+      nutritionHealth: {
+        available: true,
+        instrumented: true,
+        foodLogs: 3184,
+        foodLogsPerActiveDay: 7.7,
+        foodLogDocuments: 903,
+        foodSources: [
+          { label: 'usda', count: 1421 },
+          { label: 'online', count: 886 },
+          { label: 'meal', count: 512 },
+          { label: 'barcode', count: 365 },
+        ],
+        correctionsSaved: 74,
+        correctionsReset: 19,
+        healthPrompted: 108,
+        healthGranted: 71,
+        healthDenied: 37,
+        healthLogDocuments: 624,
+        healthBanner: 'Health data is shown only as counts. Raw health values are never displayed here.',
+      },
+      reliability: {
+        available: true,
+        instrumented: true,
+        offlineQueuedWrites: 146,
+        writeFailures: 23,
+        writeFailureCollections: [
+          { label: 'workouts', count: 12 },
+          { label: 'foodlogs', count: 7 },
+          { label: 'runs', count: 4 },
+        ],
+        exportRequested: 38,
+        exportSucceeded: 31,
+        exportFailed: 5,
+        deletionRequests: 4,
+        supportContacts: 27,
+        supportDestinations: [
+          { label: 'email', count: 19 },
+          { label: 'web', count: 8 },
+        ],
+        communityReports: 11,
+        reportReasons: [
+          { label: 'spam', count: 6 },
+          { label: 'abuse', count: 3 },
+          { label: 'other', count: 2 },
+        ],
+        aiProviderErrorRate: 12.8,
+        pwaInstallPrompted: 214,
+        pwaInstallAccepted: 46,
+        pwaInstallDismissed: 138,
+        pwaInstalled: 52,
+        platforms: [
+          { label: 'web', count: 1420 },
+          { label: 'android', count: 422 },
+        ],
+        browsers: [
+          { label: 'chrome', count: 918 },
+          { label: 'safari', count: 372 },
+          { label: 'edge', count: 96 },
+          { label: 'webview', count: 422 },
+        ],
+        os: [
+          { label: 'android', count: 422 },
+          { label: 'ios', count: 486 },
+          { label: 'macos', count: 604 },
+          { label: 'windows', count: 264 },
+        ],
+        appVersions: [
+          { label: 'web', count: 1420 },
+          { label: '1-4-2', count: 422 },
+        ],
+        environmentSource: 'app opens',
+      },
+    },
+  }
 }
 
 function overview() {
@@ -220,6 +411,9 @@ export const mockBridge = {
   },
   async overview() {
     return { ok: true, data: overview() }
+  },
+  async analytics() {
+    return { ok: true, data: analytics() }
   },
   async listUsers(params) {
     return { ok: true, data: listUsers(params) }

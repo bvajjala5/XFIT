@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw, X,
-  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight,
+  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight, Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import GlassCard from '@/components/shared/GlassCard'
@@ -15,7 +16,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/AuthContext'
-import { callAI } from '@/lib/ai'
+import { callAIWithUsage, fetchAIUsage } from '@/lib/ai'
+import { track } from '@/lib/usageAnalytics'
 import { parseAIResponse } from '@/lib/aiPlanParse'
 import { saveAIWeeklyPlan, saveAIWorkout } from '@/lib/aiPlans'
 import {
@@ -260,6 +262,7 @@ export default function UttarAI({ onClose }) {
   const [input, setInput] = useState('')
   const [mode, setMode] = useState('chat')
   const [busy, setBusy] = useState(false)
+  const [usage, setUsage] = useState(null)
   const [savingId, setSavingId] = useState(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
@@ -280,6 +283,12 @@ export default function UttarAI({ onClose }) {
       // Storage can be full or disabled; the chat still works for this session.
     }
   }, [messages, storageKey])
+
+  useEffect(() => {
+    let alive = true
+    fetchAIUsage().then((result) => { if (alive) setUsage(result) })
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -331,12 +340,14 @@ export default function UttarAI({ onClose }) {
 
     try {
       if (selectedMode === 'chat') {
-        const reply = await callAI({
+        const { text: reply, usage: nextUsage } = await callAIWithUsage({
           system: systemFor('chat'),
           messages: historyFrom(nextMessages),
           maxTokens: 1200,
           allowMock: false,
+          mode: 'chat',
         })
+        if (nextUsage) setUsage(nextUsage)
         // The model can end its reply with a <nav> block. Strip it before it is
         // rendered and turn it into validated destination buttons. If the model
         // forgets the block, the local keyword matcher still offers a way there.
@@ -351,12 +362,14 @@ export default function UttarAI({ onClose }) {
           navActions,
         }])
       } else {
-        const reply = await callAI({
+        const { text: reply, usage: nextUsage } = await callAIWithUsage({
           system: systemFor(selectedMode),
           messages: historyFrom(nextMessages),
           maxTokens: 2000,
           allowMock: false,
+          mode: selectedMode,
         })
+        if (nextUsage) setUsage(nextUsage)
         const parsed = parseAIResponse(reply)
 
         if (!parsed) {
@@ -389,9 +402,12 @@ export default function UttarAI({ onClose }) {
       }
     } catch (err) {
       console.error('Uttar AI request failed', err)
-      const friendly = /failed to fetch|network/i.test(err?.message || '')
-        ? 'I could not reach the AI coach. Check your connection and try again.'
-        : err?.message || 'Something went wrong. Please try again.'
+      if (err?.usage) setUsage(err.usage)
+      const friendly = err?.code === 'AI_LIMIT_REACHED'
+        ? "You've used this month's Uttar AI allowance. You can still use every other Uttar Fitness feature — tap Get more if you'd like extra AI requests."
+        : /failed to fetch|network/i.test(err?.message || '')
+          ? 'I could not reach the AI coach. Check your connection and try again.'
+          : err?.message || 'Something went wrong. Please try again.'
       setMessages((prev) => [...prev, {
         id: newId(),
         role: 'assistant',
@@ -454,6 +470,16 @@ export default function UttarAI({ onClose }) {
     navigate(path)
   }
 
+  const remainingLabel = usage
+    ? (usage.persisted === false ? 'Preview allowance' : `${usage.requestsRemaining ?? 0} left`)
+    : 'Uttar AI'
+
+  function openUpgrade() {
+    track('ai_upgrade_viewed', { placement: 'sheet', platform: Capacitor?.isNativePlatform?.() ? 'android' : 'web' })
+    if (typeof onClose === 'function') onClose()
+    navigate('/ai-upgrade')
+  }
+
   const placeholder = mode === 'chat'
     ? 'Ask about training, nutrition, recovery, or form…'
     : mode === 'plan'
@@ -475,6 +501,22 @@ export default function UttarAI({ onClose }) {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={openUpgrade}
+            className="hidden items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
+            title="Get more Uttar AI requests"
+          >
+            <Zap className="h-3 w-3" /> {remainingLabel} · Get more
+          </button>
+          <button
+            type="button"
+            onClick={openUpgrade}
+            className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary sm:hidden"
+            aria-label="Get more Uttar AI"
+          >
+            <Zap className="h-3 w-3" /> More
+          </button>
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={clearChat} aria-label="New chat">
               <RotateCcw className="h-4 w-4" />

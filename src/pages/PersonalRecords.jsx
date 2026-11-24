@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Trophy, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import GlassCard from "@/components/shared/GlassCard";
+import { track } from "@/lib/usageAnalytics";
 
 const EXERCISE_CATEGORIES = {
   "Strength": ["Bench Press","Squat","Deadlift","Overhead Press","Barbell Row","Pull-Up","Dip","Bicep Curl","Tricep Extension","Lateral Raise"],
@@ -36,6 +37,7 @@ export default function PersonalRecords() {
     const updated = [newRecord, ...existing].slice(0, 10);
     const allRecords = { ...records, [exercise]: updated };
     await setDoc(doc(db, "users", user.uid, "personalRecords", "records"), allRecords);
+    track('pr_saved', { source: 'manual' });
     setAdding(null);
     setForm({ value: "", unit: "lbs", notes: "" });
     refetch();

@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { callAI } from '@/lib/ai'
 import { parseAIResponse } from '@/lib/aiPlanParse'
 import { saveAIWeeklyPlan, saveAIWorkout } from '@/lib/aiPlans'
+import { track } from '@/lib/usageAnalytics'
 
 const EXAMPLE_PROMPTS = [
   '20 minute full body HIIT — no equipment, beginner friendly',
@@ -77,6 +78,7 @@ Rules:
       const text = await callAI({ system: systemPrompt, messages: [{ role: 'user', content: prompt }], maxTokens: 1500 })
       const result = parseAIResponse(text)
       if (!result) throw new Error('The AI did not return a usable workout.')
+      track('custom_workout_generate_success')
 
       if (result.kind === 'plan') {
         setIsPlan(true)
@@ -89,6 +91,7 @@ Rules:
         setStep(2)
       }
     } catch (err) {
+      track('custom_workout_generate_failure')
       console.error(err)
       toast.error(err.message || 'Failed to generate workout. Try again.')
     } finally {
@@ -123,6 +126,7 @@ Rules:
         exercises,
         estimated_duration: minutes,
       }, prompt)
+      track('custom_workout_saved', { source: 'builder' })
       queryClient.invalidateQueries({ queryKey: ['custom-workouts', user.uid] })
       toast.success('Workout saved!')
       if (startNow) navigate(`/player/custom/${id}`)
@@ -140,6 +144,7 @@ Rules:
     setSaving(true)
     try {
       await saveAIWeeklyPlan(user.uid, planDays, prompt)
+      track('custom_workout_saved', { source: 'weekly-plan' })
       queryClient.invalidateQueries({ queryKey: ['schedule', user?.uid] })
       queryClient.invalidateQueries({ queryKey: ['custom-workouts', user?.uid] })
       toast.success('Weekly plan applied to your Plan page')

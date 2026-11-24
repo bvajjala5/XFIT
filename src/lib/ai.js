@@ -1,6 +1,7 @@
 // AI helper — talks to the Uttar Fitness AI proxy (see /worker). The Gemini API key lives on
 // the proxy, never in this app. Requests are authenticated with the user's Firebase ID token.
 import { auth } from './firebase';
+import { track } from './usageAnalytics';
 
 const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL;
 
@@ -158,40 +159,116 @@ async function getMockResponse(prompt = '') {
   return JSON.stringify(workout);
 }
 
+const proxyBase = () => (PROXY_URL || '').replace(/\/+$/, '');
+
+function aiError(message, status = 0, code = '', usage = null) {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  error.usage = usage;
+  return error;
+}
+
+async function idToken() {
+  const user = auth.currentUser;
+  if (!user) throw aiError('Please sign in to use AI features.', 401);
+  return user.getIdToken();
+}
+
+export function isAIProxyConfigured() {
+  return Boolean(PROXY_URL && !PROXY_URL.includes('your-proxy-url'));
+}
+
+/** Read the server-authoritative allowance. Returns null when unavailable. */
+export async function fetchAIUsage() {
+  if (!isAIProxyConfigured()) return null;
+  try {
+    const token = await idToken();
+    const res = await fetch(`${proxyBase()}/usage`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.usage || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Start a Stripe hosted checkout. Only called from web builds. */
+export async function startAIUpgrade(kind, returnPath = '/ai-upgrade') {
+  if (!isAIProxyConfigured()) throw aiError('Uttar AI checkout is not configured yet.', 503);
+  const token = await idToken();
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const res = await fetch(`${proxyBase()}/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      kind,
+      successUrl: `${origin}${returnPath}`,
+      cancelUrl: `${origin}${returnPath}`,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw aiError(data?.error || `Checkout error ${res.status}`, res.status);
+  track('ai_checkout_started', { plan: kind });
+  return data.url;
+}
+
 // allowMock: workout building can fall back to the local generator, but the conversational
 // coach must never pretend a failed request was answered, so chat passes false.
-export async function callAI({ system, messages, maxTokens = 1000, allowMock = true, image = null }) {
-  const userPrompt = messages?.find(m => m.role === 'user')?.content || '';
+export async function callAI(options) {
+  const result = await callAIWithUsage(options);
+  return result.text;
+}
 
-  if (!PROXY_URL || PROXY_URL.includes('your-proxy-url')) {
-    if (allowMock) return getMockResponse(userPrompt);
-    throw new Error('The AI coach is not configured. Add VITE_AI_PROXY_URL.');
+/** Low-level call that returns both the reply and the latest server usage. */
+export async function callAIWithUsage({
+  system,
+  messages,
+  maxTokens = 1000,
+  allowMock = true,
+  image = null,
+  mode = 'chat',
+}) {
+  const userPrompt = messages?.find((m) => m.role === 'user')?.content || '';
+
+  if (!isAIProxyConfigured()) {
+    if (allowMock) return { text: await getMockResponse(userPrompt), usage: null };
+    throw aiError('The AI coach is not configured. Add VITE_AI_PROXY_URL.', 503);
   }
 
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Please sign in to use AI features.');
+  track('ai_request', { mode });
 
-    const token = await user.getIdToken();
+  try {
+    const token = await idToken();
     const res = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ system, messages, maxTokens, ...(image ? { image } : {}) }),
+      body: JSON.stringify({ system, messages, maxTokens, mode, ...(image ? { image } : {}) }),
     });
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || `AI error ${res.status}`);
+      const code = data?.code || '';
+      if (res.status === 429) track('ai_rate_limited', {});
+      else if (code === 'AI_LIMIT_REACHED') track('ai_limit_reached', {});
+      else track('ai_request_failure', { mode });
+      throw aiError(data?.error || `AI error ${res.status}`, res.status, code, data?.usage || null);
+    }
+    if (!data.text) {
+      track('ai_request_failure', { mode });
+      throw aiError('No response from AI', 502);
     }
 
-    const data = await res.json();
-    if (!data.text) throw new Error('No response from AI');
-
-    return data.text;
+    track('ai_request_success', { mode });
+    return { text: data.text, usage: data.usage || null };
   } catch (err) {
+    if (err.code) throw err;
+    track('ai_request_failure', { mode });
     if (err.message?.includes('sign in')) throw err;
     if (!allowMock) throw err;
     console.warn('AI request failed, falling back to mock:', err);
-    return getMockResponse(userPrompt);
+    return { text: await getMockResponse(userPrompt), usage: null };
   }
 }

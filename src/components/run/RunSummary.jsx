@@ -7,6 +7,7 @@ import { saveRun as persistRun } from '@/lib/runSave'
 import { formatDistance, formatPace, normalizeDistanceUnit, unitConfig } from '@/lib/distanceUnits'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { track } from '@/lib/usageAnalytics'
 
 function formatTime(s) {
   const m = Math.floor(s / 60)
@@ -41,6 +42,8 @@ export default function RunSummary({ summary, userId, unit = 'miles' }) {
         splits,
         distanceUnit,
       })
+      // Only the coarse source bucket is recorded — no distance, pace or time.
+      track('run_completed', { source: 'gps' })
       toast.success(queued
         ? 'Saved on this device — it will sync when you’re back online.'
         : 'Run saved!')

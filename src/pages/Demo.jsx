@@ -265,7 +265,7 @@ export default function Demo() {
 
             <div className="flex flex-col rounded-2xl border border-border/50 bg-background/40 p-4">
               <p className="flex items-center gap-2 text-sm font-bold">
-                <Sparkles className="h-4 w-4 text-primary" /> Premium Features
+                <Sparkles className="h-4 w-4 text-primary" /> Featured tools
               </p>
               <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
                 <li>Uttar AI — ask it preloaded questions</li>
@@ -296,7 +296,7 @@ export default function Demo() {
                 </button>
               </div>
               <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
-                Free for everyone while we&rsquo;re in beta.
+                Preview only — nothing is saved. Optional Uttar AI upgrades are available on the web.
               </p>
             </div>
 

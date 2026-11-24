@@ -32,6 +32,14 @@ function getAuthApi() {
 
 const AuthContext = createContext();
 
+// Analytics is loaded on demand: an anonymous visitor should not fetch
+// Firestore/Auth SDKs just to count an app open.
+function trackEvent(name, props) {
+  void import('./usageAnalytics')
+    .then(({ track }) => track(name, props))
+    .catch(() => {});
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
@@ -43,6 +51,9 @@ export const AuthProvider = ({ children }) => {
   const unsubRef = useRef(null);
   const startedRef = useRef(false);
   const cancelledRef = useRef(false);
+  // Auth can report the same session more than once; count each restore/sign-in
+  // only once (and reset on sign-out so a later sign-in is counted again).
+  const trackedSignInRef = useRef(null);
 
   const fetchUserData = useCallback(async (uid, firebaseUser = null) => {
     try {
@@ -80,9 +91,14 @@ export const AuthProvider = ({ children }) => {
           if (firebaseUser) {
             markSessionHint();
             setUser(firebaseUser);
+            if (trackedSignInRef.current !== firebaseUser.uid) {
+              trackedSignInRef.current = firebaseUser.uid;
+              trackEvent('sign_in_completed');
+            }
             await fetchUserData(firebaseUser.uid, firebaseUser);
           } else {
             clearSessionHint();
+            trackedSignInRef.current = null;
             setUser(null);
             setUserData(null);
           }
@@ -131,6 +147,7 @@ export const AuthProvider = ({ children }) => {
         onboarding_complete: false,
         createdAt: serverTimestamp(),
       });
+      trackEvent('signup_completed');
     }
     await fetchUserData(u.uid);
     return u;

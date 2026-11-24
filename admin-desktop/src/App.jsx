@@ -5,11 +5,13 @@ import { useToast, Spinner } from './components/ui.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import Overview from './components/Overview.jsx'
 import Users from './components/Users.jsx'
+import Analytics from './components/Analytics.jsx'
 import UserDrawer from './components/UserDrawer.jsx'
 
 const TITLES = {
   overview: { title: 'Overview', subtitle: 'Users and recent activity at a glance' },
   users: { title: 'Users', subtitle: 'Search, inspect, and manage every account' },
+  analytics: { title: 'Analytics', subtitle: 'Aggregate-only product, health, and reliability signals' },
 }
 
 export default function App() {
@@ -117,8 +119,10 @@ export default function App() {
         <div className="content">
           {view === 'overview' ? (
             <Overview refreshKey={refreshKey} onSelectUser={setSelectedUid} onError={handleError} />
-          ) : (
+          ) : view === 'users' ? (
             <Users refreshKey={refreshKey} onSelectUser={setSelectedUid} onError={handleError} />
+          ) : (
+            <Analytics refreshKey={refreshKey} onError={handleError} />
           )}
         </div>
       </main>

@@ -5,16 +5,21 @@ import { db } from '@/lib/firestore';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore/lite';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Users, Dumbbell, Download, Clock, CheckCircle2 } from 'lucide-react';
+import { Users, Dumbbell, Download, Clock, CheckCircle2, Flag } from 'lucide-react';
 import { importWorkout } from '@/lib/shareWorkout';
 import { decodeSharedWorkout } from '@/lib/workoutShareLink';
 import { toast } from 'sonner';
+import { track } from '@/lib/usageAnalytics';
+
+// Fixed buckets only — no free-text report is stored or sent anywhere.
+const REPORT_REASONS = ['spam', 'unsafe', 'offensive', 'other'];
 
 export default function Community() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [searchParams] = useSearchParams();
   const [importing, setImporting] = useState(null);
+  const [reportingId, setReportingId] = useState(null);
 
   const shareToken = searchParams.get('share');
   const sharedLinkWorkout = useMemo(() => {
@@ -48,18 +53,27 @@ export default function Community() {
 
   const importedIds = new Set(myImports.map(w => w.importedFrom).filter(Boolean));
 
-  async function handleImport(workout) {
+  async function handleImport(workout, source) {
     if (!user) return;
     setImporting(workout.id);
     try {
       await importWorkout(user.uid, workout);
+      track('custom_workout_imported', { source });
       qc.invalidateQueries({ queryKey: ['custom-workouts', user.uid] });
       toast.success(`"${workout.name}" added to your workouts!`);
     } catch {
+      // There is no import-failure event in the allowlist; don't invent one.
       toast.error('Import failed');
     } finally {
       setImporting(null);
     }
+  }
+
+  function submitReport(reason) {
+    if (!REPORT_REASONS.includes(reason)) return;
+    track('community_report_submitted', { reason });
+    setReportingId(null);
+    toast.success('Thanks — your report was noted.');
   }
 
   return (
@@ -98,7 +112,7 @@ export default function Community() {
                 ...sharedLinkWorkout.workout,
                 id: sharedLinkWorkout.workout.id || `link_${shareToken.slice(0, 12)}`,
                 sharedByName: 'Shared link',
-              })}
+              }, 'link')}
               disabled={importing === sharedLinkWorkout.workout.id || !user}
               className="mt-2 flex items-center gap-1 text-xs font-semibold bg-primary/15 text-primary px-3 py-1.5 rounded-xl hover:bg-primary/25 transition-colors disabled:opacity-50"
             >
@@ -156,21 +170,46 @@ export default function Community() {
                     </span>
                   )}
                 </div>
+                {reportingId === w.id && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {REPORT_REASONS.map((reason) => (
+                      <button
+                        key={reason}
+                        type="button"
+                        onClick={() => submitReport(reason)}
+                        className="rounded-full border border-border/60 bg-secondary/40 px-2 py-1 text-[10px] font-semibold capitalize text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              {alreadyImported ? (
-                <div className="flex items-center gap-1 text-green-400 text-xs font-semibold shrink-0">
-                  <CheckCircle2 className="w-4 h-4" /> Saved
-                </div>
-              ) : (
+              <div className="flex items-center gap-1.5 shrink-0">
+                {alreadyImported ? (
+                  <div className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+                    <CheckCircle2 className="w-4 h-4" /> Saved
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleImport(w, 'community')}
+                    disabled={importing === w.id}
+                    className="flex items-center gap-1 text-xs font-semibold bg-primary/15 text-primary px-3 py-1.5 rounded-xl hover:bg-primary/25 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {importing === w.id ? '…' : 'Add'}
+                  </button>
+                )}
                 <button
-                  onClick={() => handleImport(w)}
-                  disabled={importing === w.id}
-                  className="flex items-center gap-1 text-xs font-semibold bg-primary/15 text-primary px-3 py-1.5 rounded-xl hover:bg-primary/25 transition-colors disabled:opacity-50 shrink-0"
+                  type="button"
+                  onClick={() => setReportingId(reportingId === w.id ? null : w.id)}
+                  aria-label="Report workout"
+                  aria-expanded={reportingId === w.id}
+                  className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  {importing === w.id ? '…' : 'Add'}
+                  <Flag className="w-3.5 h-3.5" />
                 </button>
-              )}
+              </div>
             </motion.div>
           );
         })}

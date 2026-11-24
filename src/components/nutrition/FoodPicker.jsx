@@ -18,6 +18,7 @@ import {
   removeFoodCorrection,
   saveFoodCorrection,
 } from '@/lib/foodCorrections'
+import { track } from '@/lib/usageAnalytics'
 
 // Keep the barcode decoder out of the first paint; it is only fetched when the
 // scan button is used.
@@ -287,6 +288,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     setCorrections(next)
     setSelected(applyFoodCorrection(base, next))
     setEditingCorrection(false)
+    track('food_correction_saved')
     toast.success('Saved on this device only')
   }
 
@@ -296,6 +298,7 @@ export default function FoodPicker({ open, onClose, onAdd, userId, defaultMeal }
     setCorrections(next)
     setSelected(applyFoodCorrection(base, next))
     setEditingCorrection(false)
+    track('food_correction_reset')
     if (base) saveRecent(userId, base)
     toast.success('Back to the original food data')
   }

@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import {
   getConfig,
   getOverview,
+  getAnalytics,
   listUsers,
   getUser,
   setRole,
@@ -35,6 +36,7 @@ function handle(channel, fn) {
 export function registerIpc() {
   handle('admin:config', () => getConfig())
   handle('admin:overview', () => getOverview())
+  handle('admin:analytics', () => getAnalytics())
   handle('admin:listUsers', (params) => listUsers(params || {}))
   handle('admin:getUser', (uid) => getUser(uid))
   handle('admin:setRole', (uid, role) => setRole({ uid, role }))

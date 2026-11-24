@@ -11,6 +11,7 @@ import {
   parseActivityFiles,
 } from '@/lib/activityFiles'
 import { saveRun } from '@/lib/runSave'
+import { track } from '@/lib/usageAnalytics'
 import useFocusTrap from '@/hooks/useFocusTrap'
 import { toast } from 'sonner'
 
@@ -19,6 +20,14 @@ const SAMPLES = [
   { label: 'GPX', name: 'uttar-run-sample.gpx', type: 'application/gpx+xml', text: SAMPLE_GPX },
   { label: 'TCX', name: 'uttar-run-sample.tcx', type: 'application/tcx+xml', text: SAMPLE_TCX },
 ]
+
+const IMPORT_SOURCES = ['csv', 'gpx', 'tcx']
+
+// A coarse bucket from the parser's own format counts — never file text.
+function importSource(result) {
+  const candidate = result?.formats?.[0] || result?.rows?.[0]?.source || 'csv'
+  return IMPORT_SOURCES.includes(candidate) ? candidate : 'csv'
+}
 
 function formatClock(seconds) {
   const mins = Math.floor(seconds / 60)
@@ -98,14 +107,21 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
     let saved = 0
     let queued = 0
     let failed = 0
+    const source = importSource(result)
+    // `skipped` is a count from the parse result (duplicates in/between files).
+    for (let i = 0; i < (result.skipped || 0); i += 1) {
+      track('run_import_duplicate', { source })
+    }
     try {
       for (const row of result.rows) {
         try {
           const outcome = await saveRun(userId, row, { id: row.id })
+          track('run_import_saved', { source })
           if (outcome.queued) queued += 1
           else saved += 1
         } catch {
           failed += 1
+          track('run_import_failed', { source })
         }
       }
       if (failed === 0) {

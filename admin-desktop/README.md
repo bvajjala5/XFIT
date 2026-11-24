@@ -10,6 +10,8 @@ project with a service account, and lets you:
   through every account; open a detail drawer.
 - **Manage** — view a user's profile, activity counters and recent workouts,
   **change their role** (Admin ⇄ User) and **suspend / restore** their account.
+- **Analytics** — aggregate-only Uttar AI, engagement, retention, runs/imports,
+  nutrition/health, and reliability/cost/safety signals.
 
 Everything is free and local: no server, no hosting, no billing.
 
@@ -90,7 +92,40 @@ with the exact steps above instead of failing.
 `npm run preview:web` opens the UI at <http://127.0.0.1:5173> with an in-memory
 **sample data** backend, so you can explore every screen before wiring up the
 service account. A "Sample data" badge is shown in that mode. Inside Electron the
-real Firebase backend is always used.
+real Firebase backend is always used. The Analytics view has its own
+**Sample-only analytics** banner in browser preview mode.
+
+---
+
+## 5b. Analytics view
+
+The **Analytics** tab (`admin:analytics` → `electron/analytics.js`) reads count-only
+telemetry and returns **aggregates only** — counts, rates, and small categorical
+buckets. It never returns document IDs, UIDs, raw health values, food names,
+prompts, or message content. If a signal has no data (or its collection cannot be
+read), the card shows **“Not instrumented yet”** instead of a made-up number.
+
+Fields read (all with `.select()` + a 20,000-document limit unless noted):
+
+- `users/{uid}/analyticsDays/{yyyy-mm-dd}` via `collectionGroup('analyticsDays')` —
+  only `counts`, `breakdowns`, `updatedAt`. Drives AI requests/outcomes, workout
+  and run events, food-log and permission counts, export/deletion/support/report
+  events, and platform/browser/OS/app-version buckets. The document **keys** are
+  used in-process only to derive DAU/WAU/MAU, returning users, and streak buckets.
+- `collectionGroup('workouts')` — `name`/`title`/`workout_title` (workout titles
+  only, never a user linkage) and `duration_seconds` for averages.
+- `collectionGroup('runs')` — `distance`, `elapsed`/`duration_seconds`, `pace`.
+- `collectionGroup('entries')` — only `source` and `loggedAt`.
+- `collectionGroup('healthLogs')` — document count only, via a `count()` aggregate.
+- Firebase Auth `listUsers()` metadata — signup counts only.
+
+Estimated AI cost is intentionally an **estimate**: requests are multiplied by
+mode buckets (chat 1,200; workout/plan 2,000; formcheck 320 tokens) and priced at
+`ADMIN_ANALYTICS_TOKEN_COST_PER_MILLION` (default `0.075` USD per 1M tokens — a
+conservative Gemini-style number). Set that env var in `.env` to change the rate.
+Exact billing/quota lives in Stripe/Gemini; KV-backed server entitlements are not
+readable by this desktop app. `ADMIN_ANALYTICS_MAX_DOCS` can lower the per-collection
+read limit (default 20,000).
 
 ---
 
@@ -134,6 +169,7 @@ of those files to the same folder there.
 │  Main process (Node)                    Renderer (React)        │
 │  ── firebase.js   Admin SDK init ─┐     ── App / Overview       │
 │  ── data.js       users, roles    │ IPC ── Users / UserDrawer   │
+│  ── analytics.js  aggregates      │◀───▶  Analytics              │
 │  ── ipc.js        request router  │◀───▶  src/lib/api.js         │
 │  ── preload.cjs   window.admin ───┘     (contextIsolation)      │
 └─────────────────────────────────────────────────────────────────┘
@@ -164,8 +200,11 @@ of those files to the same folder there.
   `experience_level`, `preferred_types`, `distance_unit`, `goals`,
   `onboarding_complete`, `createdAt`.
 - Subcollections counted in the detail drawer — `workouts`, `customWorkouts`,
-  `healthLogs`, `runs`, `weightLogs`, `checkins`, `followers`, `customFoods`;
-  recent `workouts` show `completedAt`, `duration_seconds`, `calories_burned`.
+  `healthLogs`, `runs`, `weightLogs`, `checkins`, `followers`, `customFoods`,
+  `analyticsDays`; recent `workouts` show `completedAt`, `duration_seconds`,
+  `calories_burned`.
+- Analytics telemetry — `users/{uid}/analyticsDays/{yyyy-mm-dd}` with only
+  `counts`, `breakdowns`, `updatedAt` (see §5b).
 
 ## Security notes
 

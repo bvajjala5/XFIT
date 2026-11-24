@@ -1,5 +1,9 @@
 import { getAuth, getDb, getProjectId, isConfigured, ENV_PATH } from './firebase.js'
 
+// Aggregate-only product analytics. Kept in its own module so the renderer
+// never sees any raw documents.
+export { getAnalytics } from './analytics.js'
+
 // Firebase Auth listing is the slow part, so we cache the merged user list for
 // a short window and reuse it for the dashboard, search, and pagination.
 const CACHE_TTL_MS = 30_000
@@ -16,6 +20,7 @@ const USER_SUBCOLLECTIONS = [
   'checkins',
   'followers',
   'customFoods',
+  'analyticsDays',
 ]
 
 let cache = { at: 0, users: null }

@@ -1,5 +1,6 @@
 import { db } from './firestore'
 import { doc, setDoc, Timestamp } from 'firebase/firestore/lite'
+import { track } from './usageAnalytics'
 
 // Firestore's lite SDK does not keep an offline write queue, so completed
 // sessions get a durable local entry first. Writes use a client-generated id,
@@ -111,6 +112,7 @@ export async function saveWorkoutLog(uid, log) {
 
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     if (!enqueue(entry)) throw new Error('Could not store this workout on the device')
+    track('workout_log_queued')
     return { queued: true, id: entry.id }
   }
 
@@ -119,7 +121,9 @@ export async function saveWorkoutLog(uid, log) {
     return { queued: false, id: entry.id }
   } catch (error) {
     console.warn('Workout log write failed; keeping it on this device.', error)
+    track('firestore_write_failed', { collection: 'workouts' })
     if (!enqueue(entry)) throw new Error('Could not store this workout on the device')
+    track('workout_log_queued')
     return { queued: true, id: entry.id }
   }
 }
@@ -140,6 +144,7 @@ export async function flushWorkoutLogQueue(uid) {
       synced += 1
     } catch (error) {
       console.warn('Workout log sync paused; will retry when online.', error)
+      track('firestore_write_failed', { collection: 'workouts' })
       break
     }
   }

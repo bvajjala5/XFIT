@@ -15,6 +15,7 @@ import { shareCustomWorkout } from '@/lib/workoutShareLink'
 import { seedWorkouts } from '@/lib/seedWorkouts'
 import { fetchCustomWorkouts, fetchWorkoutLibrary } from '@/lib/workoutCache'
 import { getPendingWorkoutLogs, WORKOUT_LOGS_CHANGED } from '@/lib/workoutLogQueue'
+import { track } from '@/lib/usageAnalytics'
 import DailyCheckIn from '@/components/home/DailyCheckIn'
 import GoalsTrackerButton from '@/components/home/GoalsTrackerButton'
 import { getDailyQuote } from '@/components/home/DailyQuote'
@@ -79,6 +80,8 @@ export default function Home() {
     setSharingId(w.id)
     try {
       const result = await shareCustomWorkout(w)
+      // Only `channel` is allowlisted; the raw share result is never recorded.
+      track('custom_workout_shared', { channel: 'link' })
       if (result === 'copied') toast.success('Workout link copied — send it to anyone')
       else if (result === 'failed') toast.error('Could not share workout')
     } finally {

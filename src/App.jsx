@@ -25,6 +25,7 @@ const WorkoutHistory = lazy(() => import('@/pages/WorkoutHistory'))
 const Community = lazy(() => import('@/pages/Community'))
 const Run = lazy(() => import('@/pages/Run'))
 const Demo = lazy(() => import('@/pages/Demo'))
+const AIUpgrade = lazy(() => import('@/pages/AIUpgrade'))
 
 function LoadingScreen() {
   return (
@@ -110,6 +111,7 @@ export default function App() {
         <Route path="workouts/:id" element={<Suspense fallback={<PageLoader />}><WorkoutDetail /></Suspense>} />
         <Route path="plan" element={<Suspense fallback={<PageLoader />}><WeeklyPlan /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+        <Route path="ai-upgrade" element={<Suspense fallback={<PageLoader />}><AIUpgrade /></Suspense>} />
         <Route path="insights" element={<Suspense fallback={<PageLoader />}><Insights /></Suspense>} />
         <Route path="health" element={<HealthRedirect />} />
         <Route path="builder" element={<Suspense fallback={<PageLoader />}><CustomWorkoutBuilder /></Suspense>} />

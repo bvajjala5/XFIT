@@ -25,6 +25,7 @@ const COUNT_LABELS = {
   checkins: 'Check-ins',
   followers: 'Followers',
   customFoods: 'Custom foods',
+  analyticsDays: 'Analytics days',
 }
 
 export default function UserDrawer({ uid, onClose, onChanged, onError }) {

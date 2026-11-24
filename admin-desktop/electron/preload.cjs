@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('admin', {
   isDesktop: true,
   config: () => ipcRenderer.invoke('admin:config'),
   overview: () => ipcRenderer.invoke('admin:overview'),
+  analytics: () => ipcRenderer.invoke('admin:analytics'),
   listUsers: (params) => ipcRenderer.invoke('admin:listUsers', params),
   getUser: (uid) => ipcRenderer.invoke('admin:getUser', uid),
   setRole: (uid, role) => ipcRenderer.invoke('admin:setRole', uid, role),

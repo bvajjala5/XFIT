@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Polyline, Circle, useMap } from 'react-leaflet
 import { Button } from '@/components/ui/button'
 import { formatDistance, formatPace, normalizeDistanceUnit, paceLabel, splitLabel, splitMeters, unitConfig } from '@/lib/distanceUnits'
 import { Play, Pause, Square, Navigation, Footprints, Flame } from 'lucide-react'
+import { track } from '@/lib/usageAnalytics'
 import 'leaflet/dist/leaflet.css'
 
 // Map auto-pan to latest position
@@ -183,6 +184,7 @@ export default function RunTracker({ onComplete, onStatusChange, fullScreen = fa
   }, [status])
 
   function startRun() {
+    track('run_started', { source: 'gps' })
     startTimeRef.current = Date.now()
     positionsRef.current = []
     distanceRef.current = 0
