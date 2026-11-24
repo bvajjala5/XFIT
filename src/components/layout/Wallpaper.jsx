@@ -50,7 +50,7 @@ export default function Wallpaper() {
     <div
       aria-hidden="true"
       data-wallpaper={wallpaper}
-      className={`fixed inset-0 z-0 pointer-events-none wallpaper wallpaper-${wallpaper}`}
+      className={`fixed inset-0 -z-10 pointer-events-none wallpaper wallpaper-${wallpaper}`}
       style={style}
     >
       <span className="wallpaper-layer wallpaper-layer-base" />

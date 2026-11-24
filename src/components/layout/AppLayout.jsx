@@ -107,8 +107,10 @@ export default function AppLayout() {
   // The coach lives in the app chrome on every tab: the sidebar logo on desktop
   // and the first slot of the mobile tab bar, before Home. Full-screen sessions
   // such as /player/* and /run render outside this layout.
+  // No opaque background on the root: the fixed wallpaper paints at -z-10,
+  // behind all page content, with the html element supplying the fallback colour.
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Wallpaper />
       <InstallBanner />
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />

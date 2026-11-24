@@ -111,8 +111,11 @@
 
   * { @apply border-border; }
 
+  /* Keep the body transparent: the fixed wallpaper paints at -z-10 above the
+     html fallback colour but below in-flow content. An opaque body background
+     here would cover the wallpaper entirely. */
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
