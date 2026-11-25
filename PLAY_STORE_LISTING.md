@@ -35,7 +35,7 @@ Console account, store screenshots, and a reviewer test account. The 1024×500 f
 > - Offline workout logging and a one-tap JSON data export
 > - Dark, light, and automatic wallpapers
 >
-> Core fitness tools are free to use, with no ads. Optional Uttar AI credit upgrades are available on the web; this Android build does not process payments. Sign in with Google to keep your data across devices.
+> Uttar Fitness is free to use, with no ads, subscriptions, or in-app payments. Uttar AI is included free. Sign in with Google to keep your data across devices.
 >
 > This version does not include Health Connect, Apple Health, or automatic Strava sync. You can import run files instead. Location is used only while a run is being recorded. Form-check camera frames are sent securely to the AI provider for analysis and are not stored by Uttar Fitness.
 >
@@ -71,6 +71,6 @@ Play Console and give them working credentials:
 
 > Email: `<fill in>`  
 > Password: `<fill in>`  
-> Notes: Sign in with Google. Sample data is fine; no payment is required. Uttar AI upgrades are informational in this Android build.
+> Notes: Sign in with Google. Sample data is fine. No payment or purchase is required.
 
 Do not use a personal account with real training history.
