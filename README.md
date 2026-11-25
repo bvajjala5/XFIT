@@ -34,9 +34,8 @@ for the full list. The important groups:
 - `VITE_FIREBASE_VAPID_KEY` — web push certificate. Leave blank to disable push.
 - `VITE_DEV_UID` — your own Auth UID, used only for dev tools / seeding. Real
   admin access is enforced in `firestore.rules`.
-- `VITE_AI_PROXY_URL` — URL of the deployed AI proxy Worker. No Gemini, Stripe,
-  or billing key ever goes in this app. The Worker reports Uttar AI usage and
-  handles optional Stripe-hosted checkout; see `worker/README.md` for setup.
+- `VITE_AI_PROXY_URL` — URL of the deployed AI proxy Worker. No Gemini or billing
+  key ever goes in this app. Uttar AI is included free; see `worker/README.md` for setup.
 
 ## Scripts
 

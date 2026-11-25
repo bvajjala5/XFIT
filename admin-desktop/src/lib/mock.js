@@ -137,17 +137,11 @@ function analytics() {
         successes: 1607,
         failures: 235,
         rateLimits: 58,
-        limitReached: 96,
         successRate: 87.2,
         estimatedTokens: 2_438_400,
         estimatedCostUsd: 0.18288,
         tokenRatePerMillion: 0.075,
         modeTokens: { chat: 1_238_400, workout: 1_080_000, formcheck: 96_000, other: 24_000 },
-        upgradeViews: 314,
-        checkoutStarts: 41,
-        planGrants: 29,
-        billingNote:
-          'Exact billing and quota live in Stripe/Gemini. KV-backed server entitlements are not readable by this desktop app.',
       },
       engagement: {
         available: true,

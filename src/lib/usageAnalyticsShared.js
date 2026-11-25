@@ -50,10 +50,6 @@ export const EVENT_ALLOWLIST = Object.freeze({
   ai_request_success: ['mode'],
   ai_request_failure: ['mode'],
   ai_rate_limited: [],
-  ai_limit_reached: [],
-  ai_upgrade_viewed: ['placement', 'platform'],
-  ai_checkout_started: ['plan'],
-  ai_plan_granted: ['plan'],
   firestore_write_failed: ['collection'],
 })
 

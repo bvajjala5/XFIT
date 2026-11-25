@@ -123,9 +123,8 @@ Estimated AI cost is intentionally an **estimate**: requests are multiplied by
 mode buckets (chat 1,200; workout/plan 2,000; formcheck 320 tokens) and priced at
 `ADMIN_ANALYTICS_TOKEN_COST_PER_MILLION` (default `0.075` USD per 1M tokens — a
 conservative Gemini-style number). Set that env var in `.env` to change the rate.
-Exact billing/quota lives in Stripe/Gemini; KV-backed server entitlements are not
-readable by this desktop app. `ADMIN_ANALYTICS_MAX_DOCS` can lower the per-collection
-read limit (default 20,000).
+Exact billing lives in the Google Cloud dashboard. `ADMIN_ANALYTICS_MAX_DOCS` can lower
+the per-collection read limit (default 20,000).
 
 ---
 

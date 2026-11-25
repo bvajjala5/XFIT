@@ -14,8 +14,7 @@ export default function Terms() {
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">2. Use of Service</h2><ul className="list-disc pl-5 space-y-1"><li>Uttar Fitness is a fitness tracking application for personal use</li><li>You must provide accurate information when creating your account</li><li>You must not use Uttar Fitness for any unlawful purpose</li></ul></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">3. Health Disclaimer</h2><p>Uttar Fitness is not a medical application. Always consult a qualified healthcare professional before starting any fitness program.</p></section>
         <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">4. AI Features</h2><p>The custom workout builder uses Google Gemini AI to turn text you submit into a structured workout. Responses are AI-generated and should not replace professional medical or fitness advice.</p></section>
-        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">5. Optional Uttar AI purchases</h2><p>Core Uttar Fitness features stay free. Optional monthly plans and one-time credit packs can add more Uttar AI requests and tokens. Prices are shown before payment, payments are processed by Stripe, and Uttar Fitness never stores card details. Purchases are not refundable except where required by law. Android builds do not process in-app payments yet.</p></section>
-        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">6. Contact</h2><p>Questions? Email us at bhanu.charan.vajjala@gmail.com</p></section>
+        <section className="space-y-2"><h2 className="text-base font-semibold text-foreground">5. Contact</h2><p>Questions? Email us at bhanu.charan.vajjala@gmail.com</p></section>
       </main>
     </div>
   );

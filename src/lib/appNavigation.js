@@ -67,13 +67,6 @@ export const APP_DESTINATIONS = [
     keywords: ['stats', 'statistics', 'progress', 'charts', 'trend', 'streak', 'volume'],
   },
   {
-    path: '/ai-upgrade',
-    label: 'Get more Uttar AI',
-    title: 'More Uttar AI',
-    description: 'See your remaining Uttar AI allowance and, on the web, buy a monthly plan or a one-time top-up. The Android build shows a web-only note until in-app purchases are added.',
-    keywords: ['get more', 'more uttar ai', 'uttar ai upgrade', 'upgrade uttar ai', 'upgrade', 'subscription', 'allowance', 'quota', 'top up', 'top-up', 'more requests', 'run out', 'running out', 'billing', 'paid plan', 'purchase'],
-  },
-  {
     path: '/profile#profile-settings',
     label: 'Go to Profile settings',
     title: 'Profile · Profile Settings',
@@ -91,7 +84,7 @@ export const APP_DESTINATIONS = [
     path: '/profile',
     label: 'Open profile',
     title: 'Profile',
-    description: 'Account overview, profile settings, theme, a Get more Uttar AI shortcut, workout history, personal records, legal links, sign out, and delete account.',
+    description: 'Account overview, profile settings, theme, workout history, personal records, legal links, sign out, and delete account.',
     keywords: ['profile', 'account', 'sign out', 'logout', 'log out', 'delete account', 'my account'],
   },
   {
@@ -152,10 +145,6 @@ const ALIASES = {
   '/profile/settings': '/profile#profile-settings',
   '/profile#settings': '/profile#profile-settings',
   '/account/settings': '/profile#profile-settings',
-  '/upgrade': '/ai-upgrade',
-  '/subscription': '/ai-upgrade',
-  '/billing': '/ai-upgrade',
-  '/more-ai': '/ai-upgrade',
   '/theme': '/profile#app-theme',
   '/profile#theme': '/profile#app-theme',
   '/appearance': '/profile#app-theme',

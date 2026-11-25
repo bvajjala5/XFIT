@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Capacitor } from '@capacitor/core'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw, X,
-  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight, Zap,
+  Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import GlassCard from '@/components/shared/GlassCard'
@@ -16,8 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/AuthContext'
-import { callAIWithUsage, fetchAIUsage } from '@/lib/ai'
-import { track } from '@/lib/usageAnalytics'
+import { callAI } from '@/lib/ai'
 import { parseAIResponse } from '@/lib/aiPlanParse'
 import { saveAIWeeklyPlan, saveAIWorkout } from '@/lib/aiPlans'
 import {
@@ -36,7 +34,6 @@ const SUGGESTIONS = [
   { mode: 'chat', icon: Utensils, title: 'Nutrition help', text: 'High-protein breakfast ideas under 400 calories' },
   { mode: 'chat', icon: Activity, title: 'Ask about recovery', text: 'How should I train when my legs are still sore?' },
   { mode: 'chat', icon: Compass, title: 'Find a feature', text: 'How do I change my app theme?' },
-  { mode: 'chat', icon: Zap, title: 'More Uttar AI', text: 'How do I get more Uttar AI when I run out?' },
   { mode: 'chat', icon: Activity, title: 'Where is my history?', text: 'Where can I see my workout history?' },
 ]
 
@@ -46,7 +43,7 @@ Style: warm, direct, and practical. Prefer short paragraphs and compact bullet l
 Safety: you are not a doctor. Do not diagnose. For chest pain, fainting, severe shortness of breath, head injury, or suspected fracture, tell them to stop and seek medical care. Pregnancy, eating disorders, and medical conditions need a clinician.
 Scope: stay on health and fitness; if asked something unrelated, answer briefly and steer back. Questions about where something is in this app are always in scope.
 The app can save workouts and weekly plans. When the person wants one, explain that you can build it and ask them to tap Workout or Weekly plan below. Never output workout JSON in chat mode; the only structured block you may output is the navigation block described below.
-Uttar AI has a usage allowance shown at the bottom of this sheet. When asked how to get more Uttar AI, say: open Uttar AI, tap "Get more" next to the remaining requests, and review the plan or top-up options there. On the web, purchases happen at /ai-upgrade; in the Android build that page is informational until in-app billing is added. Never say responses refresh automatically, that access is unlimited, or that subscriptions are managed in account settings. All non-AI features stay free.
+Uttar AI is included free with every account; there are no paid plans, subscriptions, top-ups, or upgrade screens. If asked how to get more Uttar AI, say it is already included and no purchase is needed. If a request is temporarily busy or rate-limited, suggest waiting a minute and trying again. Never mention payments, account settings, or a premium tier.
 
 You know exactly where everything lives in this app:
 ${APP_GUIDE}
@@ -264,7 +261,6 @@ export default function UttarAI({ onClose }) {
   const [input, setInput] = useState('')
   const [mode, setMode] = useState('chat')
   const [busy, setBusy] = useState(false)
-  const [usage, setUsage] = useState(null)
   const [savingId, setSavingId] = useState(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
@@ -285,12 +281,6 @@ export default function UttarAI({ onClose }) {
       // Storage can be full or disabled; the chat still works for this session.
     }
   }, [messages, storageKey])
-
-  useEffect(() => {
-    let alive = true
-    fetchAIUsage().then((result) => { if (alive) setUsage(result) })
-    return () => { alive = false }
-  }, [])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -342,14 +332,13 @@ export default function UttarAI({ onClose }) {
 
     try {
       if (selectedMode === 'chat') {
-        const { text: reply, usage: nextUsage } = await callAIWithUsage({
+        const reply = await callAI({
           system: systemFor('chat'),
           messages: historyFrom(nextMessages),
           maxTokens: 1200,
           allowMock: false,
           mode: 'chat',
         })
-        if (nextUsage) setUsage(nextUsage)
         // The model can end its reply with a <nav> block. Strip it before it is
         // rendered and turn it into validated destination buttons. If the model
         // forgets the block, the local keyword matcher still offers a way there.
@@ -364,14 +353,13 @@ export default function UttarAI({ onClose }) {
           navActions,
         }])
       } else {
-        const { text: reply, usage: nextUsage } = await callAIWithUsage({
+        const reply = await callAI({
           system: systemFor(selectedMode),
           messages: historyFrom(nextMessages),
           maxTokens: 2000,
           allowMock: false,
           mode: selectedMode,
         })
-        if (nextUsage) setUsage(nextUsage)
         const parsed = parseAIResponse(reply)
 
         if (!parsed) {
@@ -404,9 +392,8 @@ export default function UttarAI({ onClose }) {
       }
     } catch (err) {
       console.error('Uttar AI request failed', err)
-      if (err?.usage) setUsage(err.usage)
-      const friendly = err?.code === 'AI_LIMIT_REACHED'
-        ? "You've used this month's Uttar AI allowance. You can still use every other Uttar Fitness feature — tap Get more if you'd like extra AI requests."
+      const friendly = err?.code === 'AI_RATE_LIMITED'
+        ? 'That was a lot of requests at once. Give it a minute and try again.'
         : /failed to fetch|network/i.test(err?.message || '')
           ? 'I could not reach the AI coach. Check your connection and try again.'
           : err?.message || 'Something went wrong. Please try again.'
@@ -472,16 +459,6 @@ export default function UttarAI({ onClose }) {
     navigate(path)
   }
 
-  const remainingLabel = usage
-    ? (usage.persisted === false ? 'Preview allowance' : `${usage.requestsRemaining ?? 0} left`)
-    : 'Uttar AI'
-
-  function openUpgrade() {
-    track('ai_upgrade_viewed', { placement: 'sheet', platform: Capacitor?.isNativePlatform?.() ? 'android' : 'web' })
-    if (typeof onClose === 'function') onClose()
-    navigate('/ai-upgrade')
-  }
-
   const placeholder = mode === 'chat'
     ? 'Ask about training, nutrition, recovery, or form…'
     : mode === 'plan'
@@ -503,22 +480,6 @@ export default function UttarAI({ onClose }) {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={openUpgrade}
-            className="hidden items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
-            title="Get more Uttar AI requests"
-          >
-            <Zap className="h-3 w-3" /> {remainingLabel} · Get more
-          </button>
-          <button
-            type="button"
-            onClick={openUpgrade}
-            className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary sm:hidden"
-            aria-label="Get more Uttar AI"
-          >
-            <Zap className="h-3 w-3" /> More
-          </button>
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground" onClick={clearChat} aria-label="New chat">
               <RotateCcw className="h-4 w-4" />

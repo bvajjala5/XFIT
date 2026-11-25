@@ -54,7 +54,7 @@ Use these as the starting point, then check each answer against the shipped buil
 - **Purpose:** app functionality and personalization. Not used for advertising, not sold.
 - **Processing:** data is transmitted over HTTPS and stored in Firebase. Run files are parsed on the device before any confirmed rows are saved.
 - **Camera:** frames are sent over HTTPS to the AI provider for form feedback and are not retained by Uttar Fitness.
-- **Purchases:** optional Uttar AI upgrades use Stripe hosted checkout on the web only. The Android build shows an informational screen and does not process payments.
+- **Purchases:** none. Uttar Fitness has no in-app payments, subscriptions, or paid tiers; Uttar AI is included free.
 - **Deletion:** in-app account deletion plus the privacy policy URL.
 
 ## Assets still to produce

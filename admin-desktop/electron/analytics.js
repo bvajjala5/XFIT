@@ -46,9 +46,6 @@ const SAFE_PROPS = Object.freeze([
   'appVersion',
 ])
 
-const BILLING_NOTE =
-  'Exact billing and quota live in Stripe/Gemini. KV-backed server entitlements are not readable by this desktop app.'
-
 /* ── Small helpers ──────────────────────────────────────────────────────── */
 
 function round(value, digits = 1) {
@@ -336,16 +333,11 @@ function buildUttarAi(telemetry) {
     successes: count(telemetry, 'ai_request_success'),
     failures: count(telemetry, 'ai_request_failure'),
     rateLimits: count(telemetry, 'ai_rate_limited'),
-    limitReached: count(telemetry, 'ai_limit_reached'),
     successRate: null,
     estimatedTokens: null,
     estimatedCostUsd: null,
     tokenRatePerMillion: TOKEN_RATE,
     modeTokens: {},
-    upgradeViews: count(telemetry, 'ai_upgrade_viewed'),
-    checkoutStarts: count(telemetry, 'ai_checkout_started'),
-    planGrants: count(telemetry, 'ai_plan_granted'),
-    billingNote: BILLING_NOTE,
   })
 
   const requests = section.requests

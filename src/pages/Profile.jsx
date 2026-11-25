@@ -14,7 +14,7 @@ import { avatarImageUrl } from '@/lib/avatarUrl';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download, Database, FileSpreadsheet, Sparkles, Zap } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download, Database, FileSpreadsheet } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { track } from '@/lib/usageAnalytics';
@@ -257,23 +257,6 @@ export default function Profile() {
         </div>
         <p className="text-[10px] leading-relaxed text-muted-foreground">
           Dark and Light stay put. Auto switches to Light at 7am and Dark at 7pm, with a smooth fade.
-        </p>
-      </GlassCard>
-      <GlassCard id="uttar-ai" className={`space-y-2 scroll-mt-24 transition-shadow ${location.hash === '#uttar-ai' ? 'ring-2 ring-primary/60' : ''}`}>
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <div className="text-sm font-semibold">Uttar AI</div>
-        </div>
-        <Link
-          to="/ai-upgrade"
-          onClick={() => track('ai_upgrade_viewed', { placement: 'profile' })}
-          className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"
-        >
-          <span className="flex items-center gap-3"><Zap className="w-4 h-4 text-muted-foreground" /> Get more Uttar AI</span>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </Link>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Your remaining requests show at the bottom of the Uttar AI sheet. Plans and one-time top-ups are available on the web; the Android build shows details only until in-app billing is added.
         </p>
       </GlassCard>
           <GlassCard id="advanced-data" className="space-y-2 scroll-mt-24">

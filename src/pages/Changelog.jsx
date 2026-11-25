@@ -22,7 +22,7 @@ const RELEASES = [
       'Shared workout links open a preview anyone can add to their own workouts. The link carries the workout itself, so nothing is published to the community list without your say-so.',
       'Removed an invalid metadata link and added a real Android asset-links file so app links and a TWA can verify.',
       'Import and export tools now live under Profile → Advanced / Data tools instead of cluttering the Run and Workouts screens. Native health sync will stay opt-in and permission-based when it ships.',
-      'Uttar AI now shows your remaining requests and tokens. You can add a monthly upgrade or a one-time top-up on the web through Stripe-hosted checkout; Android builds stay payment-free until Play Billing is ready.',
+      'Uttar AI stays included with every account — no payment, subscription, or top-up is required.',
       'Added an Admin Control Hub analytics view for AI usage, engagement, retention, runs, nutrition, reliability and safety. Health data appears only as counts — never raw values.',
     ],
   },

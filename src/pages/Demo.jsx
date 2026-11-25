@@ -90,7 +90,7 @@ const NAV_TO_TAB = { home: 'home', insights: 'insights', workouts: 'workouts', p
 
 const THEME_LABELS = { cosmic: 'Dark mode', alabaster: 'Light mode', auto: 'Auto mode' }
 
-// Premium-feature previews, deep-linkable by key. The title is used for the
+// Feature previews, deep-linkable by key. The title is used for the
 // preview heading.
 const PREVIEWS = {
   barcode: { title: 'Barcode scanning' },
@@ -296,7 +296,7 @@ export default function Demo() {
                 </button>
               </div>
               <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
-                Preview only — nothing is saved. Optional Uttar AI upgrades are available on the web.
+                Preview only — nothing is saved. Sign in to use these features with your own data.
               </p>
             </div>
 
@@ -318,7 +318,7 @@ export default function Demo() {
           <div ref={previewRef} id="demo-preview" className="mt-8 scroll-mt-24">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Premium feature preview</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Feature preview</p>
                 <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">{PREVIEWS[preview].title}</h2>
               </div>
               <div className="flex items-center gap-2">

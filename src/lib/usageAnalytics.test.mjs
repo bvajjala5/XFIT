@@ -56,6 +56,6 @@ test('allowlist contains only count-safe product events', () => {
   const names = Object.keys(EVENT_ALLOWLIST)
   assert.ok(names.includes('app_opened'))
   assert.ok(names.includes('health_permission_granted'))
-  assert.ok(names.includes('ai_limit_reached'))
+  assert.ok(names.includes('ai_rate_limited'))
   assert.ok(!names.some((name) => /message|content|value|note|email|uid/i.test(name)))
 })

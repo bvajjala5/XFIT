@@ -203,10 +203,6 @@ export default function Analytics({ refreshKey, onError }) {
           <Metric label="Successes" value={ai.successes} tone="green" />
           <Metric label="Failures" value={ai.failures} tone="red" />
           <Metric label="Rate limits" value={ai.rateLimits} tone="amber" />
-          <Metric label="Limit reached" value={ai.limitReached} tone="amber" />
-          <Metric label="Upgrade views" value={ai.upgradeViews} tone="purple" />
-          <Metric label="Checkout starts" value={ai.checkoutStarts} tone="purple" />
-          <Metric label="Plan grants / top-ups" value={ai.planGrants} tone="purple" />
           <Metric label="Est. tokens" value={ai.estimatedTokens} format={fmt.tokens} tone="cyan" icon={BarChart3} />
           <Metric
             label="Est. cost"
@@ -225,13 +221,12 @@ export default function Analytics({ refreshKey, onError }) {
           <div className="card">
             <div className="card-head">
               <div>
-                <h2 className="card-title">Cost &amp; quota disclaimer</h2>
+                <h2 className="card-title">Cost estimate</h2>
                 <p className="card-sub">How to read these numbers</p>
               </div>
               <Info size={15} className="card-head-icon" />
             </div>
             <div className="analytics-notes">
-              <Note tone="warning" icon={AlertTriangle}>{ai.billingNote}</Note>
               <Note tone="info">
                 Token and cost figures are an <strong>estimate only</strong>, based on mode buckets and the configurable
                 <code> ADMIN_ANALYTICS_TOKEN_COST_PER_MILLION</code> rate. They are not an invoice.

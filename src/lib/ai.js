@@ -159,13 +159,10 @@ async function getMockResponse(prompt = '') {
   return JSON.stringify(workout);
 }
 
-const proxyBase = () => (PROXY_URL || '').replace(/\/+$/, '');
-
-function aiError(message, status = 0, code = '', usage = null) {
+function aiError(message, status = 0, code = '') {
   const error = new Error(message);
   error.status = status;
   error.code = code;
-  error.usage = usage;
   return error;
 }
 
@@ -179,51 +176,9 @@ export function isAIProxyConfigured() {
   return Boolean(PROXY_URL && !PROXY_URL.includes('your-proxy-url'));
 }
 
-/** Read the server-authoritative allowance. Returns null when unavailable. */
-export async function fetchAIUsage() {
-  if (!isAIProxyConfigured()) return null;
-  try {
-    const token = await idToken();
-    const res = await fetch(`${proxyBase()}/usage`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.usage || null;
-  } catch {
-    return null;
-  }
-}
-
-/** Start a Stripe hosted checkout. Only called from web builds. */
-export async function startAIUpgrade(kind, returnPath = '/ai-upgrade') {
-  if (!isAIProxyConfigured()) throw aiError('Uttar AI checkout is not configured yet.', 503);
-  const token = await idToken();
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const res = await fetch(`${proxyBase()}/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({
-      kind,
-      successUrl: `${origin}${returnPath}`,
-      cancelUrl: `${origin}${returnPath}`,
-    }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.url) throw aiError(data?.error || `Checkout error ${res.status}`, res.status);
-  track('ai_checkout_started', { plan: kind });
-  return data.url;
-}
-
 // allowMock: workout building can fall back to the local generator, but the conversational
 // coach must never pretend a failed request was answered, so chat passes false.
-export async function callAI(options) {
-  const result = await callAIWithUsage(options);
-  return result.text;
-}
-
-/** Low-level call that returns both the reply and the latest server usage. */
-export async function callAIWithUsage({
+export async function callAI({
   system,
   messages,
   maxTokens = 1000,
@@ -234,7 +189,7 @@ export async function callAIWithUsage({
   const userPrompt = messages?.find((m) => m.role === 'user')?.content || '';
 
   if (!isAIProxyConfigured()) {
-    if (allowMock) return { text: await getMockResponse(userPrompt), usage: null };
+    if (allowMock) return await getMockResponse(userPrompt);
     throw aiError('The AI coach is not configured. Add VITE_AI_PROXY_URL.', 503);
   }
 
@@ -252,9 +207,8 @@ export async function callAIWithUsage({
     if (!res.ok) {
       const code = data?.code || '';
       if (res.status === 429) track('ai_rate_limited', {});
-      else if (code === 'AI_LIMIT_REACHED') track('ai_limit_reached', {});
       else track('ai_request_failure', { mode });
-      throw aiError(data?.error || `AI error ${res.status}`, res.status, code, data?.usage || null);
+      throw aiError(data?.error || `AI error ${res.status}`, res.status, code);
     }
     if (!data.text) {
       track('ai_request_failure', { mode });
@@ -262,13 +216,13 @@ export async function callAIWithUsage({
     }
 
     track('ai_request_success', { mode });
-    return { text: data.text, usage: data.usage || null };
+    return data.text;
   } catch (err) {
     if (err.code) throw err;
     track('ai_request_failure', { mode });
     if (err.message?.includes('sign in')) throw err;
     if (!allowMock) throw err;
     console.warn('AI request failed, falling back to mock:', err);
-    return { text: await getMockResponse(userPrompt), usage: null };
+    return await getMockResponse(userPrompt);
   }
 }
