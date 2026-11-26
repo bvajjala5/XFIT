@@ -16,6 +16,23 @@ Do not start v3 feature work until v2 passes:
 - Workout, food, run import, AI, and Profile → Advanced data tools work
 - No blocking crashes or ANRs
 
+## Open QA item: Pixel 10a tester report
+
+An internal tester using the Play internal link reported:
+
+- “Doesn’t let you log in”
+- “Blocks out everything on the top left and right corners”
+
+Status: **unconfirmed / awaiting screenshot**.
+
+- Play Console confirms v2 is Active / Latest release / version code 2; v1 is Inactive.
+- Local emulator sign-in passed with the final APK.
+- BrowserStack sign-in failure was explained by no Google credential on the remote device; its corner overlays are BrowserStack UI, not the app.
+- If the tester was on v1, updating should resolve it.
+- If on v2 with a Google account signed in, screenshot + device details are needed before any code change.
+
+Do not rebuild or publish in response to this report until it is confirmed.
+
 ## Competitive lens: Critique AI
 
 Why people like it:
