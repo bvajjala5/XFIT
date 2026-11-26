@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
+import { registerPlugin } from '@capacitor/core';
 import { clearAppCaches } from './cache';
 import { clearSessionHint, hasSessionHint, markSessionHint } from './session';
 import { isNativeApp } from './platform';
@@ -31,18 +32,23 @@ function getAuthApi() {
   return authApiPromise;
 }
 
-// The native Firebase Auth plugin is only loaded inside the Android wrapper.
-// Keeping it lazy means the public website never downloads the native bridge.
-let nativeAuthApiPromise = null;
-function getNativeAuthApi() {
-  if (!nativeAuthApiPromise) {
-    nativeAuthApiPromise = import('@capacitor-firebase/authentication')
-      .then(({ FirebaseAuthentication }) => FirebaseAuthentication);
-  }
-  return nativeAuthApiPromise;
-}
+// Register the native bridge directly from Capacitor core. Importing the
+// plugin's JS wrapper would add a lazy chunk that the Android WebView never
+// finishes fetching; registerPlugin is already in the main bundle and only
+// resolves a method when a native call is actually made.
+// Do not wrap the plugin proxy in a Promise: Capacitor's proxy treats every
+// property access (including `then`) as a native method call, so awaiting the
+// proxy directly would never settle. Call its methods directly instead.
+const nativeFirebaseAuthentication = registerPlugin('FirebaseAuthentication');
 
 const AuthContext = createContext();
+
+function withTimeout(promise, ms, stage) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: ${stage}`)), ms)),
+  ]);
+}
 
 // Analytics is loaded on demand: an anonymous visitor should not fetch
 // Firestore/Auth SDKs just to count an app open.
@@ -174,8 +180,9 @@ export const AuthProvider = ({ children }) => {
       // The Android wrapper uses the system Google account picker instead of
       // a WebView popup. Feed the returned Google ID token to the Firebase JS
       // SDK so the rest of the app keeps using one auth state.
-      const FirebaseAuthentication = await getNativeAuthApi();
-      const result = await FirebaseAuthentication.signInWithGoogle();
+      // The system account picker can require password/consent screens, so
+      // allow enough time for a person to finish the Google flow.
+      const result = await withTimeout(nativeFirebaseAuthentication.signInWithGoogle(), 180000, 'native-signin');
       const idToken = result?.credential?.idToken;
       if (!idToken) throw new Error('Google sign-in did not return an ID token');
       const credential = api.GoogleAuthProvider.credential(
@@ -198,8 +205,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     if (isNativeApp()) {
       try {
-        const FirebaseAuthentication = await getNativeAuthApi();
-        await FirebaseAuthentication.signOut();
+        await nativeFirebaseAuthentication.signOut();
       } catch (err) {
         console.warn('native auth sign-out failed:', err);
       }

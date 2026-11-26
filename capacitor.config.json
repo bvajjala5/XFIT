@@ -3,7 +3,6 @@
   "appName": "Uttar Fitness",
   "webDir": "dist",
   "server": {
-    "url": "https://xfit-bpe.pages.dev",
     "androidScheme": "https",
     "allowNavigation": [
       "xfit-bpe.pages.dev",

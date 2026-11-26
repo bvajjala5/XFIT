@@ -28,14 +28,15 @@ Those values are set in `android/build.gradle` and `android/variables.gradle` an
 were compiled successfully. Capacitor 7 requires **JDK 21** (JDK 17 fails with
 `invalid source release: 21`).
 
-The wrapper loads the live PWA URL instead of a bundled copy of `dist`. That keeps
-Google sign-in on the Firebase-authorized domain. It also means the app needs a
-network connection for fresh data; the PWA service worker still provides offline
-app-shell caching inside the WebView.
+The wrapper bundles `dist` locally instead of loading the live PWA URL. Native
+Google sign-in now calls the Capacitor bridge directly from the main JS bundle;
+a `server.url` pointing at the deployed site made the WebView load the public
+bundle and skip native auth fixes, so keep it out of `capacitor.config.json`.
+The public website remains at the URL above and is unchanged.
 
 ## What is already wired
 
-- `capacitor.config.json` — app ID, app name, live URL, and OAuth navigation allowlist.
+- `capacitor.config.json` — app ID, app name, local web assets, and OAuth navigation allowlist.
 - `android/` — generated Capacitor Android project.
 - `android/app/src/main/AndroidManifest.xml` — INTERNET, CAMERA, and coarse/fine location permissions.
 - `android/app/build.gradle` — optional release signing from an untracked `android/keystore.properties`.
@@ -59,7 +60,9 @@ website keeps its landing page. On native, Google sign-in uses the system Google
 account picker through `@capacitor-firebase/authentication`, then passes the
 returned ID token to the Firebase JS SDK so the rest of the app keeps using one
 auth state. This avoids the WebView OAuth handoff that Google rejects with a
-malformed-request error. The launch icon and splash screen are generated from
+malformed-request error. `AuthContext` registers the bridge from `@capacitor/core`
+instead of lazily importing the plugin JS, so the native call cannot stall behind
+a missing chunk. The launch icon and splash screen are generated from
 `public/icons/icon-512.png` by `scripts/generate-android-assets.mjs`, which runs
 at the end of `npm run cap:sync`.
 
@@ -78,11 +81,12 @@ rather than one. All three are registered; refresh `google-services.json` from
 Firebase console → Project settings → Your apps if another key is added. Without
 these fingerprints, Play-installed builds cannot sign in.
 
-Functional sign-in still needs a physical device check. The Android emulator in
-this environment has a broken Chrome/Google OAuth handoff: the native account
-sheet either never appears or lands on Google's `Error 400 (Bad Request)` page.
-This is an emulator limitation, not a WebView redirect; do not publish until the
-real-device sign-in check passes.
+Native Google sign-in was verified on the local Android emulator with the
+reviewer account `uttarfitness5@gmail.com`: the system account sheet appears,
+the ID token is handed to Firebase JS, and the app opens the signed-in Home
+screen. Earlier BrowserStack/emulator hangs were caused by the WebView loading
+the deployed site instead of the bundled native assets. No password was pasted
+into chat or automation.
 
 ## Release build (already done on this machine)
 
@@ -111,8 +115,9 @@ cd android && ./gradlew bundleRelease --no-daemon
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (SHA-256
-`66593a6137120e418be6f81630167e14e65cc69ba9f8c023a04da72cff2e8da6`,
-`versionCode 2`). Signature verified with `jarsigner -verify`. Android Studio is
+`9296b9ee9124f850f796f79d82677274613c1ca74cc09abb8ebfbf57832cd253`,
+`versionCode 2`). The AAB signer was checked with `keytool -printcert -jarfile`;
+the APK's v2 signature was checked with `apksigner verify`. Android Studio is
 **not** required for this command. Run `./gradlew clean bundleRelease` if a
 previous build was interrupted, otherwise stale duplicated resources can fail
 resource validation.

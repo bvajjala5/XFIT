@@ -7,8 +7,15 @@ import path from 'node:path'
 const remove = (p) => fs.rmSync(path.resolve(p), { recursive: true, force: true })
 
 remove('android/app/src/main/assets/public')
-remove('android/app/src/main/assets/capacitor.config.json')
-remove('android/app/src/main/assets/capacitor.plugins.json')
+
+const assetsDir = path.resolve('android/app/src/main/assets')
+if (fs.existsSync(assetsDir)) {
+  for (const name of fs.readdirSync(assetsDir)) {
+    if (/^capacitor\.(config|plugins)( \d+)?\.json$/.test(name)) {
+      fs.rmSync(path.join(assetsDir, name))
+    }
+  }
+}
 
 const xmlDir = path.resolve('android/app/src/main/res/xml')
 if (fs.existsSync(xmlDir)) {
