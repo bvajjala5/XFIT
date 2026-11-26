@@ -8,11 +8,13 @@ import BrandMark from '@/components/brand/BrandMark';
 import GoogleIcon from '@/components/auth/GoogleIcon';
 import { applyResolvedTheme } from '@/lib/theme';
 import usePublicWallpaper from '@/hooks/usePublicWallpaper';
+import { isNativeApp } from '@/lib/platform';
 
 export default function Login() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, authError, clearAuthError } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const native = isNativeApp();
 
   // Login is public: always alabaster. usePublicWallpaper restores the saved
   // wallpaper when this page unmounts, so the app still honours the preference.
@@ -26,7 +28,7 @@ export default function Login() {
 
 
   const handleLogin = async () => {
-    setLoading(true); setError('');
+    setLoading(true); setError(''); clearAuthError();
     try { await signInWithGoogle(); }
     catch (err) {
       // Closing or cancelling the Google popup is a choice, not a failure.
@@ -45,10 +47,12 @@ export default function Login() {
       {/* Static, fixed-position wallpaper */}
       <Wallpaper />
 
-      <Link to="/" className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-        style={{ color: isDark ? '#94a3b8' : '#78716c' }}>
-        <ArrowLeft className="h-4 w-4" /> Back
-      </Link>
+      {!native && (
+        <Link to="/" className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          style={{ color: isDark ? '#94a3b8' : '#78716c' }}>
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Link>
+      )}
 
 
 
@@ -92,7 +96,7 @@ export default function Login() {
           <p className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Sign in to track your journey</p>
         </div>
 
-        {error && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error}</div>}
+        {(error || authError) && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error || authError}</div>}
 
         <button onClick={handleLogin} disabled={loading}
           className="w-full h-14 rounded-2xl bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-60">
@@ -102,10 +106,12 @@ export default function Login() {
           {loading ? 'Signing in…' : 'Continue with Google'}
         </button>
 
-        <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          style={{ borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.10)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)' }}>
-          Explore the demo first
-        </Link>
+        {!native && (
+          <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            style={{ borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.10)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)' }}>
+            Explore the demo first
+          </Link>
+        )}
 
         <p className="text-center text-xs" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>
           By continuing you agree to our{' '}

@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { clearAppCaches } from './cache';
 import { clearSessionHint, hasSessionHint, markSessionHint } from './session';
+import { isNativeApp } from './platform';
 
 // Load Firestore on demand. Anonymous visitors only need Auth to reach the login
 // screen, so the Firestore SDK stays out of the first-paint bundle.
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }) => {
   // actually have a session. Anonymous visitors get `loading: false` right
   // away, so the public landing page paints without waiting on Firebase.
   const [loading, setLoading] = useState(() => hasSessionHint());
+  const [authError, setAuthError] = useState('');
 
   const unsubRef = useRef(null);
   const startedRef = useRef(false);
@@ -74,6 +76,32 @@ export const AuthProvider = ({ children }) => {
       console.error('fetchUserData error:', err);
     }
   }, []);
+
+  // Shared by popup sign-in and the native redirect handoff. Creating the
+  // profile is idempotent: returning users keep their existing document.
+  const ensureUserDocument = useCallback(async (u) => {
+    markSessionHint();
+    const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
+    const ref = doc(db, 'users', u.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        email: u.email,
+        full_name: u.displayName || '',
+        profile_picture: u.photoURL || '',
+        fitness_goal: '',
+        experience_level: '',
+        preferred_types: [],
+        distance_unit: 'miles',
+        goals: {},
+        journal_entries: [],
+        onboarding_complete: false,
+        createdAt: serverTimestamp(),
+      });
+      trackEvent('signup_completed');
+    }
+    await fetchUserData(u.uid, u);
+  }, [fetchUserData]);
 
   // Attach the Firebase auth listener. Idempotent, and deliberately lazy:
   // returning visitors (a session hint exists) restore immediately, while
@@ -113,7 +141,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     cancelledRef.current = false;
-    if (hasSessionHint()) ensureAuth();
+    // Native has no session hint on a fresh install, but it still needs the
+    // listener so a completed redirect restores the signed-in session.
+    if (hasSessionHint() || isNativeApp()) ensureAuth();
     return () => {
       cancelledRef.current = true;
       unsubRef.current?.();
@@ -122,36 +152,44 @@ export const AuthProvider = ({ children }) => {
     };
   }, [ensureAuth]);
 
+  // A native redirect reloads the WebView. Pick up the result on the way back
+  // and finish the same profile setup the popup path uses on the website.
+  useEffect(() => {
+    if (!isNativeApp()) return undefined;
+    let cancelled = false;
+    getAuthApi()
+      .then(async ({ auth, getRedirectResult }) => {
+        const result = await getRedirectResult(auth);
+        if (cancelled || !result?.user) return;
+        await ensureUserDocument(result.user);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('auth redirect error:', err);
+        setAuthError('Google sign-in could not be completed. Please try again.');
+      });
+    return () => { cancelled = true; };
+  }, [ensureUserDocument]);
+
   const signInWithGoogle = async () => {
-    const { auth, googleProvider, signInWithPopup } = await getAuthApi();
-    // Start tracking auth before the popup so the resolved session lands in
+    const api = await getAuthApi();
+    // Start tracking auth before the handoff so the resolved session lands in
     // context (and localStorage gets the hint) even on a first-time visit.
     ensureAuth();
-    const result = await signInWithPopup(auth, googleProvider);
-    const { user: u } = result;
-    markSessionHint();
-    const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
-    const ref = doc(db, 'users', u.uid);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        email: u.email,
-        full_name: u.displayName || '',
-        profile_picture: u.photoURL || '',
-        fitness_goal: '',
-        experience_level: '',
-        preferred_types: [],
-        distance_unit: 'miles',
-        goals: {},
-        journal_entries: [],
-        onboarding_complete: false,
-        createdAt: serverTimestamp(),
-      });
-      trackEvent('signup_completed');
+    setAuthError('');
+    if (isNativeApp()) {
+      // Firebase popups are unreliable in the Android WebView; a full-page
+      // redirect survives the trip through accounts.google.com.
+      await api.signInWithRedirect(api.auth, api.googleProvider);
+      return null;
     }
-    await fetchUserData(u.uid);
+    const result = await api.signInWithPopup(api.auth, api.googleProvider);
+    const u = result.user;
+    await ensureUserDocument(u);
     return u;
   };
+
+  const clearAuthError = () => setAuthError('');
 
   const logout = async () => {
     const { auth, signOut } = await getAuthApi();
@@ -174,7 +212,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, ensureAuth, signInWithGoogle, logout, updateUserData, refreshUserData,
+    <AuthContext.Provider value={{ user, userData, loading, authError, clearAuthError, ensureAuth, signInWithGoogle, logout, updateUserData, refreshUserData,
       // Aliases used by pages
       userDoc: userData, updateUserDoc: updateUserData, refreshUserDoc: refreshUserData,
     }}>

@@ -7,6 +7,7 @@ import Login from '@/pages/Login'
 import Landing from '@/pages/Landing'
 import BrandLoader from '@/components/brand/BrandLoader'
 import { hasSessionHint } from '@/lib/session'
+import { isNativeApp } from '@/lib/platform'
 
 const Home = lazy(() => import('@/pages/Home'))
 const WorkoutsAndRun = lazy(() => import('@/pages/WorkoutsAndRun'))
@@ -56,6 +57,13 @@ function AuthGuard({ children }) {
 function PublicHome() {
   const { user, loading } = useAuth()
   const [sessionHint] = useState(hasSessionHint)
+
+  // The packaged app is a fitness app, not a marketing site. Signed-out users
+  // start at /login; the public website keeps its landing page.
+  if (isNativeApp()) {
+    if (loading) return <LoadingScreen />
+    return <Navigate to={user ? '/home' : '/login'} replace />
+  }
 
   if (loading && sessionHint) return <LoadingScreen />
   if (user) return <Navigate to="/home" replace />

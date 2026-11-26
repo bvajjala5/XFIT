@@ -3,9 +3,10 @@
 The browser app and installable PWA remain the primary product. This folder adds a
 Capacitor shell so the same app can be offered in Google Play later.
 
-**Current state:** a signed release AAB has been built on this machine and is ready
-to upload. Nothing has been submitted to Play Console. The AAB is generated output
-(git-ignored), so rebuild it from source if you move to another machine.
+**Current state:** a signed release AAB (`versionCode 2`) has been built on this
+machine for the next internal-test upload. The first `versionCode 1` build is
+already published to internal testing. The AAB is generated output (git-ignored),
+so rebuild it from source if you move to another machine.
 
 Everything below is editable before the first release. The package ID is the one
 thing that becomes effectively permanent once the app is published.
@@ -51,11 +52,15 @@ npm run cap:open:android  # opens the native project in Android Studio
 
 `npm run cap:sync` is safe to rerun after any web change.
 
-## Known limitation to verify on device
+## Native-only behaviour
 
-The web app signs in with Firebase's `signInWithPopup`. Android WebViews do not
-always open that popup. If Google sign-in does not work in the wrapper, switch
-that call to `signInWithRedirect` (or use `@capacitor/browser`) before release.
+The packaged app opens straight to `/login` for signed-out users; the public
+website keeps its landing page. On native, Google sign-in uses Firebase
+`signInWithRedirect` because WebViews can drop `signInWithPopup`. The launch icon
+and splash screen are generated from `public/icons/icon-512.png` by
+`scripts/generate-android-assets.mjs`, which runs at the end of `npm run cap:sync`.
+
+The redirect handoff still needs a real device check with a tester account.
 The OAuth domains are already in the `capacitor.config.json` allowlist.
 
 ## Release build (already done on this machine)
@@ -85,9 +90,11 @@ cd android && ./gradlew bundleRelease --no-daemon
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (SHA-256
-`01fa3795e373d751a3c05fed66cb40a7cc42cc94ae900587f6d4fd65d594937b`).
-Signature verified with `jarsigner -verify`. Android Studio is **not** required
-for this command.
+`ac1d808f6fde61f0d1908160fef5db524aec490bc6f58af4883665756b8c5dbe`,
+`versionCode 2`). Signature verified with `jarsigner -verify`. Android Studio is
+**not** required for this command. Run `./gradlew clean bundleRelease` if a
+previous build was interrupted, otherwise stale duplicated resources can fail
+resource validation.
 
 To upload from Android Studio instead, use **Build → Generate Signed Bundle /
 APK → Android App Bundle** and select the release signing config.
