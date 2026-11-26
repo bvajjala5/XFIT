@@ -39,6 +39,8 @@ Console account, store screenshots, and a reviewer test account. The 1024×500 f
 >
 > This version does not include Health Connect, Apple Health, or automatic Strava sync. You can import run files instead. Location is used only while a run is being recorded. Form-check camera frames are sent securely to the AI provider for analysis and are not stored by Uttar Fitness.
 >
+> Uttar Fitness is a general fitness and wellness tool, not a medical device. It does not diagnose, treat, cure, or prevent any disease or medical condition.
+>
 > Privacy policy: https://xfit-bpe.pages.dev/privacy
 
 ## What's new (first release)
