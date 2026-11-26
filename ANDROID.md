@@ -81,8 +81,8 @@ cd android && ./gradlew bundleRelease --no-daemon
 ```
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
-(4.0 MB, SHA-256
-`f607efe570bf368d2edd51648d68c5862a27e15b52f027f44bf0547c6c1b7ce7`).
+(SHA-256
+`43ef2a0547bcc9a737382a9124dc30094a327225e0d98f537b5aec1d9ec97aeb`).
 Signature verified with `jarsigner -verify`. Android Studio is **not** required
 for this command.
 
@@ -93,12 +93,12 @@ Before creating the Play app, decide whether to keep this upload key. Enrolling 
 Play App Signing means Google replaces it with the app-signing key after the first
 upload, but the upload key must still be kept safe.
 
-`public/.well-known/assetlinks.json` uses the local release certificate above so
-App Links and a TWA verify during local/device testing. After the first Play
-upload, copy the **app signing key certificate** SHA-256 fingerprint from Play
-Console → App integrity and add a second entry to that file. Play signs updates
-with that key, not the upload key, so both entries are needed once App Signing is
-active.
+`public/.well-known/assetlinks.json` lists both the local release upload
+certificate above and the Play App Signing certificate
+(`57:D6:E8:C5:7F:1A:26:88:A3:A6:87:0F:66:8D:AC:8D:07:45:C0:3D:F7:70:CE:4C:92:46:6D:9A:3F:2A:F2:FF`)
+copied from Play Console → App integrity, so App Links and a TWA verify in
+local/device testing and with Play-signed builds. Keep both entries: Play signs
+updates with the app signing key, not the upload key.
 
 ## Play Console listing
 
