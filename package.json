@@ -14,6 +14,7 @@
     "test": "node --test src/lib/workoutTracking.test.mjs src/lib/poseCounter.test.mjs src/lib/goalsTracker.test.mjs src/lib/appNavigation.test.mjs src/lib/theme.test.mjs src/lib/publicWallpaper.test.mjs src/lib/distanceUnits.test.mjs src/lib/workoutValidation.test.mjs src/lib/barcode.test.mjs src/lib/foodSearch.test.mjs src/lib/foodCorrections.test.mjs src/lib/dataExport.test.mjs src/lib/csvImport.test.mjs src/lib/activityFiles.test.mjs src/lib/workoutShareLink.test.mjs src/lib/avatarUrl.test.mjs src/lib/exerciseLookup.test.mjs src/lib/aiPlanParse.test.mjs src/lib/usageAnalytics.test.mjs worker/auth.test.mjs"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^7.5.0",
     "@capacitor/android": "^7.6.10",
     "@capacitor/core": "^7.6.10",
     "@mediapipe/tasks-vision": "^1.2.3",

@@ -55,13 +55,20 @@ npm run cap:open:android  # opens the native project in Android Studio
 ## Native-only behaviour
 
 The packaged app opens straight to `/login` for signed-out users; the public
-website keeps its landing page. On native, Google sign-in uses Firebase
-`signInWithRedirect` because WebViews can drop `signInWithPopup`. The launch icon
-and splash screen are generated from `public/icons/icon-512.png` by
-`scripts/generate-android-assets.mjs`, which runs at the end of `npm run cap:sync`.
+website keeps its landing page. On native, Google sign-in uses the system Google
+account picker through `@capacitor-firebase/authentication`, then passes the
+returned ID token to the Firebase JS SDK so the rest of the app keeps using one
+auth state. This avoids the WebView OAuth handoff that Google rejects with a
+malformed-request error. The launch icon and splash screen are generated from
+`public/icons/icon-512.png` by `scripts/generate-android-assets.mjs`, which runs
+at the end of `npm run cap:sync`.
 
-The redirect handoff still needs a real device check with a tester account.
-The OAuth domains are already in the `capacitor.config.json` allowlist.
+Firebase has an Android app registered as `com.uttar.fitness` with the upload
+certificate SHA-1 `A5:01:B1:CA:0C:00:01:A3:EE:E2:4C:E0:7E:D0:C4:7F:8C:22:C0:64`.
+Before publishing a Play-signed build, also add the Play App Signing SHA-1 in
+Firebase console → Project settings → Your apps → Android app → SHA certificate
+fingerprints, then download the refreshed `google-services.json`. Without it,
+Play-installed builds cannot sign in.
 
 ## Release build (already done on this machine)
 
@@ -90,7 +97,7 @@ cd android && ./gradlew bundleRelease --no-daemon
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (SHA-256
-`ac1d808f6fde61f0d1908160fef5db524aec490bc6f58af4883665756b8c5dbe`,
+`66593a6137120e418be6f81630167e14e65cc69ba9f8c023a04da72cff2e8da6`,
 `versionCode 2`). Signature verified with `jarsigner -verify`. Android Studio is
 **not** required for this command. Run `./gradlew clean bundleRelease` if a
 previous build was interrupted, otherwise stale duplicated resources can fail

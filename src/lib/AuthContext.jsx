@@ -31,6 +31,17 @@ function getAuthApi() {
   return authApiPromise;
 }
 
+// The native Firebase Auth plugin is only loaded inside the Android wrapper.
+// Keeping it lazy means the public website never downloads the native bridge.
+let nativeAuthApiPromise = null;
+function getNativeAuthApi() {
+  if (!nativeAuthApiPromise) {
+    nativeAuthApiPromise = import('@capacitor-firebase/authentication')
+      .then(({ FirebaseAuthentication }) => FirebaseAuthentication);
+  }
+  return nativeAuthApiPromise;
+}
+
 const AuthContext = createContext();
 
 // Analytics is loaded on demand: an anonymous visitor should not fetch
@@ -77,8 +88,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Shared by popup sign-in and the native redirect handoff. Creating the
-  // profile is idempotent: returning users keep their existing document.
+  // Shared by web popup sign-in and the native Credential Manager handoff.
+  // Creating the profile is idempotent: returning users keep their document.
   const ensureUserDocument = useCallback(async (u) => {
     markSessionHint();
     const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
@@ -142,7 +153,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     cancelledRef.current = false;
     // Native has no session hint on a fresh install, but it still needs the
-    // listener so a completed redirect restores the signed-in session.
+    // listener so a restored IndexedDB session is picked up.
     if (hasSessionHint() || isNativeApp()) ensureAuth();
     return () => {
       cancelledRef.current = true;
@@ -152,37 +163,30 @@ export const AuthProvider = ({ children }) => {
     };
   }, [ensureAuth]);
 
-  // A native redirect reloads the WebView. Pick up the result on the way back
-  // and finish the same profile setup the popup path uses on the website.
-  useEffect(() => {
-    if (!isNativeApp()) return undefined;
-    let cancelled = false;
-    getAuthApi()
-      .then(async ({ auth, getRedirectResult }) => {
-        const result = await getRedirectResult(auth);
-        if (cancelled || !result?.user) return;
-        await ensureUserDocument(result.user);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error('auth redirect error:', err);
-        setAuthError('Google sign-in could not be completed. Please try again.');
-      });
-    return () => { cancelled = true; };
-  }, [ensureUserDocument]);
-
   const signInWithGoogle = async () => {
     const api = await getAuthApi();
     // Start tracking auth before the handoff so the resolved session lands in
     // context (and localStorage gets the hint) even on a first-time visit.
     ensureAuth();
     setAuthError('');
+
     if (isNativeApp()) {
-      // Firebase popups are unreliable in the Android WebView; a full-page
-      // redirect survives the trip through accounts.google.com.
-      await api.signInWithRedirect(api.auth, api.googleProvider);
-      return null;
+      // The Android wrapper uses the system Google account picker instead of
+      // a WebView popup. Feed the returned Google ID token to the Firebase JS
+      // SDK so the rest of the app keeps using one auth state.
+      const FirebaseAuthentication = await getNativeAuthApi();
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      const idToken = result?.credential?.idToken;
+      if (!idToken) throw new Error('Google sign-in did not return an ID token');
+      const credential = api.GoogleAuthProvider.credential(
+        idToken,
+        result.credential.accessToken || undefined,
+      );
+      const u = (await api.signInWithCredential(api.auth, credential)).user;
+      await ensureUserDocument(u);
+      return u;
     }
+
     const result = await api.signInWithPopup(api.auth, api.googleProvider);
     const u = result.user;
     await ensureUserDocument(u);
@@ -192,6 +196,14 @@ export const AuthProvider = ({ children }) => {
   const clearAuthError = () => setAuthError('');
 
   const logout = async () => {
+    if (isNativeApp()) {
+      try {
+        const FirebaseAuthentication = await getNativeAuthApi();
+        await FirebaseAuthentication.signOut();
+      } catch (err) {
+        console.warn('native auth sign-out failed:', err);
+      }
+    }
     const { auth, signOut } = await getAuthApi();
     await clearAppCaches();
     await signOut(auth);

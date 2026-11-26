@@ -31,8 +31,12 @@ export default function Login() {
     setLoading(true); setError(''); clearAuthError();
     try { await signInWithGoogle(); }
     catch (err) {
-      // Closing or cancelling the Google popup is a choice, not a failure.
-      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      // Closing the web popup or cancelling the native account picker is a
+      // choice, not a failure.
+      const cancelled = err?.code === 'auth/popup-closed-by-user'
+        || err?.code === 'auth/cancelled-popup-request'
+        || /cancel(?:l)?ed/i.test(err?.message || '');
+      if (cancelled) {
         setLoading(false);
         return;
       }
