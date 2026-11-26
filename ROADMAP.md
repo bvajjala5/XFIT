@@ -83,12 +83,38 @@ Ranked by impact, effort, and risk.
    - Last, after retention is proven.
    - No upfront gate, upgrade screens, quotas, or subscription pressure before value is clear.
 
+## Activity Unlock — future research notes
+
+Parked for the later OS-level version of Focus Mode. Not in v3 scope.
+
+How similar screen-time fitness blockers work:
+
+- **App selection:** user chooses distracting apps such as social media, games, or streaming services.
+- **Enforcement:**
+  - iOS: integrate with Apple's Screen Time API / device-management family APIs to limit or block selected apps.
+  - Android: foreground service plus `TYPE_APPLICATION_OVERLAY` to detect the blocked app and show a lock screen over it.
+- **Strict mode / bypass prevention:** removing a restriction may require a cool-down timer, a heavier penalty set, or approval from a trusted friend.
+- **Activity-based unlock:** when the user wants more access, the gate opens the camera and verifies a countable movement.
+- **Pose detection:** on-device skeletal tracking of head, shoulders, elbows, wrists, hips, and knees validates full-range reps in real time.
+- **Reps-to-time conversion:** each verified rep grants a configurable amount of screen time, e.g. 1 push-up = 1 minute.
+- **Supported activities for Uttar:** any activity the counter can reliably verify — push-ups, squats, planks, and similar bodyweight movements — configurable by the user.
+
+Uttar guardrails when this is eventually built:
+
+- Camera use must be explicit opt-in with a clear explanation.
+- Pose detection and frame processing stay on-device; no video upload and no stored frames.
+- Only derived unlock events and rep counts may be stored; no raw health values in Firestore or admin analytics.
+- Show honest permission prompts; do not present OS-level locking as a normal in-app feature.
+- Validate Play policy and Accessibility/overlay permissions before implementation.
+- Keep a simple manual check-in fallback for users who do not want camera access.
+
 ## Explicit non-goals for now
 
 - No paywall, subscription, quota, or upgrade UI/endpoints for Uttar AI
 - No silent health reads; explicit permission required
 - No raw health values in analytics/admin views
 - No OS-level app locking in v3
+- No camera-based rep verification in v3; Focus Mode starts with manual check-ins
 - No fake community activity
 - No Firestore rules changes or deploy without explicit approval
 - No Play review, closed testing rollout, or production rollout without explicit approval
