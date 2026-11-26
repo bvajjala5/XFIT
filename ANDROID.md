@@ -70,6 +70,12 @@ Firebase console → Project settings → Your apps → Android app → SHA cert
 fingerprints, then download the refreshed `google-services.json`. Without it,
 Play-installed builds cannot sign in.
 
+Functional sign-in still needs a physical device check. The Android emulator in
+this environment has a broken Chrome/Google OAuth handoff: the native account
+sheet either never appears or lands on Google's `Error 400 (Bad Request)` page.
+This is an emulator limitation, not a WebView redirect; do not publish until the
+real-device sign-in check passes.
+
 ## Release build (already done on this machine)
 
 The local toolchain was installed with Homebrew: `openjdk@21`, the
