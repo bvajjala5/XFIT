@@ -14,11 +14,35 @@
       },
       "oauth_client": [
         {
+          "client_id": "694479131683-7dcq4r72l04nded5ocs3fab86n0gtsv8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.uttar.fitness",
+            "certificate_hash": "37f609c0e10976ef3d6c6975607b97ecae09c0f8"
+          }
+        },
+        {
+          "client_id": "694479131683-gl1621uu3b7ud5ptcv1m2iq3iuckm32g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.uttar.fitness",
+            "certificate_hash": "141adfd7dde6fa419f1ca8b3b77fccf917bc99bd"
+          }
+        },
+        {
           "client_id": "694479131683-npn7db3pvuq2qp3tpeo0spac4lalk2tm.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.uttar.fitness",
             "certificate_hash": "a501b1ca0c0001a3eee24ce07ed0c47f8c22c064"
+          }
+        },
+        {
+          "client_id": "694479131683-ntvc39vdsgnqqjm4frsa8njv6na23lt6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.uttar.fitness",
+            "certificate_hash": "98fa105a6ea5b2a49f4cce8932628068cb663f20"
           }
         },
         {

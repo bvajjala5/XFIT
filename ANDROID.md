@@ -63,12 +63,20 @@ malformed-request error. The launch icon and splash screen are generated from
 `public/icons/icon-512.png` by `scripts/generate-android-assets.mjs`, which runs
 at the end of `npm run cap:sync`.
 
-Firebase has an Android app registered as `com.uttar.fitness` with the upload
-certificate SHA-1 `A5:01:B1:CA:0C:00:01:A3:EE:E2:4C:E0:7E:D0:C4:7F:8C:22:C0:64`.
-Before publishing a Play-signed build, also add the Play App Signing SHA-1 in
-Firebase console → Project settings → Your apps → Android app → SHA certificate
-fingerprints, then download the refreshed `google-services.json`. Without it,
-Play-installed builds cannot sign in.
+Firebase has an Android app registered as `com.uttar.fitness`, and
+`android/app/google-services.json` is downloaded from it. All four SHA-1
+certificate fingerprints are registered there so both locally signed and
+Play-signed builds can use Google sign-in:
+
+- Upload key: `A5:01:B1:CA:0C:00:01:A3:EE:E2:4C:E0:7E:D0:C4:7F:8C:22:C0:64`
+- Play previous app signing key: `98:FA:10:5A:6E:A5:B2:A4:9F:4C:CE:89:32:62:80:68:CB:66:3F:20`
+- Play current classical key: `14:1A:DF:D7:DD:E6:FA:41:9F:1C:A8:B3:B7:7F:CC:F9:17:BC:99:BD`
+- Play post-quantum key: `37:F6:09:C0:E1:09:76:EF:3D:6C:69:75:60:7B:97:EC:AE:09:C0:F8`
+
+Play enabled quantum-ready hybrid signing, so there are three app-signing keys
+rather than one. All three are registered; refresh `google-services.json` from
+Firebase console → Project settings → Your apps if another key is added. Without
+these fingerprints, Play-installed builds cannot sign in.
 
 Functional sign-in still needs a physical device check. The Android emulator in
 this environment has a broken Chrome/Google OAuth handoff: the native account
@@ -116,12 +124,11 @@ Before creating the Play app, decide whether to keep this upload key. Enrolling 
 Play App Signing means Google replaces it with the app-signing key after the first
 upload, but the upload key must still be kept safe.
 
-`public/.well-known/assetlinks.json` lists both the local release upload
-certificate above and the Play App Signing certificate
-(`57:D6:E8:C5:7F:1A:26:88:A3:A6:87:0F:66:8D:AC:8D:07:45:C0:3D:F7:70:CE:4C:92:46:6D:9A:3F:2A:F2:FF`)
-copied from Play Console → App integrity, so App Links and a TWA verify in
-local/device testing and with Play-signed builds. Keep both entries: Play signs
-updates with the app signing key, not the upload key.
+`public/.well-known/assetlinks.json` lists the local release upload certificate
+above and all three Play app-signing certificates from Play Console → Protected
+with Play → Play Store protection → Manage Play app signing, so App Links and a
+TWA verify in local/device testing and with Play-signed builds. Keep all entries:
+Play signs updates with its app-signing keys, not the upload key.
 
 ## Play Console listing
 
