@@ -64,6 +64,9 @@ The local toolchain was installed with Homebrew: `openjdk@21`, the
 `android-commandlinetools` cask, and SDK platform 36, build-tools 36.0.0 and
 platform-tools under `$HOME/Android/Sdk`. SDK licenses were accepted.
 
+`android/variables.gradle` sets `minSdkVersion = 24`. Play automatic protection
+rejects bundles below API 24, so keep this minimum for store uploads.
+
 An upload key and local signing config were created:
 
 - Keystore: `$HOME/keys/uttar-fitness-release.jks` (git-ignored)
@@ -82,7 +85,7 @@ cd android && ./gradlew bundleRelease --no-daemon
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (SHA-256
-`43ef2a0547bcc9a737382a9124dc30094a327225e0d98f537b5aec1d9ec97aeb`).
+`01fa3795e373d751a3c05fed66cb40a7cc42cc94ae900587f6d4fd65d594937b`).
 Signature verified with `jarsigner -verify`. Android Studio is **not** required
 for this command.
 

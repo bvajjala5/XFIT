@@ -1,5 +1,6 @@
 ext {
-    minSdkVersion = 23
+    // Play automatic protection requires minSdkVersion 24 or higher.
+    minSdkVersion = 24
     // Google Play requires new apps and updates to target API 36 (Android 16).
     compileSdkVersion = 36
     targetSdkVersion = 36
