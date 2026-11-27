@@ -240,237 +240,239 @@ export default function Demo() {
           </p>
         </div>
 
-        <section
-          aria-labelledby="demo-scope-title"
-          className="mt-10 rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md sm:p-6"
-        >
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What&rsquo;s interactive in this demo</p>
-          <h2 id="demo-scope-title" className="mt-2 text-lg font-black leading-tight sm:text-xl">Know what you can tap before you start</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            The one reason to come back is the guided workout player — timers, sets, rest, and optional voice cues so you&rsquo;re not counting reps in your head. Everything else feeds into it. Here&rsquo;s what this no-account demo covers.
-          </p>
+        <div className="mt-10 flex flex-col gap-8">
+          <section
+            aria-labelledby="demo-scope-title"
+            className="order-2 rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md sm:p-6 lg:order-1"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What&rsquo;s interactive in this demo</p>
+            <h2 id="demo-scope-title" className="mt-2 text-lg font-black leading-tight sm:text-xl">Know what you can tap before you start</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              The one reason to come back is the guided workout player — timers, sets, rest, and optional voice cues so you&rsquo;re not counting reps in your head. Everything else feeds into it. Here&rsquo;s what this no-account demo covers.
+            </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold text-[hsl(var(--success-text))]">
-                <Check className="h-4 w-4" /> Fully interactive
-              </p>
-              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
-                <li>Home — complete the sample workout</li>
-                <li>Insights — switch Health/Stats, log a day, change the range</li>
-                <li>Workouts — search and filter the library</li>
-                <li>Profile — preview Dark, Light, and Auto wallpapers</li>
-              </ul>
-            </div>
-
-            <div className="flex flex-col rounded-2xl border border-border/50 bg-background/40 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold">
-                <Sparkles className="h-4 w-4 text-primary" /> Featured tools
-              </p>
-              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
-                <li>Uttar AI — ask it preloaded questions</li>
-                <li>Barcode scanning — every state, including no match</li>
-                <li>Form check — what it can and can&rsquo;t detect</li>
-              </ul>
-              <div className="mt-3 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPreview('ai')}
-                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  Open Uttar AI preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreview('barcode')}
-                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  Open barcode preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreview('form-check')}
-                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  Open form-check preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-                </button>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-4">
+                <p className="flex items-center gap-2 text-sm font-bold text-[hsl(var(--success-text))]">
+                  <Check className="h-4 w-4" /> Fully interactive
+                </p>
+                <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>Home — complete the sample workout</li>
+                  <li>Insights — switch Health/Stats, log a day, change the range</li>
+                  <li>Workouts — search and filter the library</li>
+                  <li>Profile — preview Dark, Light, and Auto wallpapers</li>
+                </ul>
               </div>
-              <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
-                Preview only — nothing is saved. Sign in to use these features with your own data.
-              </p>
-            </div>
 
-            <div className="rounded-2xl border border-border/50 bg-background/40 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold">
-                <Lock className="h-4 w-4 text-primary" /> Needs the signed-in app
-              </p>
-              <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
-                <li>Real sessions and the guided player</li>
-                <li>GPS run tracking with maps</li>
-                <li>Uttar AI using your history</li>
-                <li>Saving your data, offline sync, and account persistence</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {preview ? (
-          <div ref={previewRef} id="demo-preview" className="mt-8 scroll-mt-24">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Feature preview</p>
-                <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">{PREVIEWS[preview].title}</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={copyPreviewLink}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  <Link2 className="h-4 w-4" /> Copy link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreview(null)}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  <ArrowLeft className="h-4 w-4" /> Back to the demo
-                </button>
-              </div>
-            </div>
-            <div className="mt-5">
-              {preview === 'barcode' && <BarcodePreview />}
-              {preview === 'form-check' && <FormCheckPreview />}
-              {preview === 'ai' && <AIPreview />}
-            </div>
-          </div>
-        ) : (
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
-          <div>
-            <div
-              role="tablist"
-              aria-label="Demo screens"
-              tabIndex={-1}
-              onKeyDown={handleTabKeyDown}
-              className="mb-3 flex gap-1 rounded-2xl border border-border/50 bg-card/60 p-1 backdrop-blur-md"
-            >
-              {TABS.map(({ key, label, icon: Icon }) => {
-                const selected = key === tab
-                return (
+              <div className="flex flex-col rounded-2xl border border-border/50 bg-background/40 p-4">
+                <p className="flex items-center gap-2 text-sm font-bold">
+                  <Sparkles className="h-4 w-4 text-primary" /> Featured tools
+                </p>
+                <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>Uttar AI — preview preloaded questions; type your own in the app</li>
+                  <li>Barcode scanning — every state, including no match</li>
+                  <li>Form check — what it can and can&rsquo;t detect</li>
+                </ul>
+                <div className="mt-3 flex flex-col gap-2">
                   <button
-                    key={key}
-                    ref={(node) => { tabRefs.current[key] = node }}
                     type="button"
-                    role="tab"
-                    id={`demo-tab-${key}`}
-                    aria-selected={selected}
-                    aria-controls={selected ? `demo-panel-${key}` : undefined}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setTab(key)}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:text-sm ${selected ? 'bg-[hsl(var(--accent-solid))] text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}
+                    onClick={() => setPreview('ai')}
+                    className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span className="truncate">{label}</span>
+                    Open Uttar AI preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                   </button>
-                )
-              })}
+                  <button
+                    type="button"
+                    onClick={() => setPreview('barcode')}
+                    className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    Open barcode preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreview('form-check')}
+                    className="inline-flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-left text-xs font-semibold text-[hsl(var(--accent-text))] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    Open form-check preview <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+                </div>
+                <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+                  Preview only — nothing is saved. Sign in to use these features with your own data.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-border/50 bg-background/40 p-4">
+                <p className="flex items-center gap-2 text-sm font-bold">
+                  <Lock className="h-4 w-4 text-primary" /> Needs the signed-in app
+                </p>
+                <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                  <li>Real sessions and the guided player</li>
+                  <li>GPS run tracking with maps</li>
+                  <li>Uttar AI using your history</li>
+                  <li>Saving your data, offline sync, and account persistence</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {preview ? (
+            <div ref={previewRef} id="demo-preview" className="order-1 scroll-mt-24 lg:order-2">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">Feature preview</p>
+                  <h2 className="mt-1 text-xl font-black leading-tight sm:text-2xl">{PREVIEWS[preview].title}</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={copyPreviewLink}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    <Link2 className="h-4 w-4" /> Copy link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreview(null)}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/60 px-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Back to the demo
+                  </button>
+                </div>
+              </div>
+              <div className="mt-5">
+                {preview === 'barcode' && <BarcodePreview />}
+                {preview === 'form-check' && <FormCheckPreview />}
+                {preview === 'ai' && <AIPreview />}
+              </div>
+            </div>
+          ) : (
+          <div className="order-1 grid gap-6 lg:order-2 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+            <div>
+              <div
+                role="tablist"
+                aria-label="Demo screens"
+                tabIndex={-1}
+                onKeyDown={handleTabKeyDown}
+                className="mb-3 flex gap-1 rounded-2xl border border-border/50 bg-card/60 p-1 backdrop-blur-md"
+              >
+                {TABS.map(({ key, label, icon: Icon }) => {
+                  const selected = key === tab
+                  return (
+                    <button
+                      key={key}
+                      ref={(node) => { tabRefs.current[key] = node }}
+                      type="button"
+                      role="tab"
+                      id={`demo-tab-${key}`}
+                      aria-selected={selected}
+                      aria-controls={selected ? `demo-panel-${key}` : undefined}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => setTab(key)}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:text-sm ${selected ? 'bg-[hsl(var(--accent-solid))] text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="truncate">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <DemoFrame active={tab === 'player' ? null : tab} onNavigate={handleNavigate} theme={theme}>
+                <div
+                  role="tabpanel"
+                  id={`demo-panel-${tab}`}
+                  {...(tab === 'player'
+                    ? { 'aria-label': 'Demo workout player' }
+                    : { 'aria-labelledby': `demo-tab-${tab}` })}
+                  tabIndex={0}
+                  className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {tab === 'home' && (
+                    <HomeMock done={workoutDone} onToggleDone={toggleWorkout} onNavigate={handleNavigate} />
+                  )}
+                  {tab === 'insights' && insightsView === 'health' && (
+                    <InsightsHealthMock
+                      view="health"
+                      onView={setInsightsView}
+                      tab={healthTab}
+                      onTab={setHealthTab}
+                      onLog={() => toast.message('In the app this opens the health log sheet.')}
+                    />
+                  )}
+                  {tab === 'insights' && insightsView === 'stats' && (
+                    <InsightsStatsMock view="stats" onView={setInsightsView} range={statsRange} onRange={setStatsRange} />
+                  )}
+                  {tab === 'workouts' && (
+                    <WorkoutsMock
+                      search={workoutSearch}
+                      onSearch={setWorkoutSearch}
+                      type={workoutType}
+                      onType={setWorkoutType}
+                      difficulty={workoutDifficulty}
+                      onDifficulty={setWorkoutDifficulty}
+                      muscle={workoutMuscle}
+                      onMuscle={setWorkoutMuscle}
+                    />
+                  )}
+                  {tab === 'profile' && <ProfileMock theme={theme} onTheme={handleTheme} />}
+                  {tab === 'player' && (
+                    <WorkoutPlayerMock title={playerTitle} onExit={() => setTab('home')} />
+                  )}
+                </div>
+              </DemoFrame>
+
+              <div className="mt-3 flex flex-col items-center justify-between gap-2 px-1 text-xs text-muted-foreground sm:flex-row">
+                <p>Sample data only. Nothing is written to an account.</p>
+                <button
+                  type="button"
+                  onClick={resetDemo}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset demo
+                </button>
+              </div>
             </div>
 
-            <DemoFrame active={tab === 'player' ? null : tab} onNavigate={handleNavigate} theme={theme}>
-              <div
-                role="tabpanel"
-                id={`demo-panel-${tab}`}
-                {...(tab === 'player'
-                  ? { 'aria-label': 'Demo workout player' }
-                  : { 'aria-labelledby': `demo-tab-${tab}` })}
-                tabIndex={0}
-                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                {tab === 'home' && (
-                  <HomeMock done={workoutDone} onToggleDone={toggleWorkout} onNavigate={handleNavigate} />
-                )}
-                {tab === 'insights' && insightsView === 'health' && (
-                  <InsightsHealthMock
-                    view="health"
-                    onView={setInsightsView}
-                    tab={healthTab}
-                    onTab={setHealthTab}
-                    onLog={() => toast.message('In the app this opens the health log sheet.')}
-                  />
-                )}
-                {tab === 'insights' && insightsView === 'stats' && (
-                  <InsightsStatsMock view="stats" onView={setInsightsView} range={statsRange} onRange={setStatsRange} />
-                )}
-                {tab === 'workouts' && (
-                  <WorkoutsMock
-                    search={workoutSearch}
-                    onSearch={setWorkoutSearch}
-                    type={workoutType}
-                    onType={setWorkoutType}
-                    difficulty={workoutDifficulty}
-                    onDifficulty={setWorkoutDifficulty}
-                    muscle={workoutMuscle}
-                    onMuscle={setWorkoutMuscle}
-                  />
-                )}
-                {tab === 'profile' && <ProfileMock theme={theme} onTheme={handleTheme} />}
-                {tab === 'player' && (
-                  <WorkoutPlayerMock title={playerTitle} onExit={() => setTab('home')} />
+            <aside className="rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <ActiveIcon className="h-5 w-5" />
+              </span>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What you&rsquo;re seeing</p>
+              <h2 className="mt-2 text-lg font-black leading-tight">{active.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{active.copy}</p>
+
+              <ul className="mt-4 space-y-2">
+                {active.bullets.map((bullet) => (
+                  <li key={bullet} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                <p className="text-sm font-bold">Like what you see?</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {user
+                    ? 'You’re signed in, so your real dashboard is waiting.'
+                    : 'Create a free account and the demo is replaced by your own week.'}
+                </p>
+                {user ? (
+                  <Link to="/home" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">
+                    Back to my dashboard
+                  </Link>
+                ) : (
+                  <GoogleSignInButton className="mt-3" label="Continue with Google" variant="primary" />
                 )}
               </div>
-            </DemoFrame>
 
-            <div className="mt-3 flex flex-col items-center justify-between gap-2 px-1 text-xs text-muted-foreground sm:flex-row">
-              <p>Sample data only. Nothing is written to an account.</p>
-              <button
-                type="button"
-                onClick={resetDemo}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                <RotateCcw className="h-3 w-3" /> Reset demo
-              </button>
-            </div>
+              <Link to="/" className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                <ArrowLeft className="h-3 w-3" /> Back to the overview
+              </Link>
+            </aside>
           </div>
-
-          <aside className="rounded-3xl border border-border/50 bg-card/60 p-5 backdrop-blur-md">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <ActiveIcon className="h-5 w-5" />
-            </span>
-            <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What you&rsquo;re seeing</p>
-            <h2 className="mt-2 text-lg font-black leading-tight">{active.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{active.copy}</p>
-
-            <ul className="mt-4 space-y-2">
-              {active.bullets.map((bullet) => (
-                <li key={bullet} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/5 p-4">
-              <p className="text-sm font-bold">Like what you see?</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {user
-                  ? 'You’re signed in, so your real dashboard is waiting.'
-                  : 'Create a free account and the demo is replaced by your own week.'}
-              </p>
-              {user ? (
-                <Link to="/home" className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[hsl(var(--accent-solid))] px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:brightness-95">
-                  Back to my dashboard
-                </Link>
-              ) : (
-                <GoogleSignInButton className="mt-3" label="Continue with Google" variant="primary" />
-              )}
-            </div>
-
-            <Link to="/" className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-              <ArrowLeft className="h-3 w-3" /> Back to the overview
-            </Link>
-          </aside>
+          )}
         </div>
-        )}
       </main>
 
       <footer className="relative z-10 border-t border-border/40 bg-background/50 backdrop-blur-md">

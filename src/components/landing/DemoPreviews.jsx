@@ -578,7 +578,7 @@ export function AIPreview() {
 
         <div ref={scrollRef} className="h-[380px] space-y-3.5 overflow-y-auto p-3.5">
           <div className="rounded-2xl border border-border/50 bg-background/50 p-3 text-sm leading-relaxed">
-            Hey — I can answer health and nutrition questions, build a single workout, or set up your whole week. Pick a question below to see how I reply.
+            Hey — I can answer health and nutrition questions, build a single workout, or set up your whole week. Pick a question below to see how I reply. In the full app you can type your own.
           </div>
 
           {thread.map((message) => (
@@ -639,7 +639,9 @@ export function AIPreview() {
             ))}
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <span className="min-h-[40px] flex-1 rounded-xl border border-border/50 px-3 py-2.5 text-[11px] text-muted-foreground">Ask about training, nutrition, recovery, or form…</span>
+            <span className="flex min-h-[40px] flex-1 items-center gap-2 rounded-xl border border-border/50 px-3 py-2.5 text-[11px] text-muted-foreground">
+              <Keyboard className="h-3.5 w-3.5 shrink-0" /> Type your own questions in the full app
+            </span>
             <span className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[hsl(var(--accent-solid))] px-3 text-[11px] font-semibold text-primary-foreground"><Send className="h-3.5 w-3.5" /> Send</span>
           </div>
         </div>
@@ -650,7 +652,7 @@ export function AIPreview() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent-text))]">What it does</p>
           <h3 className="mt-2 text-lg font-black leading-tight">Ask in plain language, get a plan back</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Uttar AI is the AI coach built into the app. It reads your profile, training history, and nutrition log, then answers in plain language — or builds something you can save.
+            Uttar AI is the AI coach built into the app. It reads your profile, training history, and nutrition log, then answers in plain language — or builds something you can save. In the signed-in app you can type your own question.
           </p>
         </div>
 

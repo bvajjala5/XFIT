@@ -1,6 +1,6 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-26. Parked ideas only — no app code changes._
+_Last updated: 2026-11-27._
 
 ## Current gate: v2 internal testing
 
@@ -23,15 +23,29 @@ An internal tester using the Play internal link reported:
 - “Doesn’t let you log in”
 - “Blocks out everything on the top left and right corners”
 
-Status: **unconfirmed / awaiting screenshot**.
+Status: **lower risk / still awaiting screenshot**.
 
 - Play Console confirms v2 is Active / Latest release / version code 2; v1 is Inactive.
 - Local emulator sign-in passed with the final APK.
+- A second internal tester initially could not sign in, then succeeded after retrying / following the checklist. They were able to sign in and use the app.
 - BrowserStack sign-in failure was explained by no Google credential on the remote device; its corner overlays are BrowserStack UI, not the app.
-- If the tester was on v1, updating should resolve it.
-- If on v2 with a Google account signed in, screenshot + device details are needed before any code change.
+- If the Pixel tester was on v1, updating should resolve it.
+- If on v2 with a Google account signed in and still failing, screenshot + device details are needed before any code change.
 
 Do not rebuild or publish in response to this report until it is confirmed.
+
+## Reddit demo feedback — 2026-11-27
+
+Feedback from a Reddit reader after viewing the public demo:
+
+1. **Mobile `/demo` order:** the app frame started far below the explainer text on phones.
+   - Fixed: app frame / feature preview now comes first on small screens; explainer moves below it. Desktop order is unchanged.
+2. **AI preview mismatch:** copy said “plain language,” but only preset questions were available and the composer looked typeable.
+   - Fixed: intro and sidebar say you can type your own question in the signed-in app; the demo composer now reads “Type your own questions in the full app.”
+3. **Share preview:** `og:image` was the small square app icon.
+   - Fixed: added `public/og-image.png` (1200×630 product screenshot) and updated Open Graph / Twitter card meta tags.
+
+These are public-web-only changes. No native build or Play release was made.
 
 ## Competitive lens: Critique AI
 
