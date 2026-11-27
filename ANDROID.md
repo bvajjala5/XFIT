@@ -3,10 +3,10 @@
 The browser app and installable PWA remain the primary product. This folder adds a
 Capacitor shell so the same app can be offered in Google Play later.
 
-**Current state:** a signed release AAB (`versionCode 2`) has been built on this
-machine for the next internal-test upload. The first `versionCode 1` build is
-already published to internal testing. The AAB is generated output (git-ignored),
-so rebuild it from source if you move to another machine.
+**Current state:** a signed release AAB (`versionCode 3`) has been built on this
+machine and uploaded to Play closed testing as `Closed test 1.0`. Version codes 1
+and 2 are already published to internal testing. The AAB is generated output
+(git-ignored), so rebuild it from source if you move to another machine.
 
 Everything below is editable before the first release. The package ID is the one
 thing that becomes effectively permanent once the app is published.
@@ -18,7 +18,7 @@ thing that becomes effectively permanent once the app is published.
 | Package ID | `com.uttar.fitness` |
 | App name | Uttar Fitness |
 | Web URL | `https://xfit-bpe.pages.dev` |
-| Support email | the Google account already used for sign-in |
+| Support email | `bhanu.charan.vajjala@gmail.com` |
 | Privacy policy | `https://xfit-bpe.pages.dev/privacy` |
 | Data deletion URL | `https://xfit-bpe.pages.dev/privacy` |
 | Target API | 36 (Android 16), required for new Play submissions since Aug 31, 2026 |
@@ -110,17 +110,18 @@ The signed bundle was built with:
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 export ANDROID_HOME="$HOME/Android/Sdk" ANDROID_SDK_ROOT="$ANDROID_HOME"
-cd android && ./gradlew bundleRelease --no-daemon
+cd android && ./gradlew clean bundleRelease assembleRelease --no-daemon
 ```
 
 Result: `android/app/build/outputs/bundle/release/app-release.aab`
 (SHA-256
-`9296b9ee9124f850f796f79d82677274613c1ca74cc09abb8ebfbf57832cd253`,
-`versionCode 2`). The AAB signer was checked with `keytool -printcert -jarfile`;
-the APK's v2 signature was checked with `apksigner verify`. Android Studio is
-**not** required for this command. Run `./gradlew clean bundleRelease` if a
-previous build was interrupted, otherwise stale duplicated resources can fail
-resource validation.
+`3f6b35046ab44f260f7cecfcfebe281b03fc19f47dcb4af176e02da69db75f1e`,
+`versionCode 3`) and `android/app/build/outputs/apk/release/app-release.apk`
+(SHA-256 `b7f6a524cdba2116a6997e74f14963cdcf887a2e9d8cb0b5d42cdea8f4a90a61`).
+The AAB signer was checked with `keytool -printcert -jarfile`; the APK's v2
+signature was checked with `apksigner verify`. Android Studio is **not** required
+for this command. Always use `clean`; interrupted builds left duplicate resource
+files with spaces in their names, which otherwise fail resource validation.
 
 To upload from Android Studio instead, use **Build → Generate Signed Bundle /
 APK → Android App Bundle** and select the release signing config.
