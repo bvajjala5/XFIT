@@ -27,10 +27,11 @@ is also approved: Publishing overview has no pending changes and the track lists
 members can access the test now.
 
 On 2026-11-27, Slovenia was staged as an additional country/region for
-`Closed testing - Alpha` and submitted for review with explicit approval. Play
-Console shows it under “Changes in review” with quick checks running; this is a
-country/region change only, with no new app upload or version-code bump. The
-Slovenian Reddit tester can opt in once the change is approved.
+`Closed testing - Alpha` and submitted for review with explicit approval. It was
+approved quickly: Publishing overview has no pending or in-review changes, and the
+track now lists 3 targeted countries/regions — India, Slovenia, and United States.
+This was a country/region change only, with no new app upload or version-code bump.
+The Slovenian Reddit tester can now opt in through the closed-test link.
 
 Important: internal-test users are not eligible for closed testing until they opt
 out of internal testing. Adding them to the Google Group or giving them the closed
