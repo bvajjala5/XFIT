@@ -1,25 +1,27 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-27 (closed test submitted for review)._
+_Last updated: 2026-11-27 (closed test live; Google Group tester change in review)._
 
-## Current gate: closed testing review
+## Current gate: closed testing
 
-The closed-test track `Closed testing - Alpha` is Active. Release `Closed test 1.0`
-was created from the current bundled app at version code 3 and, with explicit
-approval, submitted to Google Play for review on 2026-11-27. It is **in review**,
-not live yet.
+Release `Closed test 1.0` (version code 3) was approved and published on
+2026-11-27. The `Closed testing - Alpha` track is Active and this is its latest
+release.
 
 - Closed-test web opt-in link: `https://play.google.com/apps/testing/com.uttar.fitness`
 - Closed-test Android opt-in link: `https://play.google.com/store/apps/details?id=com.uttar.fitness`
-- Testers: the existing 6-person `Uttar internal testers` email list
+- Google Group join link: `https://groups.google.com/g/uttar-fitness-closed-testers`
+- Google Group email: `uttar-fitness-closed-testers@googlegroups.com`
 - Feedback email: `bhanu.charan.vajjala@gmail.com`
 - Countries/regions: India and United States
 - AAB SHA-256: `3f6b35046ab44f260f7cecfcfebe281b03fc19f47dcb4af176e02da69db75f1e`
 - No full rollout or production release has been started.
-- Do not post the closed-test link publicly until the release is approved and live.
 
-The review submission covered 14 saved changes, including the closed-test release,
-store listing, app content, data safety, privacy policy, and store settings.
+The initial review submission covered 14 changes, including the closed-test
+release, store listing, app content, data safety, privacy policy, and store
+settings. A follow-up change switching closed-test testers from the internal email
+list to the Google Group was submitted with explicit approval and is **in review**.
+New group members can access the test once that change is approved.
 
 v2 remains live on internal testing as **Fixed Google sign-in 1.0** (version code 2).
 The version code was bumped to 3 for closed testing because Play rejects a reused
@@ -27,8 +29,8 @@ version code.
 
 Do not start v3 feature work until closed testing passes:
 
-- Closed-test release is approved and testers can join
-- Testers sign in with Google and can use the app
+- Closed-test release and Google Group tester change are both live
+- Testers join the group, opt in, sign in with Google, and can use the app
 - Workout, food, run import, AI, and Profile → Advanced data tools work
 - No blocking crashes or ANRs
 
