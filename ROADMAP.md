@@ -1,12 +1,12 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-27 (closed test live; Google Group tester change in review)._
+_Last updated: 2026-11-27 (closed test live; Google Group tester change approved)._
 
 ## Current gate: closed testing
 
 Release `Closed test 1.0` (version code 3) was approved and published on
-2026-11-27. The `Closed testing - Alpha` track is Active and this is its latest
-release.
+2026-11-27 at 10:51 AM. The `Closed testing - Alpha` track is Active and this is
+its latest release. Play shows it as **Available to selected testers**.
 
 - Closed-test web opt-in link: `https://play.google.com/apps/testing/com.uttar.fitness`
 - Closed-test Android opt-in link: `https://play.google.com/store/apps/details?id=com.uttar.fitness`
@@ -19,9 +19,10 @@ release.
 
 The initial review submission covered 14 changes, including the closed-test
 release, store listing, app content, data safety, privacy policy, and store
-settings. A follow-up change switching closed-test testers from the internal email
-list to the Google Group was submitted with explicit approval and is **in review**.
-New group members can access the test once that change is approved.
+settings. The follow-up change switching closed-test testers to the Google Group
+is also approved: Publishing overview has no pending changes and the track lists
+`uttar-fitness-closed-testers@googlegroups.com` as the tester group. New group
+members can access the test now.
 
 v2 remains live on internal testing as **Fixed Google sign-in 1.0** (version code 2).
 The version code was bumped to 3 for closed testing because Play rejects a reused
@@ -291,4 +292,4 @@ Uttar guardrails when this is eventually built:
 
 ## Next action
 
-Wait for the Google Group tester change to be approved, then for testers to opt in and keep the app installed for 14 days. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
+The closed-test release and Google Group tester change are both live. Get testers to join the group, opt in, update to version code 3, and keep the app installed for 14 days. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
