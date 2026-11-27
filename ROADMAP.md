@@ -109,6 +109,33 @@ Uttar's wedge:
 - Form Check, demo/body-map visibility, tempo cues
 - Grounded in the user's own logged data
 
+## Queued fixes and additions — first release after closed testing
+
+Do not add these to the live closed-test build; any native change needs a new
+version code, upload, and review. Land these with the first post-test release:
+
+1. **Fix Apply time calculation**
+   - Typing a duration such as `0:45` or `:30` and tapping **Apply** must set the
+     interval to that exact value.
+   - Stop subtracting entered or elapsed seconds from a 60-second or elapsed
+     baseline. No leftover offsets.
+
+2. **Voice Count toggle on the Reps screen**
+   - Put **Voice Count** directly above the Weight input field.
+   - Default to **Off** every time the screen loads; it is explicit opt-in.
+
+3. **Hands-free voice rep counting**
+   - When Voice Count is On, listen for spoken numbers and increment **REPS DONE**
+     automatically instead of requiring a tap for every rep.
+   - Keep speech audio and transcripts on-device; do not upload or store them.
+   - Needs debouncing, clear start/stop feedback, and graceful handling of
+     denied mic permission, silence, and no-network speech recognition.
+
+Google Health Connect and the OS-level app-lock version of Activity Unlock remain
+later-stage work. Health Connect follows the first post-test release; Focus Mode
+starts with manual in-app check-ins, and OS-level locking is evaluated only after
+Play policy/permission review.
+
 ## Parked v3 priorities
 
 Ranked by impact, effort, and risk.
@@ -191,4 +218,4 @@ Uttar guardrails when this is eventually built:
 
 ## Next action
 
-Wait for the closed-test release to be approved and for tester feedback. If it passes, start with priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI.
+Wait for the Google Group tester change to be approved, then for testers to opt in and keep the app installed for 14 days. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
