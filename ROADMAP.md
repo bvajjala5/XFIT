@@ -198,21 +198,75 @@ Ranked by impact, effort, and risk.
    - Last, after retention is proven.
    - No upfront gate, upgrade screens, quotas, or subscription pressure before value is clear.
 
-## Activity Unlock — future research notes
+## Activity Unlock / Focus Mode — future research notes
 
-Parked for the later OS-level version of Focus Mode. Not in v3 scope.
+Parked for the later OS-level version of Focus Mode. Not in v3 scope. There is
+currently no `ios/` platform target in this repo, so iOS work cannot start until
+an iOS/Capacitor target exists.
 
-How similar screen-time fitness blockers work:
+### Desired end state
 
-- **App selection:** user chooses distracting apps such as social media, games, or streaming services.
-- **Enforcement:**
-  - iOS: integrate with Apple's Screen Time API / device-management family APIs to limit or block selected apps.
-  - Android: foreground service plus `TYPE_APPLICATION_OVERLAY` to detect the blocked app and show a lock screen over it.
-- **Strict mode / bypass prevention:** removing a restriction may require a cool-down timer, a heavier penalty set, or approval from a trusted friend.
-- **Activity-based unlock:** when the user wants more access, the gate opens the camera and verifies a countable movement.
-- **Pose detection:** on-device skeletal tracking of head, shoulders, elbows, wrists, hips, and knees validates full-range reps in real time.
-- **Reps-to-time conversion:** each verified rep grants a configurable amount of screen time, e.g. 1 push-up = 1 minute.
-- **Supported activities for Uttar:** any activity the counter can reliably verify — push-ups, squats, planks, and similar bodyweight movements — configurable by the user.
+1. User turns on `Profile → Focus Mode`.
+2. User chooses an activity and target, e.g. 20 push-ups.
+3. User chooses which distracting apps/categories are locked; Phone, Messages,
+   emergency services, and Uttar itself stay reachable.
+4. Opening a locked app shows the system/Apple shield or Android gate with
+   “Do your activity to unlock.”
+5. User completes the chosen activity in Uttar or through the permitted camera
+   flow.
+6. The app unlocks, optionally for a temporary window before the shield returns.
+7. User can turn Focus Mode off again from `Profile`.
+
+### Camera + rep counting
+
+- Camera use is explicit opt-in only, with manual check-in always available.
+- Frames are processed on-device; no frames are uploaded or stored.
+- No raw camera/health data goes into Firestore, analytics, or admin views. Only
+  derived rep counts/unlock events are kept.
+- Countable reps: push-ups, squats, sit-ups, jumping jacks, burpees.
+- Planks and similar holds use a timer/hold check, not a rep count.
+- Burpees need more forgiving state-machine logic than simple joint-angle reps.
+
+### Staging
+
+- **V1:** in-app/manual check-in gate. UI must be honest that other apps are not
+  system-locked yet.
+- **V2 Android:** OS-level lock after Play policy/permission review; camera
+  verification remains opt-in.
+- **V2 iOS:** Screen Time APIs and Shield extensions; shield → Uttar → verify →
+  unlock. The camera cannot run inside Apple's shield extension.
+
+### iOS implementation path (when an iOS app exists)
+
+1. **Entitlements and targets:** add Family Controls capability to the app and
+   Screen Time extensions (`com.apple.developer.family-controls`). Development
+   can use the capability; TestFlight/App Store distribution requires Apple's
+   entitlement request. Add an App Group/shared container for the saved
+   `FamilyActivitySelection`, Focus Mode state, and unlock window.
+2. **Authorize and choose apps:** call
+   `AuthorizationCenter.shared.requestAuthorization(for: .individual)` and
+   present `FamilyActivityPicker`. iOS returns opaque `ApplicationToken` values;
+   the app does not learn the specific chosen apps from the picker.
+3. **Apply the shield:** put the saved tokens into a named
+   `ManagedSettingsStore().shield.applications`. iOS enforces the shield at the
+   OS level; up to 50 application tokens can be shielded at once.
+4. **ShieldConfiguration extension:** show a static Uttar-branded gate:
+   “Focus Mode Active,” “Complete 20 push-ups to unlock,” and a primary button
+   like “Start Push-Ups.” This extension is sandboxed: no live camera, no network
+   calls, no custom full-screen app UI.
+5. **ShieldAction extension:** handle the button tap. On iOS 26.5+, Apple
+   documents `ShieldActionResponse.openParentalControlsApp` for returning the
+   user to Uttar. On earlier versions there is no documented direct
+   parent-app-open API; use a local notification/deep link or tell the user to
+   open Uttar. Do not rely on private APIs.
+6. **Verify in Uttar:** V1 uses a manual completed check-in. V2 may use on-device
+   `VNDetectHumanBodyPoseRequest` or MediaPipe. Only after the target is met,
+   clear that named store's shield (or set `shield.applications = nil`). A
+   `DeviceActivity` schedule can reapply it after a temporary unlock window.
+7. **Token/QA caveats:** treat tokens as re-creatable; handle unknown tokens with
+   a generic shield and re-prompt the user to reselect apps. Record a demo video
+   for App Review explaining that Screen Time is used only for user-initiated
+   fitness/self-control gating.
 
 Uttar guardrails when this is eventually built:
 
@@ -220,7 +274,8 @@ Uttar guardrails when this is eventually built:
 - Pose detection and frame processing stay on-device; no video upload and no stored frames.
 - Only derived unlock events and rep counts may be stored; no raw health values in Firestore or admin analytics.
 - Show honest permission prompts; do not present OS-level locking as a normal in-app feature.
-- Validate Play policy and Accessibility/overlay permissions before implementation.
+- Include an emergency escape hatch/cooldown so injury or urgency never traps the user.
+- Validate Play policy and Accessibility/overlay permissions before Android implementation.
 - Keep a simple manual check-in fallback for users who do not want camera access.
 
 ## Explicit non-goals for now
