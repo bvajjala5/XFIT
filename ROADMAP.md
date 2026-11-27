@@ -131,6 +131,15 @@ version code, upload, and review. Land these with the first post-test release:
    - Needs debouncing, clear start/stop feedback, and graceful handling of
      denied mic permission, silence, and no-network speech recognition.
 
+4. **Fix workout duration mismatch**
+   - Workouts tab cards show a different minute count from the workout detail,
+     player, and exercise list.
+   - Known example: `Core Crusher` is seeded with `duration: 25`, but its five
+     60-second exercises derive to 5 minutes in `WorkoutDetail.jsx` / the player.
+   - Decide the source of truth before changing catalog data; do not silently
+     rewrite real account data. Cards, detail, player, and logged minutes must all
+     agree.
+
 Google Health Connect and the OS-level app-lock version of Activity Unlock remain
 later-stage work. Health Connect follows the first post-test release; Focus Mode
 starts with manual in-app check-ins, and OS-level locking is evaluated only after
@@ -161,16 +170,25 @@ Ranked by impact, effort, and risk.
    - Barcode scanner and quick photo food logging if not already solid.
    - Keep quick-add actions clean and secondary tools tucked away.
 
-6. **Focus Mode — in-app gate first**
-   - Configure under `Profile → Focus Mode`: activity (push-ups, squats, plank), reps/timer, session length.
-   - Opening Uttar shows a gate; complete the quick check-in before entering.
-   - OS-level locking of other apps is deferred: it needs powerful permissions and carries Play policy/review risk.
+6. **Focus Mode / app locker**
+   - Desired end state (user clarification): `Profile → Focus Mode` → turn on,
+     choose activity and reps → all other apps on the phone are locked. Opening a
+     locked app presents the Uttar gate; completing the chosen activity unlocks it.
+     Focus Mode can be turned off again from Profile.
+   - First implementation remains the in-app gate: opening Uttar requires a
+     completed check-in. Android OS-level app locking is the goal but deferred: it
+     needs overlay/usage-access/foreground-service permissions and Play policy
+     review. Keep manual check-in fallback and exempt emergency calling.
 
 7. **Health Connect integration**
    - Opt-in only, read-only, on-device first.
    - Show the user's own steps/workouts/sleep trends inside Uttar.
    - No raw health values in Firestore or admin analytics.
    - Update Data Safety declaration before shipping.
+   - When Health Connect is live on the Insights/Health page, remove the current
+     “Health Connect and Apple Health support is planned but not available yet…
+     log your stats manually…” note under **Connect a Fitness Device** and replace
+     it with accurate availability copy. Do not claim Apple Health support.
 
 8. **Real community / accountability circles**
    - Only if users ask for it.
