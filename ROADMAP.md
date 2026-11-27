@@ -15,6 +15,8 @@ its latest release. Play shows it as **Available to selected testers**.
 - Feedback email: `bhanu.charan.vajjala@gmail.com`
 - Countries/regions: India and United States
 - AAB SHA-256: `3f6b35046ab44f260f7cecfcfebe281b03fc19f47dcb4af176e02da69db75f1e`
+- Play requirement: at least **12 testers opted in continuously for 14 days**
+  before applying for production access. Play currently shows **2 opted-in**.
 - No full rollout or production release has been started.
 
 The initial review submission covered 14 changes, including the closed-test
@@ -23,6 +25,13 @@ settings. The follow-up change switching closed-test testers to the Google Group
 is also approved: Publishing overview has no pending changes and the track lists
 `uttar-fitness-closed-testers@googlegroups.com` as the tester group. New group
 members can access the test now.
+
+Important: internal-test users are not eligible for closed testing until they opt
+out of internal testing. Adding them to the Google Group or giving them the closed
+link is not enough; each tester must use their own Google Account and accept the
+closed-test opt-in. Reddit recruits count if they join the group, opt in through
+Play, install v3, and stay opted in. Recruit 15–16 rather than exactly 12 so a
+dropout does not break the 14-day run.
 
 v2 remains live on internal testing as **Fixed Google sign-in 1.0** (version code 2).
 The version code was bumped to 3 for closed testing because Play rejects a reused
@@ -292,4 +301,4 @@ Uttar guardrails when this is eventually built:
 
 ## Next action
 
-The closed-test release and Google Group tester change are both live. Get testers to join the group, opt in, update to version code 3, and keep the app installed for 14 days. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
+The closed-test release and Google Group tester change are both live. Recruit enough new testers to reach at least 12 opted in (15–16 is safer). Each tester must join the group, opt in through the closed-test link, install/update to version code 3, actually use the app, and stay opted in for 14 continuous days. Internal testers must opt out of internal testing first. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
