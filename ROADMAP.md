@@ -57,7 +57,8 @@ Fix: added `https://localhost` and `capacitor://localhost` to
 Verified by OPTIONS and POST checks that all three origins now receive the correct
 CORS header. This is server-side only: no APK/AAB rebuild, upload, or Play review.
 Existing native installs should start working immediately. Form Check image
-requests benefit from the same fix.
+requests benefit from the same fix. The reporting tester confirmed Uttar AI
+works after the redeploy, with no reinstall or app update.
 
 ## Open QA item: Pixel 10a tester report
 
