@@ -6,10 +6,12 @@ compatibility_date = "2025-01-01"
 FIREBASE_PROJECT_ID = "xfit-723dd"
 # Gemini API model used by the proxy. Must exist for the project's API key.
 GEMINI_MODEL = "gemini-3.5-flash"
-# Comma-separated site origins allowed to call this Worker.
-# For local development, temporarily add http://localhost:5173 in the Cloudflare
+# Comma-separated origins allowed to call this Worker.
+# https://localhost is the Capacitor Android WebView origin (androidScheme: https).
+# capacitor://localhost covers iOS Capacitor. Keep these alongside the web origins.
+# For local web development, temporarily add http://localhost:5173 in the Cloudflare
 # dashboard (or a local `wrangler dev --var` override) — never commit it here.
-ALLOWED_ORIGINS = "https://xfit-bpe.pages.dev,https://xfit-723dd.web.app"
+ALLOWED_ORIGINS = "https://xfit-bpe.pages.dev,https://xfit-723dd.web.app,https://localhost,capacitor://localhost"
 # GEMINI_MODEL = "gemini-2.0-flash"
 
 # Secret (NOT stored in this file) — set with:  npx wrangler secret put GEMINI_API_KEY

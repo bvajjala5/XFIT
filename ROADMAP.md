@@ -44,6 +44,21 @@ Do not start v3 feature work until closed testing passes:
 - Workout, food, run import, AI, and Profile → Advanced data tools work
 - No blocking crashes or ANRs
 
+## Uttar AI native fix — 2026-11-27
+
+A closed tester reported “I could not reach the AI coach. Check your connection
+and try again.” Root cause was CORS, not the tester's connection: the Capacitor
+Android WebView origin is `https://localhost`, while the AI Worker's
+`ALLOWED_ORIGINS` only had the web origins. The missing
+`Access-Control-Allow-Origin` made `fetch` fail before authentication.
+
+Fix: added `https://localhost` and `capacitor://localhost` to
+`worker/wrangler.toml` and redeployed `xfit-ai-proxy` with explicit approval.
+Verified by OPTIONS and POST checks that all three origins now receive the correct
+CORS header. This is server-side only: no APK/AAB rebuild, upload, or Play review.
+Existing native installs should start working immediately. Form Check image
+requests benefit from the same fix.
+
 ## Open QA item: Pixel 10a tester report
 
 An internal tester using the Play internal link reported:
