@@ -63,7 +63,28 @@ Feedback from a Reddit reader after viewing the public demo:
 3. **Share preview:** `og:image` was the small square app icon.
    - Fixed: added `public/og-image.png` (1200×630 product screenshot) and updated Open Graph / Twitter card meta tags.
 
-These are public-web-only changes. No native build or Play release was made.
+These were public-web-only changes. The later version 3 native build for closed
+testing was made separately.
+
+## Protected with Play review — 2026-11-27
+
+Current Play Console status is **Good protection**.
+
+- Automatic protection: **1/1 active**. Kept on; it requires `minSdkVersion >= 24`,
+  which the app already has.
+- Play Store protection: **6/7 active**. The one off setting is “Prevent installs on
+  risky devices / Store listing device checks.” Leave it off during closed testing
+  so rooted devices, emulators, and unusual test devices are not blocked. Revisit
+  before production.
+- Play Integrity API: **0/7 active / not integrated**. Defer. It needs native
+  integration, a Cloud project, server-side token verification, and another release.
+  There is no payment or high-risk server flow that needs it right now.
+- Play Billing protection: **0/4 active**. Not applicable; the app has no purchases,
+  subscriptions, or paid AI quota.
+- Automatic-protection monitoring shows no data because there are no production
+  installs yet. That is expected.
+
+Revisit this page before production, not during closed testing.
 
 ## Competitive lens: Critique AI
 
