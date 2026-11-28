@@ -7,6 +7,9 @@ export const MODE_TIME = 'time'
 export const DEFAULT_REPS = 10
 export const DEFAULT_SECONDS = 30
 export const DEFAULT_REST_SECONDS = 30
+// Break between different exercises. Rest between sets of the same exercise
+// stays at that exercise's own restSeconds; this gap is only for transitioning.
+export const DEFAULT_TRANSITION_SECONDS = 15
 export const SESSION_KEY = 'xfit_active_session_v1'
 
 const HOLD_NAME = /plank|hold|stretch|breath|savasana|pose|wall\s?sit|bridge|bird\s?dog|dead\s?bug/i
@@ -18,6 +21,11 @@ const clampInt = (value, fallback, min, max) => {
 
 export function normalizeMode(value) {
   return value === MODE_REPS || value === MODE_TIME ? value : null
+}
+
+/** Clamp a caller-supplied transition break, defaulting to the 15s gap. */
+export function transitionSeconds(value = DEFAULT_TRANSITION_SECONDS) {
+  return clampInt(value, DEFAULT_TRANSITION_SECONDS, 0, 600)
 }
 
 /**

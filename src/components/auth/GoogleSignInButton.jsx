@@ -31,12 +31,16 @@ export default function GoogleSignInButton({
     try {
       await signInWithGoogle()
     } catch (err) {
-      // Closing the popup is a normal choice, not an error worth showing.
-      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      // Closing the popup or account picker is a normal choice, not an error worth showing.
+      if (
+        err?.code === 'auth/popup-closed-by-user'
+        || err?.code === 'auth/cancelled-popup-request'
+        || /cancel(?:l)?ed/i.test(err?.message || '')
+      ) {
         setLoading(false)
         return
       }
-      const message = 'Could not sign in. Please try again.'
+      const message = "Couldn't sign in. Check that pop-ups are allowed, or try again in a moment."
       setError(message)
       onError?.(message)
       setLoading(false)

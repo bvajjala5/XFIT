@@ -58,7 +58,7 @@ export default function Insights() {
               aria-selected={active}
               aria-controls="insights-panel"
               onClick={() => selectView(key)}
-              className={`relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors sm:gap-3 ${
+              className={`relative flex min-h-[44px] items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/40 sm:gap-3 ${
                 active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >

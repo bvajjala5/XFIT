@@ -17,8 +17,8 @@ const DIFFICULTIES = ['All','beginner','intermediate','advanced'];
 const MUSCLE_GROUPS = ['All','Chest','Back','Shoulders','Arms','Core','Legs','Glutes'];
 
 // Compact filter chip shared by the collapsible panel.
-const chipClass = (active) => `rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-  active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+const chipClass = (active) => `pill-button text-xs capitalize ${
+  active ? 'border-transparent bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : ''
 }`;
 
 export default function WorkoutsAndRun() {
@@ -126,10 +126,10 @@ export default function WorkoutsAndRun() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Link to="/plan" className="inline-flex min-h-[36px] items-center rounded-xl bg-secondary/60 px-3 py-2 text-xs font-semibold text-foreground">
+          <Link to="/plan" className="soft-button min-h-[44px] text-xs">
             Plan
           </Link>
-          <Link to="/builder" className="inline-flex min-h-[36px] items-center rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/20">
+          <Link to="/builder" className="soft-button min-h-[44px] border-primary/25 bg-primary/10 text-xs text-primary hover:bg-primary/20">
             + Build
           </Link>
         </div>
@@ -159,10 +159,10 @@ export default function WorkoutsAndRun() {
           onClick={() => setFiltersOpen(open => !open)}
           aria-expanded={filtersOpen}
           aria-controls="workout-filters"
-          className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-colors ${
+          className={`soft-button h-10 shrink-0 text-xs ${
             filtersOpen || filterCount
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-border/60 bg-card text-muted-foreground hover:text-foreground'
+              ? 'border-primary/30 bg-primary/10 text-primary hover:text-primary'
+              : ''
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export default function WorkoutsAndRun() {
               type="button"
               onClick={f.clear}
               aria-label={`Remove filter ${f.label}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold capitalize text-primary transition-colors hover:bg-primary/20"
+              className="pill-button border-primary/20 bg-primary/10 text-xs capitalize text-primary hover:bg-primary/20"
             >
               {f.label}
               <X className="w-3 h-3" />
@@ -193,7 +193,7 @@ export default function WorkoutsAndRun() {
           <button
             type="button"
             onClick={resetFilters}
-            className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="pill-button text-xs"
           >
             Reset filters
           </button>

@@ -50,6 +50,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
   const [selectedUnit, setSelectedUnit] = useState(() => normalizeDistanceUnit(unit))
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   const result = useMemo(
     () => (files.length ? parseActivityFiles(files, { unit: selectedUnit }) : null),
@@ -60,6 +61,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
     setFiles([])
     setDragging(false)
     setBusy(false)
+    setConfirming(false)
   }
 
   function close() {
@@ -69,10 +71,15 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
   }
 
   async function readFiles(fileList) {
-    const supported = Array.from(fileList || []).filter((file) => /\.(csv|gpx|tcx)$/i.test(file.name))
+    const all = Array.from(fileList || [])
+    const supported = all.filter((file) => /\.(csv|gpx|tcx)$/i.test(file.name))
     if (supported.length === 0) {
       toast.error('Choose a CSV, GPX, or TCX file.')
       return
+    }
+    const skipped = all.length - supported.length
+    if (skipped > 0) {
+      toast.message(`Skipped ${skipped} unsupported file${skipped === 1 ? '' : 's'}. Use CSV, GPX, or TCX.`)
     }
     try {
       const loaded = await Promise.all(supported.map(async (file) => ({
@@ -80,6 +87,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
         text: await file.text(),
       })))
       setFiles((previous) => [...previous, ...loaded])
+      setConfirming(false)
     } catch {
       toast.error('Could not read those files. Try again.')
     }
@@ -98,11 +106,17 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
 
   function removeFile(index) {
     setFiles((previous) => previous.filter((_, position) => position !== index))
+    setConfirming(false)
   }
 
   async function handleImport() {
     if (!userId) { toast.error('Sign in before importing runs.'); return }
     if (!result?.rows?.length) return
+    // Preview first: nothing is written until the summary is confirmed.
+    if (!confirming) {
+      setConfirming(true)
+      return
+    }
     setBusy(true)
     let saved = 0
     let queued = 0
@@ -129,6 +143,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
         reset()
         onClose()
       } else {
+        setConfirming(false)
         toast.error(`Imported ${saved + queued} runs; ${failed} failed. Nothing else was changed.`)
       }
     } finally {
@@ -180,7 +195,7 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
               type="button"
               onClick={close}
               aria-label="Close import dialog"
-              className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+              className="icon-button h-9 w-9 rounded-full"
             >
               <X className="w-4 h-4" />
             </button>
@@ -270,10 +285,10 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setSelectedUnit(option)}
+                      onClick={() => { setSelectedUnit(option); setConfirming(false) }}
                       aria-pressed={selectedUnit === option}
-                      className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
-                        selectedUnit === option ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      className={`min-h-[40px] flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors ${
+                        selectedUnit === option ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
                       }`}
                     >
                       {option}
@@ -291,35 +306,47 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
                   </p>
                 )}
                 {result.rows.length > 0 && (
-                  <div className="max-h-44 overflow-auto rounded-xl border border-border/60">
-                    <table className="w-full text-left text-[11px]">
-                      <thead className="sticky top-0 bg-secondary/70 text-muted-foreground">
-                        <tr>
-                          <th className="px-2 py-1.5">Date</th>
-                          <th className="px-2 py-1.5">Distance</th>
-                          <th className="px-2 py-1.5">Time</th>
-                          <th className="px-2 py-1.5">Pace</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.rows.slice(0, 8).map((row) => (
-                          <tr key={row.id} className="border-t border-border/40">
-                            <td className="px-2 py-1.5">{formatDate(row.completedAt)}</td>
-                            <td className="px-2 py-1.5">{formatDistance(row.distance, row.distance_unit)} {row.distance_unit === 'miles' ? 'mi' : 'km'}</td>
-                            <td className="px-2 py-1.5">{formatClock(row.elapsed)}</td>
-                            <td className="px-2 py-1.5">{formatPace(row.elapsed, row.distance, row.distance_unit)}</td>
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Preview — first {Math.min(8, result.rows.length)} of {result.rows.length}
+                    </p>
+                    <div className="max-h-44 overflow-auto rounded-xl border border-border/60">
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="sticky top-0 bg-secondary/70 text-muted-foreground">
+                          <tr>
+                            <th className="px-2 py-1.5">Date</th>
+                            <th className="px-2 py-1.5">Distance</th>
+                            <th className="px-2 py-1.5">Time</th>
+                            <th className="px-2 py-1.5">Pace</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {result.rows.slice(0, 8).map((row) => (
+                            <tr key={row.id} className="border-t border-border/40">
+                              <td className="px-2 py-1.5">{formatDate(row.completedAt)}</td>
+                              <td className="px-2 py-1.5">{formatDistance(row.distance, row.distance_unit)} {row.distance_unit === 'miles' ? 'mi' : 'km'}</td>
+                              <td className="px-2 py-1.5">{formatClock(row.elapsed)}</td>
+                              <td className="px-2 py-1.5">{formatPace(row.elapsed, row.distance, row.distance_unit)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
                 <p className="text-[11px] text-muted-foreground">
                   {result.rows.length} run{result.rows.length === 1 ? '' : 's'} ready{result.skipped ? ` · ${result.skipped} skipped` : ''}
                 </p>
-                {result.errors.map((error) => (
-                  <p key={error} className="text-[11px] text-amber-500">{error}</p>
-                ))}
+                {result.errors.length > 0 && (
+                  <div className="space-y-1">
+                    {result.errors.map((error) => (
+                      <p key={error} className="text-[11px] text-amber-500">{error}</p>
+                    ))}
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      Check the date, distance, and duration columns, or download a sample above.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -329,13 +356,47 @@ export default function CsvImportDialog({ open, onClose, userId, unit = 'miles' 
               </p>
             )}
 
-            <Button
-              className="w-full rounded-xl"
-              disabled={!result?.rows?.length || busy}
-              onClick={handleImport}
-            >
-              {busy ? 'Importing…' : `Import ${result?.rows?.length || ''} run${result?.rows?.length === 1 ? '' : 's'}`}
-            </Button>
+            {confirming && result?.rows?.length ? (
+              <div className="space-y-2 rounded-xl border border-primary/25 bg-primary/5 p-3">
+                <p className="text-xs font-semibold">
+                  Save {result.rows.length} run{result.rows.length === 1 ? '' : 's'} to your history?
+                </p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Adds {result.rows.length} run{result.rows.length === 1 ? '' : 's'} to Workout History{result.skipped ? `; ${result.skipped} duplicate${result.skipped === 1 ? '' : 's'} skipped` : ''}. Nothing else changes.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    className="min-h-[48px] flex-1 rounded-xl"
+                    onClick={() => setConfirming(false)}
+                    disabled={busy}
+                  >
+                    Back
+                  </Button>
+                  <Button className="min-h-[48px] flex-[2] rounded-xl" onClick={handleImport} disabled={busy}>
+                    {busy ? 'Importing…' : 'Confirm import'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="min-h-[48px] flex-1 rounded-xl"
+                  onClick={close}
+                  disabled={busy}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="min-h-[48px] flex-[2] rounded-xl"
+                  disabled={!result?.rows?.length || busy}
+                  onClick={handleImport}
+                >
+                  Review {result?.rows?.length || ''} run{result?.rows?.length === 1 ? '' : 's'}
+                </Button>
+              </div>
+            )}
           </div>
         </motion.div>,
       ]}

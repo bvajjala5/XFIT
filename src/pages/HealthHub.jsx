@@ -97,12 +97,12 @@ function WeightTracker({ userId }) {
             onKeyDown={e => e.key === 'Enter' && logWeight()}
           />
           <button onClick={() => { const next = unit === 'lbs' ? 'kg' : 'lbs'; setUnit(next); localStorage.setItem('xfit_weight_unit', next); }}
-            className="h-10 px-3 rounded-xl bg-secondary/50 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            className="soft-button h-11 min-w-[44px] px-3 text-xs text-muted-foreground hover:text-foreground shrink-0">
             {unit}
           </button>
         </div>
         <button onClick={logWeight}
-          className="h-10 px-4 rounded-xl primary-gradient text-white text-sm font-bold shrink-0">
+          className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl primary-gradient px-4 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
           Log
         </button>
       </div>
@@ -149,7 +149,7 @@ function HealthMetricCard({ metric, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left glass rounded-2xl p-4 flex flex-col gap-3 active:scale-95 transition-all hover:border-white/15 min-h-[140px]"
+      className="card-hover flex min-h-[140px] w-full flex-col gap-3 rounded-2xl p-4 text-left glass transition-all hover:border-primary/40 hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
     >
       {/* Top row: label + icon */}
       <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ function HealthLogModal({ open, onClose, existing, onSave, saving }) {
         {/* Sticky header */}
         <div className="sticky top-0 bg-card border-b border-border/50 px-5 py-4 flex items-center justify-between rounded-t-3xl z-10">
           <h2 id="health-log-title" className="text-lg font-bold">Log Today's Health</h2>
-          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-lg">×</button>
+          <button onClick={onClose} aria-label="Close" className="icon-button h-10 w-10 rounded-full text-xl leading-none">×</button>
         </div>
 
         <div className="p-5 space-y-4">
@@ -372,7 +372,7 @@ export default function HealthHub({ embedded = false } = {}) {
       {[{ key:'overview', label:'Overview', Icon:BarChart3 },{ key:'weight', label:'Weight', Icon:Scale },{ key:'nutrition', label:'Nutrition', Icon:Utensils }].map(t => (
         <button key={t.key} type="button" onClick={() => selectTab(t.key)}
           aria-pressed={activeTab === t.key}
-          className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all sm:text-sm ${activeTab===t.key?'bg-primary text-primary-foreground shadow-sm':'text-muted-foreground hover:text-foreground'}`}>
+          className={`min-h-[44px] flex-1 rounded-xl text-xs font-semibold transition-all sm:text-sm ${activeTab===t.key?'bg-primary text-primary-foreground shadow-sm':'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'}`}>
           <span className="inline-flex items-center justify-center gap-1.5"><t.Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />{t.label}</span>
         </button>
       ))}

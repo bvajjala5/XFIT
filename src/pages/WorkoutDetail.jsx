@@ -176,7 +176,7 @@ export default function WorkoutDetail() {
     <div className="relative z-10 min-h-screen">
       {/* Header */}
       <div className="relative z-10 px-4 md:px-8 pt-6 max-w-4xl mx-auto">
-        <button onClick={() => navigate(-1)} aria-label="Back" className="glass rounded-full w-11 h-11 flex items-center justify-center">
+        <button onClick={() => navigate(-1)} aria-label="Back" className="glass icon-button rounded-full w-11 h-11 flex items-center justify-center text-foreground hover:text-foreground">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="mt-5">
@@ -222,13 +222,13 @@ export default function WorkoutDetail() {
                 {/* Reset all button */}
                 {hasAnyCustom && (
                   <button onClick={handleResetAll}
-                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-all">
+                    className="soft-button min-h-[40px] text-xs text-muted-foreground hover:text-foreground">
                     <RotateCcw className="w-3 h-3" /> Reset all
                   </button>
                 )}
                 {/* Save button */}
                 <button onClick={handleSave}
-                  className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${justSaved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary hover:bg-primary/30'}`}>
+                  className={`soft-button min-h-[40px] text-xs ${justSaved ? 'border-green-500/30 bg-green-500/20 text-green-400' : 'border-primary/30 bg-primary/15 text-primary hover:bg-primary/25'}`}>
                   {justSaved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
                   {justSaved ? 'Saved!' : 'Save'}
                 </button>
@@ -260,7 +260,7 @@ export default function WorkoutDetail() {
                           <button
                             type="button"
                             onClick={() => setFormExercise(ex.name)}
-                            className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/20"
+                            className="pill-button mt-1 border-primary/20 bg-primary/10 text-[10px] text-primary hover:bg-primary/20"
                           >
                             <ScanFace className="h-3 w-3" /> Check Form
                           </button>
@@ -274,8 +274,8 @@ export default function WorkoutDetail() {
                         {isCustomized && (
                           <button onClick={() => handleReset(ex, i)}
                             title="Reset to default"
-                            className="w-6 h-6 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
-                            <RotateCcw className="w-3 h-3" />
+                            className="icon-button h-9 w-9 text-muted-foreground hover:text-foreground">
+                            <RotateCcw className="h-4 w-4" />
                           </button>
                         )}
                       </div>

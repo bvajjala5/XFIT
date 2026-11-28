@@ -13,7 +13,7 @@ export default function WorkoutCard({ workout, index = 0, isCustom = false, onDe
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.03, duration: 0.3 }} className="relative">
       <Link to={`/workouts/${workout.id}`}
-        className="block h-full bg-card/75 backdrop-blur-md border border-border/50 rounded-2xl p-4 hover:border-primary/40 transition-colors active:scale-[0.98]">
+        className="card-hover block h-full bg-card/75 backdrop-blur-md border border-border/50 rounded-2xl p-4 hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label(workout.type)}</p>
         <h3 className="font-semibold leading-snug mt-1 line-clamp-2">{workout.title || workout.name}</h3>
         <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
@@ -25,9 +25,9 @@ export default function WorkoutCard({ workout, index = 0, isCustom = false, onDe
 
       {isCustom && (
         <div className="absolute top-2 right-2 z-10">
-          <Button variant="ghost" size="icon" className="w-6 h-6 rounded-full p-1 text-muted-foreground hover:text-foreground"
+          <Button variant="ghost" size="icon" className="icon-button h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
             onClick={(e) => { e.preventDefault(); setShowMenu(!showMenu); }}>
-            <MoreVertical className="w-3 h-3" />
+            <MoreVertical className="h-4 w-4" />
           </Button>
           <AnimatePresence>
             {showMenu && (
@@ -45,7 +45,7 @@ export default function WorkoutCard({ workout, index = 0, isCustom = false, onDe
                     onShare?.(workout);
                   }}
                   disabled={sharing}
-                  className="w-full px-3 py-2 text-left text-xs text-foreground hover:bg-secondary/60 flex items-center gap-2 transition-colors disabled:opacity-50"
+                  className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:bg-secondary disabled:opacity-50"
                 >
                   <Share2 className="w-3 h-3" /> {sharing ? 'Sharing…' : 'Share'}
                 </button>
@@ -56,7 +56,7 @@ export default function WorkoutCard({ workout, index = 0, isCustom = false, onDe
                     setShowMenu(false);
                     onDelete?.(workout);
                   }}
-                  className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                  className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-400 transition-colors hover:bg-red-500/10 focus-visible:outline-none focus-visible:bg-red-500/10"
                 >
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>

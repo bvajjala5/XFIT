@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Dumbbell, Footprints, Utensils } from 'lucide-react'
 import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
 import Wallpaper from '@/components/layout/Wallpaper';
 import BrandMark from '@/components/brand/BrandMark';
-import GoogleIcon from '@/components/auth/GoogleIcon';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 import { applyResolvedTheme } from '@/lib/theme';
 import usePublicWallpaper from '@/hooks/usePublicWallpaper';
 import { isNativeApp } from '@/lib/platform';
 
 export default function Login() {
-  const { signInWithGoogle, authError, clearAuthError } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { authError } = useAuth();
   const native = isNativeApp();
 
   // Login is public: always alabaster. usePublicWallpaper restores the saved
@@ -26,24 +24,6 @@ export default function Login() {
     applyResolvedTheme(activeTheme);
   }, [activeTheme]);
 
-
-  const handleLogin = async () => {
-    setLoading(true); setError(''); clearAuthError();
-    try { await signInWithGoogle(); }
-    catch (err) {
-      // Closing the web popup or cancelling the native account picker is a
-      // choice, not a failure.
-      const cancelled = err?.code === 'auth/popup-closed-by-user'
-        || err?.code === 'auth/cancelled-popup-request'
-        || /cancel(?:l)?ed/i.test(err?.message || '');
-      if (cancelled) {
-        setLoading(false);
-        return;
-      }
-      setError('Could not sign in. Please try again.');
-      setLoading(false);
-    }
-  };
 
   return (
     <main className={`min-h-screen flex flex-col relative overflow-hidden theme-${activeTheme}`}>
@@ -107,21 +87,20 @@ export default function Login() {
           <p className="text-sm mt-1" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Sign in to track your journey</p>
         </div>
 
-        {(error || authError) && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error || authError}</div>}
+        {authError && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{authError}</div>}
 
-        <button onClick={handleLogin} disabled={loading}
-          className="w-full h-14 rounded-2xl border border-black/10 bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-md hover:bg-gray-50 hover:shadow-lg active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-60">
-          {loading
-            ? <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-            : <GoogleIcon />}
-          {loading ? 'Signing in…' : 'Continue with Google'}
-        </button>
+        <GoogleSignInButton variant="light" className="h-14 text-base shadow-md hover:shadow-lg" />
 
         {!native && (
-          <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold shadow-sm transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            style={{ borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.16)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)' }}>
-            Explore the demo first
-          </Link>
+          <div className="space-y-1.5">
+            <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold shadow-sm transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              style={{ borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.16)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)' }}>
+              Explore the demo first
+            </Link>
+            <p className="text-center text-[11px]" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>
+              No account needed, nothing saved
+            </p>
+          </div>
         )}
 
         <p className="text-center text-xs" style={{ color: isDark ? '#94a3b8' : '#78716c' }}>

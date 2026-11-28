@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  MODE_REPS, MODE_TIME, DEFAULT_REST_SECONDS,
+  MODE_REPS, MODE_TIME, DEFAULT_REST_SECONDS, DEFAULT_TRANSITION_SECONDS, transitionSeconds,
   detectMode, targetFor, createSession, setExerciseMode, adjust,
   parseQuantity, recordSet, nextPosition, sessionProgress, flattenSets,
   signatureFor, firstIncomplete, setRestSeconds, completedExerciseCount,
@@ -60,6 +60,13 @@ test('createSession normalizes sets, targets, rest and intervals without mutatin
   assert.equal(session.exercises[1].intervalSeconds, 10)
   assert.equal(session.exercises[1].restSeconds, DEFAULT_REST_SECONDS)
   assert.deepEqual(session.exercises[1].sets, [null])
+})
+
+test('exercise transitions default to a 15 second break', () => {
+  assert.equal(DEFAULT_TRANSITION_SECONDS, 15)
+  assert.equal(transitionSeconds(), 15)
+  assert.equal(transitionSeconds(0), 0)
+  assert.equal(transitionSeconds(9999), 600)
 })
 
 test('setExerciseMode switches the metric and keeps the session immutable', () => {

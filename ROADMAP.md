@@ -1,6 +1,6 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-28 (closed test live; global availability live; tester UI fixes queued)._
+_Last updated: 2026-11-28 (closed test live; global availability live; website-only polish and 15-second exercise transition landed locally)._
 
 ## Current gate: closed testing
 
@@ -64,6 +64,37 @@ Code changes made locally:
 These are UI-only changes. No new AAB/APK was uploaded, no version code was
 bumped, and no Play submission was made. Do not publish them as v4 until closed
 testing completes or the user explicitly approves a new upload.
+
+## Website-only polish and transition gap — 2026-11-28
+
+Whole-app website polish is now on `main`: shared premium button affordances
+(`.soft-button`, `.icon-button`, `.pill-button`), stronger card shadows and
+focus/hover states, clearer touch targets across Workout Detail, Home, Workouts,
+History, Records, Weekly Plan, Profile, Insights, Health, and the app chrome.
+
+Other website-only improvements:
+
+- Workout Player now inserts a fixed **15-second transition break** when moving
+  to a different exercise. Same-exercise rest is unchanged. The break can be
+  paused and skipped, uses a dedicated countdown so rest controls cannot alter
+  it, announces the next exercise once, and commits the pending set through one
+  guarded path so timer/button races cannot double-advance. Restart clears it.
+  A pure `DEFAULT_TRANSITION_SECONDS` helper and test cover the timing rule.
+- Uttar AI suggestions are grouped by the selected mode, prefill the composer
+  instead of sending immediately, explain save/apply consequences, use an
+  in-panel New chat confirmation, and state the "check with a clinician" limit.
+- Login uses the shared Google button with retry guidance; the demo link says
+  "No account needed, nothing saved". Demo previews keep a compact sign-in CTA.
+- Run import is now explicitly **Review → Confirm**: files are parsed on-device,
+  the first 8 rows are labelled as a preview, unsupported files and parser
+  errors get clearer messages, and nothing is saved until confirmation.
+- Profile export opens a confirmation summary and shows collection progress;
+  all-time totals are labelled. Admin Analytics distinguishes "No data yet"
+  from "Unavailable" and adds denominators/hints to aggregate cards.
+
+All of this is website-only. The installed closed-test build stays at version
+code 3 until an explicit v4 upload is approved. Deployed web changes also do
+not change the native bundle already on testers' phones.
 
 Important: internal-test users are not eligible for closed testing until they opt
 out of internal testing. Adding them to the Google Group or giving them the closed
@@ -356,4 +387,4 @@ Uttar guardrails when this is eventually built:
 
 ## Next action
 
-The closed-test release and Google Group tester change are both live. Recruit enough new testers to reach at least 12 opted in (15–16 is safer). Each tester must join the group, opt in through the closed-test link, install/update to version code 3, actually use the app, and stay opted in for 14 continuous days. Internal testers must opt out of internal testing first. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.
+The closed-test release and Google Group tester change are both live. Recruit enough new testers to reach at least 12 opted in (15–16 is safer). Each tester must join the group, opt in through the closed-test link, install/update to version code 3, actually use the app, and stay opted in for 14 continuous days. Internal testers must opt out of internal testing first. Website polish is committed to `main` and deploys automatically; do not bundle it into a native v4 or submit to Play without explicit approval. If testing passes, do the queued fixes first, then priorities **1 and 2**: Today's Focus plus data-grounded Uttar AI. Health Connect and Activity Unlock come after that.

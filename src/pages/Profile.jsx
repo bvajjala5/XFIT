@@ -74,6 +74,8 @@ export default function Profile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportConfirming, setExportConfirming] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
 
@@ -150,12 +152,16 @@ export default function Profile() {
     if (!user || exporting) return;
     track('export_requested');
     setExporting(true);
+    setExportProgress('Reading your profile…');
     try {
       const profileSnap = await getDoc(doc(db, 'users', user.uid));
       const collections = {};
-      for (const name of USER_DATA_COLLECTIONS) {
+      for (let index = 0; index < USER_DATA_COLLECTIONS.length; index += 1) {
+        const name = USER_DATA_COLLECTIONS[index];
+        setExportProgress(`Reading ${index + 1} of ${USER_DATA_COLLECTIONS.length} collections…`);
         collections[name] = await readUserDataCollection(user.uid, name);
       }
+      setExportProgress('Preparing your download…');
       const shared = await getDocs(query(collection(db, 'sharedWorkouts'), where('sharedBy', '==', user.uid)));
       collections.sharedWorkouts = shared.docs.map(serializeDocument);
 
@@ -173,6 +179,8 @@ export default function Profile() {
       toast.error("Couldn't export your data. Please try again.");
     } finally {
       setExporting(false);
+      setExportProgress('');
+      setExportConfirming(false);
     }
   };
 
@@ -194,10 +202,13 @@ export default function Profile() {
           {userData?.experience_level && <span className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full capitalize">{userData.experience_level}</span>}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        <GlassCard className="text-center"><Dumbbell className="w-4 h-4 text-primary mx-auto mb-1"/><div className="text-xl font-bold">{logs.length}</div><div className="text-[10px] text-muted-foreground">Workouts</div></GlassCard>
-        <GlassCard className="text-center"><Clock className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
-        <GlassCard className="text-center"><Flame className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
+      <div className="space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">All-time totals</p>
+        <div className="grid grid-cols-3 gap-3">
+          <GlassCard className="text-center"><Dumbbell className="w-4 h-4 text-primary mx-auto mb-1"/><div className="text-xl font-bold">{logs.length}</div><div className="text-[10px] text-muted-foreground">Workouts</div></GlassCard>
+          <GlassCard className="text-center"><Clock className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalMins}</div><div className="text-[10px] text-muted-foreground">Minutes</div></GlassCard>
+          <GlassCard className="text-center"><Flame className="w-4 h-4 text-muted-foreground mx-auto mb-1"/><div className="text-xl font-bold">{totalCals}</div><div className="text-[10px] text-muted-foreground">Calories</div></GlassCard>
+        </div>
       </div>
       <GlassCard id="profile-settings" className={`scroll-mt-24 transition-shadow ${location.hash === '#profile-settings' ? 'ring-2 ring-primary/60' : ''}`}>
         <div className="flex items-center justify-between mb-4">
@@ -264,7 +275,7 @@ export default function Profile() {
               type="button"
               onClick={() => setAdvancedOpen((open) => !open)}
               aria-expanded={advancedOpen}
-              className="flex w-full items-center justify-between py-1 text-left transition-colors hover:text-primary"
+              className="-mx-2 flex min-h-[44px] w-full items-center justify-between rounded-xl px-2 text-left transition-colors hover:bg-secondary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <Database className="h-4 w-4" /> Advanced / Data tools
@@ -275,11 +286,11 @@ export default function Profile() {
               <div className="space-y-3 pt-1">
                 <button
                   type="button"
-                  onClick={handleExportData}
+                  onClick={() => setExportConfirming(true)}
                   disabled={exporting}
-                  className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary disabled:opacity-60"
+                  className="-mx-2 flex min-h-[44px] w-full items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary disabled:opacity-60"
                 >
-                  <span className="flex items-center gap-3"><Download className="h-4 w-4 text-muted-foreground" /> {exporting ? 'Preparing export…' : 'Export Data'}</span>
+                  <span className="flex items-center gap-3"><Download className="h-4 w-4 text-muted-foreground" /> {exporting && exportProgress ? exportProgress : 'Export Data'}</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </button>
                 <p className="text-[10px] leading-relaxed text-muted-foreground">Downloads a JSON copy of your workouts, nutrition, runs, health logs and preferences. It stays on your device.</p>
@@ -287,7 +298,7 @@ export default function Profile() {
                 <button
                   type="button"
                   onClick={() => navigate('/run?import=1')}
-                  className="flex w-full items-center justify-between py-2 text-sm transition-colors hover:text-primary"
+                  className="-mx-2 flex min-h-[44px] w-full items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"
                 >
                   <span className="flex items-center gap-3"><FileSpreadsheet className="h-4 w-4 text-muted-foreground" /> Import runs from a file</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -300,26 +311,42 @@ export default function Profile() {
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Fitness</p>
-            <Link to="/history" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span className="flex items-center gap-3"><Dumbbell className="w-4 h-4 text-muted-foreground" /> Workout History</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/history" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span className="flex items-center gap-3"><Dumbbell className="w-4 h-4 text-muted-foreground" /> Workout History</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/records" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span className="flex items-center gap-3"><Trophy className="w-4 h-4 text-muted-foreground" /> Personal Records</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/records" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span className="flex items-center gap-3"><Trophy className="w-4 h-4 text-muted-foreground" /> Personal Records</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
           </GlassCard>
           <GlassCard className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legal</p>
-            <Link to="/terms" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Terms of Service</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/terms" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span>Terms of Service</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/privacy" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Privacy Policy</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/privacy" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span>Privacy Policy</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/changelog" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Changelog</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/changelog" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span>Changelog</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
-            <Link to="/status" className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors"><span>Status &amp; reliability</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
+            <Link to="/status" className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary"><span>Status &amp; reliability</span><ChevronRight className="w-4 h-4 text-muted-foreground" /></Link>
             <div className="border-t border-border/30" />
             <a href="mailto:bhanu.charan.vajjala@gmail.com" onClick={() => track('support_contacted', { destination: 'email' })}
-              className="flex items-center justify-between py-2 text-sm hover:text-primary transition-colors">
+              className="-mx-2 flex min-h-[44px] items-center justify-between rounded-xl px-2 text-sm transition-colors hover:bg-secondary/40 hover:text-primary">
               <span>Contact Support</span><ChevronRight className="w-4 h-4 text-muted-foreground" />
             </a>
           </GlassCard>
           <Button variant="secondary" className="w-full rounded-xl h-12 text-destructive hover:text-destructive" onClick={handleSignOut}><LogOut className="w-4 h-4 mr-2"/>Sign Out</Button>
+      <AlertDialog open={exportConfirming} onOpenChange={(open) => { if (!exporting) setExportConfirming(open) }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Export your data</AlertDialogTitle>
+            <AlertDialogDescription>
+              Downloads one JSON file with your profile and {USER_DATA_COLLECTIONS.length} collections — workouts, nutrition, runs, health logs, and preferences. The file stays on your device.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl" disabled={exporting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-xl" onClick={handleExportData} disabled={exporting}>
+              {exporting ? 'Preparing…' : 'Download JSON'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog>
         <AlertDialogTrigger asChild><Button variant="ghost" className="w-full rounded-xl h-12 text-destructive/60 hover:text-destructive hover:bg-destructive/10 text-sm"><Trash2 className="w-4 h-4 mr-2"/>Delete Account</Button></AlertDialogTrigger>
         <AlertDialogContent className="bg-card border-border">

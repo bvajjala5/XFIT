@@ -59,7 +59,7 @@ export default function PersonalRecords() {
       {Object.entries(EXERCISE_CATEGORIES).map(([cat, exercises]) => (
         <GlassCard key={cat} className="overflow-hidden p-0">
           <button onClick={() => setExpanded(e => e === cat ? null : cat)}
-            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+            className="flex min-h-[48px] w-full items-center justify-between p-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
             <span className="font-semibold text-sm">{cat}</span>
             {expanded === cat ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
@@ -82,8 +82,9 @@ export default function PersonalRecords() {
                             )}
                           </div>
                           <button onClick={() => setAdding(isAdding ? null : ex)}
-                            className="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
-                            <Plus className="w-4 h-4" />
+                            aria-label={isAdding ? `Close record form for ${ex}` : `Add a record for ${ex}`}
+                            className="icon-button h-10 w-10 border-primary/20 bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary">
+                            <Plus className="h-4 w-4" />
                           </button>
                         </div>
                         <AnimatePresence>
@@ -103,7 +104,7 @@ export default function PersonalRecords() {
                                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                                 className="w-full bg-background border border-border/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary/50" />
                               <button onClick={() => handleSave(ex)}
-                                className="w-full h-9 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors">
+                                className="min-h-[44px] w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
                                 Save Record
                               </button>
                               {(records[ex] || []).slice(0, 3).map((r, i) => (

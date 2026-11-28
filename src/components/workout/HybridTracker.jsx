@@ -9,13 +9,14 @@ const formatClock = (seconds) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
-function SegmentedButton({ active, onClick, icon: Icon, children }) {
+function SegmentedButton({ active, onClick, icon: Icon, disabled = false, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors ${active ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:text-foreground'}`}
+      disabled={disabled}
+      className={`flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-colors disabled:pointer-events-none disabled:opacity-50 ${active ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:text-foreground'}`}
     >
       <Icon className="h-3.5 w-3.5" /> {children}
     </button>
@@ -27,16 +28,18 @@ function SegmentedButton({ active, onClick, icon: Icon, children }) {
  * always-available manual controls, and optional on-device camera counting.
  */
 export default function HybridTracker({
-  exercise, phase, restLeft, elapsed, actual, weight, paused,
+  exercise, phase, restLeft, transitionLeft, nextExerciseName, elapsed, actual, weight, paused,
   poseEnabled, movement,
   onPoseToggle, onAdjust, onQuickInput,
-  onWeightChange, onModeChange, onCompleteSet, onSkipRest, onCameraReps,
+  onWeightChange, onModeChange, onCompleteSet, onSkipRest, onSkipBreak, onCameraReps,
   onRestAdjust, onRestInput, onPauseToggle, onSkip,
 }) {
   const [quick, setQuick] = useState('')
   const [restDraft, setRestDraft] = useState('')
   const isReps = exercise?.mode === MODE_REPS
   const isRest = phase === 'rest'
+  const isTransition = phase === 'transition'
+  const isWork = phase === 'work'
   const target = exercise?.target || 1
   const remaining = Math.max(0, target - elapsed)
   const progress = Math.min(100, Math.round((elapsed / target) * 100))
@@ -59,11 +62,20 @@ export default function HybridTracker({
   return (
     <div className="mx-auto w-full max-w-sm space-y-3">
       <div className="flex gap-1.5 rounded-2xl bg-secondary/30 p-1">
-        <SegmentedButton active={isReps} onClick={() => onModeChange(MODE_REPS)} icon={Dumbbell}>Reps</SegmentedButton>
-        <SegmentedButton active={!isReps} onClick={() => onModeChange(MODE_TIME)} icon={Timer}>Time</SegmentedButton>
+        <SegmentedButton active={isReps} disabled={!isWork} onClick={() => onModeChange(MODE_REPS)} icon={Dumbbell}>Reps</SegmentedButton>
+        <SegmentedButton active={!isReps} disabled={!isWork} onClick={() => onModeChange(MODE_TIME)} icon={Timer}>Time</SegmentedButton>
       </div>
 
-      {isRest ? (
+      {isTransition ? (
+        <div className="rounded-3xl border border-primary/30 bg-primary/5 px-4 py-7 text-center">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Up next</p>
+          <p className="mt-1 text-lg font-bold">{nextExerciseName || 'Next exercise'}</p>
+          <p aria-live="polite" className="mt-3 text-6xl font-black tabular-nums text-primary sm:text-7xl">{formatClock(transitionLeft)}</p>
+          <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
+            Take a breath, reset your space, and get ready. The next timer starts when the break ends.
+          </p>
+        </div>
+      ) : isRest ? (
         <div className="rounded-3xl border border-green-500/30 bg-green-500/5 px-4 py-6 text-center">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-green-500">Rest</p>
           <p className="mt-1 text-6xl font-black tabular-nums text-green-500 sm:text-7xl">{formatClock(restLeft)}</p>
@@ -209,19 +221,19 @@ export default function HybridTracker({
 
         <button
           type="button"
-          onClick={isRest ? onSkipRest : onCompleteSet}
-          disabled={!isRest && paused}
+          onClick={isTransition ? onSkipBreak : isRest ? onSkipRest : onCompleteSet}
+          disabled={isWork && paused}
           className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl primary-gradient px-3 text-sm font-black text-primary-foreground active:scale-[0.98] disabled:opacity-50 sm:min-h-[56px]"
         >
-          {isRest ? <Zap className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
-          {isRest ? 'Skip Rest' : 'Complete set'}
+          {isWork ? <Activity className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+          {isTransition ? 'Start next now' : isRest ? 'Skip Rest' : 'Complete set'}
         </button>
 
         <button
           type="button"
           onClick={onSkip}
-          aria-label="Skip to next exercise"
-          title="Skip to next exercise"
+          aria-label={isTransition ? 'Start next exercise now' : 'Skip to next exercise'}
+          title={isTransition ? 'Start next exercise now' : 'Skip to next exercise'}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-secondary/60 active:scale-95 sm:h-14 sm:w-14"
         >
           <SkipForward className="h-5 w-5" />

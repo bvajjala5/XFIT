@@ -30,8 +30,12 @@ const MODES = [
 ]
 
 const SUGGESTIONS = [
-  { mode: 'workout', icon: Dumbbell, title: 'Build a workout', text: '20-minute full-body workout, no equipment, beginner friendly' },
+  { mode: 'workout', icon: Dumbbell, title: 'Quick full-body', text: '20-minute full-body workout, no equipment, beginner friendly' },
+  { mode: 'workout', icon: Activity, title: 'Dumbbell strength', text: '45-minute strength workout with dumbbells, intermediate' },
+  { mode: 'workout', icon: Flame, title: 'Fast HIIT', text: '15-minute HIIT, no jumping, beginner friendly' },
   { mode: 'plan', icon: CalendarDays, title: 'Make a weekly plan', text: '4-day upper/lower plan for fat loss, 45 minutes per session' },
+  { mode: 'plan', icon: Dumbbell, title: 'Simple 3-day split', text: '3-day beginner full-body plan, 30 minutes, no equipment' },
+  { mode: 'plan', icon: Activity, title: 'Five-day split', text: '5-day push/pull/legs plan, 60 minutes, gym equipment' },
   { mode: 'chat', icon: Utensils, title: 'Nutrition help', text: 'High-protein breakfast ideas under 400 calories' },
   { mode: 'chat', icon: Activity, title: 'Ask about recovery', text: 'How should I train when my legs are still sore?' },
   { mode: 'chat', icon: Compass, title: 'Find a feature', text: 'How do I change my app theme?' },
@@ -179,7 +183,10 @@ function WorkoutCard({ message, saving, onSave, onStart }) {
         ))}
       </ol>
 
-      <div className="border-t border-border/40 p-3">
+      <div className="space-y-1.5 border-t border-border/40 p-3">
+        <p className="text-center text-[10px] leading-relaxed text-muted-foreground">
+          {message.savedId ? 'Ready to start whenever you are.' : 'Saving adds this workout to My workouts.'}
+        </p>
         {message.savedId ? (
           <Button className="w-full gap-2 rounded-xl" onClick={() => onStart(message.savedId)}>
             <Play className="h-4 w-4 fill-current" /> Start workout
@@ -220,7 +227,10 @@ function PlanCard({ message, saving, onApply, onOpen }) {
         ))}
       </div>
 
-      <div className="border-t border-border/40 p-3">
+      <div className="space-y-1.5 border-t border-border/40 p-3">
+        <p className="text-center text-[10px] leading-relaxed text-muted-foreground">
+          {message.planApplied ? 'Your week is saved. Your own workouts stay untouched.' : 'Applying replaces your current week. Your own workouts stay untouched.'}
+        </p>
         {message.planApplied ? (
           <Button className="w-full gap-2 rounded-xl" onClick={onOpen}>
             <CalendarDays className="h-4 w-4" /> Open my Plan
@@ -264,6 +274,7 @@ export default function UttarAI({ onClose }) {
   const [busy, setBusy] = useState(false)
   const [savingId, setSavingId] = useState(null)
   const [showAllSuggestions, setShowAllSuggestions] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -272,6 +283,13 @@ export default function UttarAI({ onClose }) {
     () => describeLocation(location.pathname, location.search),
     [location.pathname, location.search]
   )
+  // Keep prompts relevant to the selected mode, then fill the rest with the
+  // other kinds of help so "Show more" still has something useful to offer.
+  const suggestions = useMemo(() => [
+    ...SUGGESTIONS.filter((s) => s.mode === mode),
+    ...SUGGESTIONS.filter((s) => s.mode !== mode),
+  ], [mode])
+  const visibleSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3)
 
   // Persist the conversation as it changes. The initial value was read
   // synchronously above, so there is no empty-render clobber to guard against.
@@ -443,7 +461,12 @@ export default function UttarAI({ onClose }) {
   }
 
   function clearChat() {
-    if (messages.length && !window.confirm('Clear this conversation?')) return
+    if (!messages.length) return
+    if (!confirmClear) {
+      setConfirmClear(true)
+      return
+    }
+    setConfirmClear(false)
     setMessages([])
     setShowAllSuggestions(false)
     if (storageKey) {
@@ -452,8 +475,10 @@ export default function UttarAI({ onClose }) {
   }
 
   function chooseSuggestion(suggestion) {
+    // Prefill instead of sending so people can tweak the prompt before asking.
     setMode(suggestion.mode)
-    send(suggestion.text, suggestion.mode)
+    setInput(suggestion.text)
+    requestAnimationFrame(() => inputRef.current?.focus())
   }
 
   // Close the sheet first so the destination is visible immediately.
@@ -496,24 +521,37 @@ export default function UttarAI({ onClose }) {
         </div>
       </header>
 
+      {confirmClear && (
+        <div role="alert" className="mx-4 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px]">
+          <span className="font-semibold text-amber-200">Clear this conversation?</span>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setConfirmClear(false)} className="soft-button min-h-[36px] border-transparent bg-background/40 px-2.5 py-1 text-[11px]">Cancel</button>
+            <button type="button" onClick={clearChat} className="pill-button min-h-[36px] border-amber-400/40 bg-amber-400/20 px-2.5 py-1 text-[11px] text-amber-100 hover:bg-amber-400/30 hover:text-amber-50">Clear chat</button>
+          </div>
+        </div>
+      )}
+
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && (
           <div className="space-y-3 pt-2">
             <div className="rounded-2xl border border-border/60 bg-card/75 p-3.5">
               <p className="text-sm leading-relaxed">
-                Hey{userData?.full_name ? ` ${String(userData.full_name).split(/\s+/)[0]}` : ''} — I can answer health and nutrition
-                questions, build a single workout, or set up your whole week. What are we working on?
+                Hey{userData?.full_name ? ` ${String(userData.full_name).split(/\s+/)[0]}` : ''} — I can build workouts and weekly plans,
+                answer app questions, and help with training, nutrition, and recovery. You’re on {currentScreen}.
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                Tap a prompt to edit it, then Send. For injuries or medical conditions, check with a clinician first.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {(showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3)).map((suggestion) => {
+              {visibleSuggestions.map((suggestion) => {
                 const Icon = suggestion.icon
                 return (
                   <button
                     key={suggestion.title}
                     onClick={() => chooseSuggestion(suggestion)}
                     disabled={busy}
-                    className="group rounded-2xl border border-border/70 bg-card/80 p-3 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
+                    className="group min-h-[72px] rounded-2xl border border-border/70 bg-card/80 p-3 text-left shadow-sm transition-all hover:border-primary/50 hover:bg-primary/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
                   >
                     <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
                       <Icon className="h-4 w-4 shrink-0 text-primary" /> {suggestion.title}
@@ -527,9 +565,9 @@ export default function UttarAI({ onClose }) {
               type="button"
               onClick={() => setShowAllSuggestions((value) => !value)}
               aria-expanded={showAllSuggestions}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="soft-button w-full text-xs"
             >
-              {showAllSuggestions ? 'Show fewer ideas' : `Show ${SUGGESTIONS.length - 3} more ideas`}
+              {showAllSuggestions ? 'Show fewer ideas' : `Show ${suggestions.length - 3} more ideas`}
               {showAllSuggestions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </button>
           </div>
@@ -595,8 +633,8 @@ export default function UttarAI({ onClose }) {
             <button
               key={id}
               onClick={() => { setMode(id); inputRef.current?.focus() }}
-              className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
-                mode === id ? 'bg-background text-foreground shadow-sm' : 'text-foreground/80 hover:text-foreground'
+              className={`flex min-h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors active:scale-[0.98] ${
+                mode === id ? 'bg-background text-foreground shadow-sm' : 'text-foreground/80 hover:bg-background/50 hover:text-foreground'
               }`}
             >
               <Icon className={`h-3.5 w-3.5 shrink-0 ${mode === id ? 'text-primary' : 'text-foreground/60'}`} />

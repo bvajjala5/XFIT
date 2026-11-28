@@ -240,7 +240,7 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             <p className="font-semibold">Today</p>
             <p className="text-sm text-muted-foreground leading-snug">{todayText}</p>
-            {!hasAnyPlan && !todayLogged && <Link to="/plan" className="inline-block text-sm text-primary mt-1">Set up your weekly split</Link>}
+            {!hasAnyPlan && !todayLogged && <Link to="/plan" className="mt-1 inline-flex min-h-[44px] items-center text-sm font-semibold text-primary hover:underline">Set up your weekly split</Link>}
           </div>
           {scheduled && !todayLogged && (
             <Link to={scheduledLink} aria-label={`Start ${scheduled.workout_title}`}
@@ -296,7 +296,7 @@ export default function Home() {
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={`${cardCls} overflow-hidden`}>
             <div className="flex items-center justify-between px-5 pt-4 pb-1">
               <h2 className="font-semibold">Start a workout</h2>
-              <Link to="/workouts" className="text-sm text-primary flex items-center min-h-[44px]">All <ChevronRight className="w-4 h-4" /></Link>
+              <Link to="/workouts" className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-2 text-sm font-semibold text-primary transition-colors hover:bg-secondary/50">All <ChevronRight className="w-4 h-4" /></Link>
             </div>
             <ul className="divide-y divide-border/40">
               {customWorkouts.filter((w) => !w.is_split_template).slice(0, 3).map((w) => (
@@ -309,7 +309,7 @@ export default function Home() {
                     <Play className="w-4 h-4 text-muted-foreground" />
                   </Link>
                   <button onClick={() => handleShare(w)} disabled={sharingId === w.id} aria-label="Share workout"
-                    className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-primary disabled:opacity-50">
+                    className="icon-button w-11 h-11 rounded-full text-muted-foreground hover:text-primary">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </li>

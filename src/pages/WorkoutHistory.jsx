@@ -48,7 +48,7 @@ export default function WorkoutHistory() {
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {types.map(t => (
           <button key={t} onClick={() => setFilter(t)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${filter === t ? "bg-primary/20 text-primary border border-primary/30" : "bg-secondary/50 text-muted-foreground border border-transparent"}`}>
+            className={`pill-button flex-shrink-0 text-xs ${filter === t ? "border-primary/30 bg-primary/20 text-primary hover:text-primary" : ""}`}>
             {t}
           </button>
         ))}
@@ -65,7 +65,7 @@ export default function WorkoutHistory() {
           <Dumbbell className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="font-semibold">No workouts yet</p>
           <p className="text-sm text-muted-foreground mt-1">Complete a workout to see it here!</p>
-          <Link to="/workouts" className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold">Browse Workouts</Link>
+          <Link to="/workouts" className="mt-4 inline-flex min-h-[44px] items-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">Browse Workouts</Link>
         </GlassCard>
       )}
 
@@ -74,7 +74,7 @@ export default function WorkoutHistory() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">{date}</p>
           {dayLogs.map((log, i) => (
             <motion.div key={log.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <GlassCard className="flex items-center gap-3">
+              <GlassCard className="flex items-center gap-3 transition-colors hover:border-primary/30 hover:bg-secondary/30">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
                   <Dumbbell className="w-5 h-5 text-primary" />
                 </div>

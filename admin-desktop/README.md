@@ -120,7 +120,7 @@ Fields read (all with `.select()` + a 20,000-document limit unless noted):
 - Firebase Auth `listUsers()` metadata — signup counts only.
 
 Estimated AI cost is intentionally an **estimate**: requests are multiplied by
-mode buckets (chat 1,200; workout/plan 2,000; formcheck 320 tokens) and priced at
+the mode buckets in `electron/analytics.js` and priced at
 `ADMIN_ANALYTICS_TOKEN_COST_PER_MILLION` (default `0.075` USD per 1M tokens — a
 conservative Gemini-style number). Set that env var in `.env` to change the rate.
 Exact billing lives in the Google Cloud dashboard. `ADMIN_ANALYTICS_MAX_DOCS` can lower

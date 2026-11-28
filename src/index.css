@@ -94,6 +94,13 @@
 
   * { @apply border-border; }
 
+  /* Buttons must look touchable at a glance. The browser default arrow cursor
+     makes icon-only controls read as decoration, which is a common source of
+     "I didn't know that was a button" feedback. */
+  button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: pointer; }
+  button:disabled, [role='button'][aria-disabled='true'] { cursor: not-allowed; }
+  ::selection { background: hsl(var(--primary) / 0.22); }
+
   /* Keep the body transparent: the fixed wallpaper paints at -z-10 above the
      html fallback colour but below in-flow content. An opaque body background
      here would cover the wallpaper entirely. */
@@ -108,16 +115,29 @@
 
 @layer components {
   .glass {
-    @apply bg-card/75 backdrop-blur-xl border border-border/60;
+    @apply bg-card/75 backdrop-blur-xl border border-border/60 shadow-[0_12px_40px_-28px_rgba(0,0,0,0.65)];
   }
   .glass-strong {
-    @apply bg-card/95 backdrop-blur-2xl border border-border;
+    @apply bg-card/95 backdrop-blur-2xl border border-border shadow-[0_16px_48px_-28px_rgba(0,0,0,0.7)];
   }
   .card-hover {
     @apply transition-all duration-200 hover:scale-[1.01] active:scale-[0.99];
   }
   .primary-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  /* Shared affordance for raw <button> elements that cannot use the shadcn
+     Button component. Gives icon-only and text controls a visible surface,
+     comfortable hit area, and a clear pressed response. */
+  .soft-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-secondary/60 px-3 py-2 text-sm font-semibold text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-secondary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+  }
+  .icon-button {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-secondary/60 text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+  }
+  .pill-button {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 text-[11px] font-bold text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-secondary hover:text-foreground active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-50;
   }
 }
 

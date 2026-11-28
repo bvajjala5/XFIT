@@ -123,7 +123,7 @@ const WEEK_STYLES = {
 const FAQS = [
   {
     q: 'Is Uttar Fitness free?',
-    a: 'Yes. The live demo, account creation, Uttar AI, and every fitness tool are free with no credit card required.',
+    a: 'Yes. The live demo, account creation, Uttar AI, and every fitness tool is free with no credit card required.',
   },
   {
     q: 'Do I need a gym or equipment?',
@@ -144,6 +144,10 @@ const FAQS = [
   {
     q: 'Can I use it on my phone?',
     a: 'Yes. Uttar Fitness is mobile-first and installs to your home screen, so it feels like a native app without an app-store download.',
+  },
+  {
+    q: 'Can I import runs or export my data?',
+    a: 'Yes. In Profile open Advanced / Data tools. CSV, GPX, and TCX runs are previewed on your device before they are saved, and you can download a JSON copy of your data anytime.',
   },
 ]
 

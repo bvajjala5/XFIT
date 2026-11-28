@@ -122,7 +122,7 @@ export default function Demo() {
   const tabRefs = useRef({})
   const previewRef = useRef(null)
 
-  // The premium-feature previews are deep-linkable so a reviewer can be handed
+  // The feature previews are deep-linkable so a reviewer can be handed
   // a direct URL: /demo?preview=barcode, /demo?preview=form-check, and
   // /demo?preview=ai open straight to that screen. The URL is the source of truth.
   const previewParam = searchParams.get('preview')
@@ -179,7 +179,7 @@ export default function Demo() {
       setTab(NAV_TO_TAB[key])
       return
     }
-    if (key === 'ai') toast.message('Uttar AI opens as a full-screen AI coach in the app.')
+    if (key === 'ai') toast.message('Uttar AI opens as a coach panel from the app menu.')
     else if (key === 'plan') toast.message('The weekly plan opens from the Plan quick link.')
     else if (key === 'run') toast.message('The run tracker is built into the app.')
     else toast.message('That screen opens in the full app.')
@@ -338,6 +338,17 @@ export default function Demo() {
                     <ArrowLeft className="h-4 w-4" /> Back to the demo
                   </button>
                 </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-3 py-2.5">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {user ? 'You’re signed in — your own dashboard is ready.' : 'Sample data only. Sign in to try it with your own data.'}
+                </p>
+                <Link
+                  to={user ? '/home' : '/login'}
+                  className="soft-button min-h-[40px] border-primary/25 bg-primary/10 text-xs text-primary hover:bg-primary/20 hover:text-primary"
+                >
+                  {user ? 'Open dashboard' : 'Sign in'}
+                </Link>
               </div>
               <div className="mt-5">
                 {preview === 'barcode' && <BarcodePreview />}

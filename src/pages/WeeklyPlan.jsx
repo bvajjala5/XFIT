@@ -17,7 +17,7 @@ const presetWeek = (p) => p.week.map((k) => (k ? TEMPLATES[k].label : 'Rest')).j
 
 function PickerItem({ title, sub, onClick, icon }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center gap-3 px-1 py-3 min-h-[56px] text-left border-b border-border/30 last:border-0 active:bg-secondary/40">
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-3 py-3 min-h-[56px] text-left border-b border-border/30 last:border-0 transition-colors hover:bg-secondary/30 active:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
       {icon}
       <div className="flex-1 min-w-0"><p className="font-medium truncate">{title}</p>{sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}</div>
     </button>
@@ -49,7 +49,7 @@ function PickerSheet({ day, custom, library, onPick, onClose }) {
         style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
         <div className="flex items-center justify-between">
           <h2 id="picker-title" className="text-lg font-extrabold">{day}</h2>
-          <button onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-2 flex items-center justify-center text-muted-foreground"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} aria-label="Close" className="icon-button -mr-2 w-11 h-11 rounded-full"><X className="w-5 h-5" /></button>
         </div>
         <Item title="Rest day" sub="Recovery counts" icon={<Moon className="w-5 h-5 text-muted-foreground" />} onClick={() => onPick({ type: 'rest' })} />
         <Head>Split workouts</Head>
@@ -119,7 +119,7 @@ export default function WeeklyPlan() {
   return (
     <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-28 space-y-5">
       <header className="flex items-center gap-1">
-        <Link to="/home" aria-label="Back" className="w-11 h-11 -ml-3 flex items-center justify-center text-muted-foreground"><ChevronLeft className="w-6 h-6" /></Link>
+        <Link to="/home" aria-label="Back" className="icon-button -ml-3 w-11 h-11 rounded-full"><ChevronLeft className="w-6 h-6" /></Link>
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Weekly plan</h1>
           <p className="text-sm text-muted-foreground">Pick a split, then change any day you like.</p>
@@ -161,7 +161,7 @@ export default function WeeklyPlan() {
             const tpl = e && templateById(e.workout_id)
             return (
               <li key={key} className={`flex items-center ${isToday ? 'bg-primary/8' : ''}`}>
-                <button onClick={() => setPickDay(key)} disabled={busy} className="flex-1 min-w-0 flex items-center gap-4 pl-5 py-3 min-h-[64px] text-left">
+                <button onClick={() => setPickDay(key)} disabled={busy} className="flex flex-1 min-w-0 items-center gap-4 pl-5 py-3 min-h-[64px] text-left transition-colors hover:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
                   <span className={`w-9 text-sm font-semibold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{short}</span>
                   <span className="flex-1 min-w-0">
                     <span className={`block font-semibold truncate ${rest ? 'text-muted-foreground' : ''}`}>{!e ? 'Not set' : rest ? 'Rest' : e.label || e.workout_title}</span>
@@ -171,7 +171,7 @@ export default function WeeklyPlan() {
                 </button>
                 {!rest && (
                   <Link to={e.is_custom ? `/player/custom/${e.workout_id}` : `/player/${e.workout_id}`} aria-label={`Start ${e.workout_title}`}
-                    className="w-11 h-11 mr-3 rounded-full flex items-center justify-center text-primary active:scale-90 transition-transform">
+                    className="icon-button mr-3 h-11 w-11 rounded-full border-primary/25 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary">
                     <Play className="w-4 h-4 fill-current" />
                   </Link>
                 )}

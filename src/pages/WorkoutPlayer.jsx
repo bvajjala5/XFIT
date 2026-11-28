@@ -29,6 +29,7 @@ import {
   MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
   recordSet, nextPosition, setExerciseMode, adjust, sessionProgress, flattenSets,
   detectMode, signatureFor, firstIncomplete, setRestSeconds, completedExerciseCount,
+  DEFAULT_TRANSITION_SECONDS, transitionSeconds,
 } from '@/lib/workoutTracking';
 
 // ── Voice: pick the most natural English voice the device has, and speak with a calm coaching pace ──
@@ -220,8 +221,10 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const [session, setSession] = useState(null);
   const [exIndex, setExIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
-  const [phase, setPhase] = useState('work'); // work | rest
+  const [phase, setPhase] = useState('work'); // work | rest | transition
   const [restLeft, setRestLeft] = useState(0);
+  // Dedicated countdown so rest adjustments can never alter the transition gap.
+  const [transitionLeft, setTransitionLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [actual, setActual] = useState(0);
   const [weight, setWeight] = useState('');
@@ -273,6 +276,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   const phaseRef = useRef('work');
   const elapsedRef = useRef(0);
   const restLeftRef = useRef(0);
+  const transitionLeftRef = useRef(0);
+  const pendingNextRef = useRef(null);
   const actualRef = useRef(0);
   const weightRef = useRef('');
   const logModalRef = useRef(null);
@@ -400,6 +405,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     setPhase('work');
     setElapsed(0);
     setRestLeft(0);
+    setTransitionLeft(0);
     setActual(0);
     setWeight(next.exercises[start.exIndex]?.weight || '');
     setPoseEnabled(false);
@@ -410,6 +416,13 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     if (!sessionKey) return;
     cameraRepsRef.current = 0;
     lastCueRef.current = -1;
+    phaseRef.current = 'work';
+    elapsedRef.current = 0;
+    restLeftRef.current = 0;
+    transitionLeftRef.current = 0;
+    pendingNextRef.current = null;
+    actualRef.current = 0;
+    announcedRef.current = { exIndex: -1, countdown: false };
   }, [sessionKey]);
 
   // A restored session counts as resumed; a fresh one as started. The ref guard
@@ -488,11 +501,42 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     };
   }, [trackDropOff]);
 
+  // Commit the next position. Kept separate from transition handling so the
+  // timer, the primary button and the skip button all land on exactly the same
+  // set, even if two of them fire in the same tick.
+  const commitNext = useCallback((nextSession, pos) => {
+    if (!nextSession?.exercises?.[pos.exIndex]) return;
+    pendingNextRef.current = null;
+    setExIndex(pos.exIndex); exIndexRef.current = pos.exIndex;
+    setSetIndex(pos.setIndex); setIndexRef.current = pos.setIndex;
+    setPhase('work'); phaseRef.current = 'work';
+    setElapsed(0); elapsedRef.current = 0;
+    setRestLeft(0); restLeftRef.current = 0;
+    setTransitionLeft(0); transitionLeftRef.current = 0;
+    setActual(0); actualRef.current = 0;
+    setWeight(nextSession.exercises[pos.exIndex]?.weight || '');
+    weightRef.current = nextSession.exercises[pos.exIndex]?.weight || '';
+    cameraRepsRef.current = 0;
+    lastCueRef.current = -1;
+    setPoseEnabled(false);
+  }, []);
+
+  // End the between-exercise break early. The pending position was saved when
+  // the break started, so skipping never skips an extra exercise.
+  const skipBreak = useCallback(() => {
+    if (phaseRef.current !== 'transition' || !sessionRef.current || !pendingNextRef.current) return;
+    const pos = pendingNextRef.current;
+    playBeep(880, 0.2);
+    commitNext(sessionRef.current, pos);
+  }, [commitNext]);
+
   // Move to the next set (or exercise) after the current set has been recorded.
   const goNext = useCallback((nextSession, fromEx, fromSet) => {
     const pos = nextPosition(nextSession, fromEx, fromSet);
     persistSession(nextSession);
     if (pos.done) {
+      pendingNextRef.current = null;
+      setTransitionLeft(0); transitionLeftRef.current = 0;
       trackCompleted();
       speakText('Workout complete. You crushed it today.', voiceEnabled);
       setIsComplete(true);
@@ -503,28 +547,27 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       triggerFlash();
       setMotivation(motivations[Math.floor(Math.random() * motivations.length)]);
       setTimeout(() => setMotivation(''), 3000);
+      const seconds = transitionSeconds(DEFAULT_TRANSITION_SECONDS);
+      const nextName = nextSession.exercises[pos.exIndex]?.name;
+      pendingNextRef.current = pos;
+      setPhase('transition'); phaseRef.current = 'transition';
+      setRestLeft(0); restLeftRef.current = 0;
+      setTransitionLeft(seconds); transitionLeftRef.current = seconds;
+      // Announce once here. Marking it announced stops the exIndex effect from
+      // repeating the same line when the break ends.
+      announcedRef.current.exIndex = pos.exIndex;
+      announcedRef.current.countdown = false;
+      speakText(`Nice work. Up next, ${nextName}. Take a ${seconds} second transition.`, voiceEnabled);
+      return;
     }
-    setExIndex(pos.exIndex);
-    setSetIndex(pos.setIndex);
-    setPhase('work');
-    phaseRef.current = 'work';
-    setElapsed(0); elapsedRef.current = 0;
-    setRestLeft(0); restLeftRef.current = 0;
-    setActual(0); actualRef.current = 0;
-    setWeight(nextSession.exercises[pos.exIndex]?.weight || '');
-    weightRef.current = nextSession.exercises[pos.exIndex]?.weight || '';
-    cameraRepsRef.current = 0;
-    lastCueRef.current = -1;
-    setPoseEnabled(false);
-    const nextName = nextSession.exercises[pos.exIndex]?.name;
-    if (pos.exIndex !== fromEx) speakText(`${pick(PRAISE)} Next, ${nextName}.`, voiceEnabled);
-    else speakText(`Set ${pos.setIndex + 1}`, voiceEnabled);
-  }, [voiceEnabled, trackCompleted]);
+    commitNext(nextSession, pos);
+    speakText(`Set ${pos.setIndex + 1}`, voiceEnabled);
+  }, [voiceEnabled, trackCompleted, commitNext]);
 
   const finishSet = useCallback((source = 'manual') => {
     const current = sessionRef.current;
     const ex = current?.exercises[exIndexRef.current];
-    if (!ex || phaseRef.current === 'rest') return;
+    if (!ex || phaseRef.current !== 'work') return;
     playBeep(440, 0.2);
     const finalSource = source === 'camera' || cameraRepsRef.current > 0 ? 'camera' : 'manual';
     const record = ex.mode === MODE_REPS
@@ -559,6 +602,18 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       if (!mountedRef.current) return;
       setTotalTime(t => t + 1);
 
+      if (phaseRef.current === 'transition') {
+        const next = transitionLeftRef.current - 1;
+        transitionLeftRef.current = next;
+        setTransitionLeft(next);
+        if (next <= 0) {
+          // skipBreak owns the completion beep so a click on the same tick
+          // cannot produce two sounds.
+          skipBreak();
+        }
+        return;
+      }
+
       if (phaseRef.current === 'rest') {
         const next = restLeftRef.current - 1;
         restLeftRef.current = next;
@@ -590,7 +645,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       }
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [isPaused, isComplete, session, tempoEnabled, voiceEnabled, finishSet, skipRest]);
+  }, [isPaused, isComplete, session, tempoEnabled, voiceEnabled, finishSet, skipRest, skipBreak]);
 
   const setPrimaryValue = (value) => {
     const ex = session?.exercises[exIndex];
@@ -612,7 +667,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   };
   const handleWeight = (value) => { weightRef.current = value; setWeight(value); };
   const handleModeChange = (mode) => {
-    if (!session) return;
+    if (!session || phaseRef.current !== 'work') return;
     const next = setExerciseMode(session, exIndex, mode);
     setSession(next);
     sessionRef.current = next;
@@ -633,6 +688,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
   };
 
   const applyRestSeconds = (seconds) => {
+    if (phaseRef.current !== 'rest') return;
     const value = adjust(seconds, 0, 0, 600);
     restLeftRef.current = value;
     setRestLeft(value);
@@ -646,6 +702,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
 
   const skipExercise = useCallback(() => {
     if (!sessionRef.current) return;
+    pendingNextRef.current = null;
+    setTransitionLeft(0); transitionLeftRef.current = 0;
     if (exIndexRef.current < sessionRef.current.exercises.length - 1) {
       setExIndex(exIndexRef.current + 1);
       setSetIndex(0);
@@ -677,6 +735,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     setPhase('work'); phaseRef.current = 'work';
     setElapsed(0); elapsedRef.current = 0;
     setRestLeft(0); restLeftRef.current = 0;
+    setTransitionLeft(0); transitionLeftRef.current = 0;
+    pendingNextRef.current = null;
     setActual(0); actualRef.current = 0;
     setWeight(firstWeight); weightRef.current = firstWeight;
     setTotalTime(0);
@@ -1079,6 +1139,8 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               exercise={exState}
               phase={phase}
               restLeft={restLeft}
+              transitionLeft={transitionLeft}
+              nextExerciseName={exercises[exIndex + 1]?.name}
               elapsed={elapsed}
               actual={actual}
               weight={weight}
@@ -1090,13 +1152,18 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               onQuickInput={setPrimaryValue}
               onWeightChange={handleWeight}
               onModeChange={handleModeChange}
-              onCompleteSet={() => (phase === 'rest' ? skipRest() : finishSet('manual'))}
+              onCompleteSet={() => {
+                if (phase === 'transition') skipBreak();
+                else if (phase === 'rest') skipRest();
+                else finishSet('manual');
+              }}
               onSkipRest={skipRest}
+              onSkipBreak={skipBreak}
               onCameraReps={handleCameraReps}
               onRestAdjust={handleRestAdjust}
               onRestInput={handleRestInput}
               onPauseToggle={() => setIsPaused((value) => !value)}
-              onSkip={skipExercise}
+              onSkip={phase === 'transition' ? skipBreak : skipExercise}
             />
           ) : (
             <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>

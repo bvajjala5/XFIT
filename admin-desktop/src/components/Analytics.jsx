@@ -31,8 +31,8 @@ const fmt = {
 }
 
 const NOT_INSTRUMENTED = (
-  <span className="not-instrumented" title="No telemetry has been recorded for this signal yet">
-    Not instrumented yet
+  <span className="not-instrumented" title="No aggregate has been recorded for this signal yet">
+    No data yet
   </span>
 )
 
@@ -57,15 +57,18 @@ function Note({ children, tone = 'info', icon: Icon = Info }) {
   )
 }
 
-function Breakdown({ title, subtitle, rows, emptyLabel = 'Not instrumented yet' }) {
+function Breakdown({ title, subtitle, rows, emptyLabel = 'No data yet' }) {
   const list = Array.isArray(rows) ? rows : []
   const max = Math.max(1, ...list.map((row) => row.count || 0))
+  const total = list.reduce((sum, row) => sum + (row.count || 0), 0)
   return (
     <section className="card">
       <div className="card-head">
         <div>
           <h2 className="card-title">{title}</h2>
-          {subtitle ? <p className="card-sub">{subtitle}</p> : null}
+          {subtitle || list.length ? (
+            <p className="card-sub">{subtitle ? `${subtitle} · ` : ''}{NUMBER.format(total)} total</p>
+          ) : null}
         </div>
         <BarChart3 size={15} className="card-head-icon" />
       </div>
@@ -79,7 +82,9 @@ function Breakdown({ title, subtitle, rows, emptyLabel = 'Not instrumented yet' 
               <span className="breakdown-track">
                 <span className="breakdown-fill" style={{ width: `${Math.max(3, ((row.count || 0) / max) * 100)}%` }} />
               </span>
-              <span className="breakdown-value">{NUMBER.format(row.count || 0)}</span>
+              <span className="breakdown-value" title={`${NUMBER.format(row.count || 0)} of ${NUMBER.format(total)}`}>
+                {NUMBER.format(row.count || 0)}
+              </span>
             </li>
           ))}
         </ul>
@@ -101,7 +106,7 @@ function Section({ title, subtitle, icon: Icon, section, children }) {
           <p className="card-sub">{subtitle}</p>
         </div>
         <Badge tone={status === 'aggregates' ? 'green' : status === 'empty' ? 'amber' : 'red'}>
-          {status === 'aggregates' ? 'Aggregates' : status === 'empty' ? 'Not instrumented yet' : 'Unavailable'}
+          {status === 'aggregates' ? 'Aggregates' : status === 'empty' ? 'No data yet' : 'Unavailable'}
         </Badge>
       </div>
       {section?.available === false ? (
@@ -127,7 +132,7 @@ function ActiveUsersChart({ series }) {
         <RefreshCw size={15} className="card-head-icon" />
       </div>
       {points.length === 0 ? (
-        <p className="analytics-empty">Not instrumented yet</p>
+        <p className="analytics-empty">No data yet</p>
       ) : (
         <div className="chart" role="img" aria-label="Daily active users over the last 14 days">
           {points.map((point) => (
@@ -199,7 +204,7 @@ export default function Analytics({ refreshKey, onError }) {
       >
         <div className="stat-grid">
           <Metric label="Requests" value={ai.requests} icon={Sparkles} />
-          <Metric label="Success rate" value={ai.successRate} format={fmt.percent} tone="green" icon={Sparkles} />
+          <Metric label="Success rate" value={ai.successRate} format={fmt.percent} tone="green" icon={Sparkles} hint="successful / total requests" />
           <Metric label="Successes" value={ai.successes} tone="green" />
           <Metric label="Failures" value={ai.failures} tone="red" />
           <Metric label="Rate limits" value={ai.rateLimits} tone="amber" />
@@ -215,7 +220,7 @@ export default function Analytics({ refreshKey, onError }) {
         <div className="two-col analytics-split">
           <Breakdown
             title="Estimated tokens by mode"
-            subtitle="chat 1,200 · workout/plan 2,000 · formcheck 320 tokens per request"
+            subtitle="Estimated tokens per request by mode"
             rows={Object.entries(ai.modeTokens || {}).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)}
           />
           <div className="card">
@@ -272,9 +277,9 @@ export default function Analytics({ refreshKey, onError }) {
           <Metric label="MAU" value={retention.mau} hint="Last 30 days" tone="green" />
           <Metric label="Sign-ups" value={retention.signups} hint="Auth metadata" tone="purple" />
           <Metric label="New · 7 days" value={retention.signups7d} tone="purple" />
-          <Metric label="Returning users" value={retention.returningUsers} hint="Active on 2+ days" tone="cyan" />
+          <Metric label="Returning users" value={retention.returningUsers} hint="Active on 2+ days in the last 30" tone="cyan" />
           <Metric label="Zero activity" value={retention.zeroActivityUsers} hint="No telemetry days" tone="amber" />
-          <Metric label="Zero 7d after signup" value={retention.zeroActivityAfterSignup7d} tone="amber" />
+          <Metric label="Zero 7d after signup" value={retention.zeroActivityAfterSignup7d} hint="Signed up ≥7d ago, no telemetry" tone="amber" />
         </div>
         <div className="two-col analytics-split">
           <ActiveUsersChart series={retention.activeUsersSeries} />
@@ -379,7 +384,7 @@ export default function Analytics({ refreshKey, onError }) {
         <span>Read limit: {fmt.integer(data.limits?.docsPerCollection ?? 20000)} docs per collection</span>
         {data.warnings?.length ? (
           <span className="analytics-warning">
-            {data.warnings.length} source{data.warnings.length === 1 ? '' : 's'} unavailable — shown as “Not instrumented yet”.
+            {data.warnings.length} source{data.warnings.length === 1 ? '' : 's'} unavailable — shown as “Unavailable”.
           </span>
         ) : null}
       </div>

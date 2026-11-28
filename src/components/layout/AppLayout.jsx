@@ -99,7 +99,7 @@ export default function AppLayout() {
     return (
       <Link key={path} to={path}
         aria-current={isActive ? 'page' : undefined}
-        className="flex flex-1 min-w-0 flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl relative transition-all active:scale-90">
+        className="relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
         {isActive && (
           <motion.div layoutId="activeMobileNav"
             className="absolute inset-0 bg-primary/10 rounded-xl"
@@ -133,7 +133,7 @@ export default function AppLayout() {
           aria-label="Open Uttar AI coach"
           aria-haspopup="dialog"
           title="Ask Uttar AI"
-          className="ai-logo group relative mb-6 flex h-11 w-11 items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="ai-logo group relative mb-6 flex h-11 w-11 items-center justify-center rounded-2xl outline-none transition-colors hover:bg-secondary/60 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50"
         >
           <BrandMark className="relative h-11 w-11 rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-105" emblemClassName="w-7" />
           <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[hsl(var(--brand-tile))]">
@@ -173,7 +173,7 @@ export default function AppLayout() {
             onFocus={preloadUttarAI}
             aria-label="Open Uttar AI coach"
             aria-haspopup="dialog"
-            className="ai-logo group relative flex flex-1 min-w-0 flex-col items-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="ai-logo group relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(var(--brand-tile))] ring-1 ring-[hsl(var(--brand-mark)/0.22)] transition-transform duration-300 group-hover:scale-105">
               <BrandEmblem className="w-5" />
