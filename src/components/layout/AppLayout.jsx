@@ -11,6 +11,7 @@ import UttarAILauncher, { preloadUttarAI } from '@/components/ai/UttarAILauncher
 import { UttarAIProvider } from '@/components/ai/UttarAIContext';
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark';
 import { applyResolvedTheme, getThemeMode, resolveTheme, THEME_KEY } from '@/lib/theme';
+import { applyAccent, getAccent, ACCENT_KEY } from '@/lib/accent';
 import useAutoTheme from '@/hooks/useAutoTheme';
 
 const navItems = [
@@ -71,10 +72,11 @@ export default function AppLayout() {
     // that re-resolves it at the next 7am/7pm boundary.
     const sync = () => {
       applyResolvedTheme(resolveTheme(getThemeMode()));
+      applyAccent(getAccent());
     };
     sync();
     const onStorage = (event) => {
-      if (!event.key || event.key === THEME_KEY) sync();
+      if (!event.key || event.key === THEME_KEY || event.key === ACCENT_KEY) sync();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -99,10 +101,10 @@ export default function AppLayout() {
     return (
       <Link key={path} to={path}
         aria-current={isActive ? 'page' : undefined}
-        className="relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+        className={`relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border px-1 py-1.5 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${isActive ? 'border-primary/35 bg-primary/15' : 'border-border/50 bg-secondary/45 hover:bg-secondary/70'}`}>
         {isActive && (
           <motion.div layoutId="activeMobileNav"
-            className="absolute inset-0 bg-primary/10 rounded-xl"
+            className="absolute inset-0 rounded-2xl bg-primary/10"
             transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
         )}
         <Icon className={`w-[19px] h-[19px] transition-colors relative z-10 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -111,7 +113,7 @@ export default function AppLayout() {
     );
   };
 
-  const bottomNavStyle = { paddingBottom: 'env(safe-area-inset-bottom)' };
+  const bottomNavStyle = { bottom: 'calc(1rem + env(safe-area-inset-bottom))' };
 
   // The coach lives in the app chrome on every tab: the sidebar logo on desktop
   // and the first slot of the mobile tab bar, before Home. Full-screen sessions
@@ -124,7 +126,7 @@ export default function AppLayout() {
       <InstallBanner />
       <UttarAILauncher open={aiOpen} onOpenChange={setAiOpen} />
       {/* Desktop sidebar */}
-      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-6 gap-1 glass-strong z-50 border-r border-border/40">
+      <nav aria-label="Main navigation" className="hidden md:flex fixed left-4 top-4 bottom-4 w-[76px] flex-col items-center gap-2 rounded-[28px] border border-border/40 bg-card/55 px-2 py-4 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.75)] backdrop-blur-xl z-50">
         <button
           type="button"
           onClick={() => setAiOpen(true)}
@@ -133,7 +135,7 @@ export default function AppLayout() {
           aria-label="Open Uttar AI coach"
           aria-haspopup="dialog"
           title="Ask Uttar AI"
-          className="ai-logo group relative mb-6 flex h-11 w-11 items-center justify-center rounded-2xl outline-none transition-colors hover:bg-secondary/60 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="ai-logo group relative mb-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 outline-none transition-all hover:bg-primary/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50"
         >
           <BrandMark className="relative h-11 w-11 rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-105" emblemClassName="w-7" />
           <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-[hsl(var(--brand-tile))]">
@@ -145,8 +147,8 @@ export default function AppLayout() {
           return (
             <Link key={path} to={path}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl w-16 transition-all ${isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
-              {isActive && <motion.div layoutId="activeNav" className="absolute inset-0 bg-primary/10 rounded-2xl" />}
+              className={`relative flex min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-2xl border p-2 transition-all ${isActive ? 'border-primary/35 bg-primary/15 text-primary shadow-sm' : 'border-border/50 bg-secondary/45 text-muted-foreground hover:border-primary/30 hover:bg-secondary/70 hover:text-foreground'}`}>
+              {isActive && <motion.div layoutId="activeNav" className="absolute inset-0 rounded-2xl bg-primary/10" />}
               <Icon className="w-[18px] h-[18px] relative z-10" />
               <span className="text-[10px] font-semibold relative z-10 leading-tight text-center">{label}</span>
             </Link>
@@ -155,16 +157,16 @@ export default function AppLayout() {
       </nav>
 
       {/* Main content */}
-      <main className="pb-24 md:pb-0 md:pl-20">
+      <main className="pb-28 md:pb-0 md:pl-28">
         <UttarAIProvider onOpen={openAI}>
           <Outlet />
         </UttarAIProvider>
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden glass-strong border-t border-border/40"
+      <nav aria-label="Main navigation" className="fixed left-3 right-3 z-50 mx-auto max-w-md rounded-[28px] border border-border/50 bg-card/60 px-1.5 py-1.5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.75)] backdrop-blur-xl md:hidden"
         style={bottomNavStyle}>
-        <div className="flex items-end py-2 px-1">
+        <div className="flex items-center gap-1">
           {/* AI is the leftmost item on mobile, before Home. */}
           <button
             type="button"
@@ -173,7 +175,7 @@ export default function AppLayout() {
             onFocus={preloadUttarAI}
             aria-label="Open Uttar AI coach"
             aria-haspopup="dialog"
-            className="ai-logo group relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="ai-logo group relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border border-primary/30 bg-primary/10 px-1 py-1 outline-none transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(var(--brand-tile))] ring-1 ring-[hsl(var(--brand-mark)/0.22)] transition-transform duration-300 group-hover:scale-105">
               <BrandEmblem className="w-5" />

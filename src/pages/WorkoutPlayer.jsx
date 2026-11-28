@@ -14,7 +14,7 @@ import useFocusTrap from '@/hooks/useFocusTrap';
 import WorkoutDemo from '@/components/workout/WorkoutDemo';
 import FormCheck from '@/components/workout/FormCheck';
 import { toast } from 'sonner';
-import { normalizeExercise } from '@/lib/exerciseTiming';
+import { normalizeExercise, secondsLeftFromInput } from '@/lib/exerciseTiming';
 import { expectedWorkoutSeconds, isWorkoutTooFast, MIN_WORKOUT_DURATION_RATIO } from '@/lib/workoutValidation';
 import { savePR } from '@/lib/personalRecords';
 import { findBuiltinWorkout } from '@/lib/workoutLibrary';
@@ -27,7 +27,7 @@ import { shareContent, dataUrlToFile } from '@/lib/shareContent';
 import { track, flushAnalytics } from '@/lib/usageAnalytics';
 import {
   MODE_REPS, MODE_TIME, createSession, restoreSession, persistSession,
-  recordSet, nextPosition, setExerciseMode, adjust, sessionProgress, flattenSets,
+  recordSet, nextPosition, setExerciseMode, adjust, parseQuantity, sessionProgress, flattenSets,
   detectMode, signatureFor, firstIncomplete, setRestSeconds, completedExerciseCount,
   DEFAULT_TRANSITION_SECONDS, transitionSeconds,
 } from '@/lib/workoutTracking';
@@ -647,6 +647,9 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
     return () => clearInterval(timerRef.current);
   }, [isPaused, isComplete, session, tempoEnabled, voiceEnabled, finishSet, skipRest, skipBreak]);
 
+  // +/- controls still nudge the underlying elapsed time or rep count. Typed
+  // values go through setQuickValue instead, because "0:45" means 45 seconds
+  // left on the clock rather than 45 seconds already completed.
   const setPrimaryValue = (value) => {
     const ex = session?.exercises[exIndex];
     if (!ex) return;
@@ -660,6 +663,22 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
       setElapsed(next);
     }
   };
+
+  const setQuickValue = (raw) => {
+    const ex = session?.exercises[exIndex];
+    if (!ex) return;
+    if (ex.mode === MODE_REPS) {
+      const next = adjust(parseQuantity(raw, actualRef.current), 0, 0, 999);
+      actualRef.current = next;
+      setActual(next);
+      return;
+    }
+    const left = secondsLeftFromInput(raw, ex.target, ex.target - elapsedRef.current);
+    const next = adjust(ex.target - left, 0, ex.target, ex.target);
+    elapsedRef.current = next;
+    setElapsed(next);
+  };
+
   const handleAdjust = (delta) => {
     const ex = session?.exercises[exIndex];
     if (!ex) return;
@@ -1149,7 +1168,7 @@ export default function WorkoutPlayer({ isCustom: isCustomRoute = false }) {
               movement={movement}
               onPoseToggle={() => setPoseEnabled((value) => !value)}
               onAdjust={handleAdjust}
-              onQuickInput={setPrimaryValue}
+              onQuickInput={setQuickValue}
               onWeightChange={handleWeight}
               onModeChange={handleModeChange}
               onCompleteSet={() => {

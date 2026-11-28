@@ -47,8 +47,13 @@ export default function HybridTracker({
 
   const submitQuick = (event) => {
     event.preventDefault()
-    const value = parseQuantity(quick, isReps ? actual : elapsed)
-    if (value > 0) onQuickInput(value)
+    if (isReps) {
+      const value = parseQuantity(quick, actual)
+      if (value > 0) onQuickInput(value)
+    } else {
+      // The player interprets time input as the value to show on the clock.
+      onQuickInput(quick)
+    }
     setQuick('')
   }
 
@@ -79,31 +84,31 @@ export default function HybridTracker({
         <div className="rounded-3xl border border-green-500/30 bg-green-500/5 px-4 py-6 text-center">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-green-500">Rest</p>
           <p className="mt-1 text-6xl font-black tabular-nums text-green-500 sm:text-7xl">{formatClock(restLeft)}</p>
-          <div className="mx-auto mt-3 flex max-w-xs items-center justify-center gap-2">
+          <div className="mx-auto mt-3 flex max-w-xs items-center justify-center gap-2.5">
             <button
               type="button"
               onClick={() => onRestAdjust(-15)}
               aria-label="Subtract fifteen seconds of rest"
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500/15 text-green-500 active:scale-95"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-green-500/30 bg-green-500/15 text-green-500 transition-all active:scale-95"
             >
               <Minus className="h-5 w-5" />
             </button>
-            <form onSubmit={submitRest} className="flex min-w-0 flex-1 items-center gap-1">
+            <form onSubmit={submitRest} className="flex min-w-0 flex-1 items-center gap-2">
               <input
                 value={restDraft}
                 onChange={(event) => setRestDraft(event.target.value)}
                 inputMode="numeric"
                 aria-label="Rest seconds"
                 placeholder={formatClock(restLeft)}
-                className="h-12 w-full min-w-0 rounded-2xl border border-green-500/30 bg-background/70 px-2 text-center text-base font-bold tabular-nums outline-none focus:border-green-500"
+                className="h-12 w-full min-w-0 rounded-2xl border border-green-500/30 bg-background/70 px-2 text-center text-base font-bold tabular-nums outline-none transition-colors focus:border-green-500"
               />
-              <button type="submit" aria-label="Apply rest time" className="h-12 shrink-0 rounded-2xl bg-green-500/15 px-3 text-xs font-bold text-green-500 active:scale-95">Apply</button>
+              <button type="submit" aria-label="Apply rest time" className="h-12 shrink-0 rounded-2xl border border-green-500/30 bg-green-500/15 px-3 text-xs font-bold text-green-500 transition-all active:scale-95">Apply</button>
             </form>
             <button
               type="button"
               onClick={() => onRestAdjust(15)}
               aria-label="Add fifteen seconds of rest"
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500 text-green-950 active:scale-95"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-green-500/40 bg-green-500 text-green-950 transition-all active:scale-95"
             >
               <Plus className="h-5 w-5" />
             </button>
@@ -136,35 +141,40 @@ export default function HybridTracker({
             )}
           </div>
 
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2.5">
             <button
               type="button"
               onClick={() => onAdjust(isReps ? -1 : -5)}
               aria-label={isReps ? 'Decrease reps' : 'Subtract five seconds'}
-              className="flex h-14 w-16 items-center justify-center rounded-2xl bg-secondary/60 active:scale-95"
+              className="icon-button h-14 w-16 rounded-2xl active:scale-95"
             >
               <Minus className="h-6 w-6" />
             </button>
-            <form onSubmit={submitQuick} className="flex min-w-0 flex-1 items-center gap-1">
+            <form onSubmit={submitQuick} className="flex min-w-0 flex-1 items-center gap-2">
               <input
                 value={quick}
                 onChange={(event) => setQuick(event.target.value)}
                 inputMode="numeric"
-                aria-label={isReps ? 'Enter reps' : 'Enter seconds'}
-                placeholder={isReps ? 'Reps' : '0:30'}
-                className="h-14 w-full min-w-0 rounded-2xl border border-border/60 bg-background/70 px-3 text-center text-lg font-bold tabular-nums outline-none focus:border-primary"
+                aria-label={isReps ? 'Enter reps' : 'Enter time left'}
+                placeholder={isReps ? 'Reps' : '0:45'}
+                className="h-14 w-full min-w-0 rounded-2xl border border-border/60 bg-background/70 px-3 text-center text-lg font-bold tabular-nums outline-none transition-colors focus:border-primary"
               />
-              <button type="submit" aria-label={isReps ? 'Apply reps' : 'Apply seconds'} className="h-14 shrink-0 rounded-2xl bg-secondary/60 px-3 text-xs font-bold active:scale-95">Apply</button>
+              <button type="submit" aria-label={isReps ? 'Apply reps' : 'Apply time left'} className="soft-button h-14 shrink-0 rounded-2xl px-4 text-xs font-bold active:scale-95">Apply</button>
             </form>
             <button
               type="button"
               onClick={() => onAdjust(isReps ? 1 : 5)}
               aria-label={isReps ? 'Increase reps' : 'Add five seconds'}
-              className="flex h-14 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground active:scale-95"
+              className="flex h-14 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary text-primary-foreground shadow-sm transition-all active:scale-95"
             >
               <Plus className="h-6 w-6" />
             </button>
           </div>
+          {!isReps && (
+            <p className="text-center text-[10px] leading-relaxed text-muted-foreground">
+              Type the time you want left on the clock, then tap Apply.
+            </p>
+          )}
 
           {isReps && (
             <label className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card/50 px-3 py-2">

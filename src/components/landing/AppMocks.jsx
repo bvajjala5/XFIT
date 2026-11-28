@@ -27,6 +27,7 @@ import {
   SkipForward,
   Sparkles,
   Sun,
+  Timer,
   TrendingUp,
   Trophy,
   User,
@@ -35,6 +36,7 @@ import {
   Zap,
 } from 'lucide-react'
 import BrandMark, { BrandEmblem } from '@/components/brand/BrandMark'
+import { secondsLeftFromInput } from '@/lib/exerciseTiming'
 
 const CARD = 'rounded-2xl border border-border/50 bg-card/80'
 
@@ -79,7 +81,7 @@ const NAV_ITEMS = [
 
 function BottomNav({ active = 'home', onNavigate }) {
   return (
-    <div className="flex items-end gap-0.5 border-t border-border/40 bg-card/60 px-1 py-1.5">
+    <div className="m-2 flex shrink-0 items-center gap-1 rounded-2xl border border-border/50 bg-card/70 px-1.5 py-1.5 shadow-[0_12px_30px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl">
       {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
         const isActive = key === active
         const tone = isActive ? 'text-[hsl(var(--accent-text))]' : 'text-muted-foreground'
@@ -96,7 +98,7 @@ function BottomNav({ active = 'home', onNavigate }) {
             <span className={`text-[8px] font-semibold leading-none ${tone}`}>{label}</span>
           </>
         )
-        const cls = `flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-0.5 py-1 transition-colors ${isActive ? 'bg-primary/10' : ''}`
+        const cls = `flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 transition-colors ${isActive ? 'border-primary/35 bg-primary/15' : 'border-border/50 bg-secondary/45'}`
         return onNavigate ? (
           <button
             key={key}
@@ -338,19 +340,47 @@ const DEMO_EXERCISES = {
 }
 const DEMO_SETS_PER_EXERCISE = 3
 const DEMO_TARGET_REPS = 12
+const DEMO_TARGET_SECONDS = 45
 const DEMO_REST_SECONDS = 20
+
+const demoClock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+const clampDemoSeconds = (seconds) => Math.max(0, Math.min(DEMO_TARGET_SECONDS, Math.round(seconds)))
 
 /** A small working player so the demo can show sets, reps and rest without an account. */
 export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
   const exercises = DEMO_EXERCISES[title] || DEMO_EXERCISES['Core Crusher']
   const totalSets = exercises.length * DEMO_SETS_PER_EXERCISE
   const [setIndex, setSetIndex] = useState(0)
+  const [mode, setMode] = useState('reps')
   const [reps, setReps] = useState(0)
+  const [secondsLeft, setSecondsLeft] = useState(DEMO_TARGET_SECONDS)
+  const [timeDraft, setTimeDraft] = useState('')
   const [restTotal, setRestTotal] = useState(0)
   const [restLeft, setRestLeft] = useState(0)
   const [finished, setFinished] = useState(false)
 
   const resting = restTotal > 0
+  const isTime = mode === 'time'
+
+  const advance = () => {
+    setRestTotal(0)
+    setRestLeft(0)
+    setReps(0)
+    setSecondsLeft(DEMO_TARGET_SECONDS)
+    setTimeDraft('')
+    if (setIndex + 1 >= totalSets) setFinished(true)
+    else setSetIndex((i) => i + 1)
+  }
+
+  const completeSet = () => {
+    if (setIndex + 1 >= totalSets) {
+      setFinished(true)
+      return
+    }
+    setRestTotal(DEMO_REST_SECONDS)
+    setRestLeft(DEMO_REST_SECONDS)
+  }
+
   useEffect(() => {
     if (!resting) return undefined
     const id = window.setInterval(() => {
@@ -365,26 +395,41 @@ export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
     return () => window.clearInterval(id)
   }, [resting])
 
-  const advance = () => {
-    setRestTotal(0)
-    setRestLeft(0)
-    setReps(0)
-    if (setIndex + 1 >= totalSets) setFinished(true)
-    else setSetIndex((i) => i + 1)
+  useEffect(() => {
+    if (!isTime || resting || finished) return undefined
+    const id = window.setInterval(() => {
+      setSecondsLeft((n) => {
+        if (n <= 0) {
+          window.clearInterval(id)
+          return 0
+        }
+        return n - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [isTime, resting, finished])
+
+  const applyTime = (event) => {
+    event.preventDefault()
+    setSecondsLeft(secondsLeftFromInput(timeDraft, DEMO_TARGET_SECONDS, secondsLeft))
+    setTimeDraft('')
   }
 
-  const completeSet = () => {
-    if (setIndex + 1 >= totalSets) {
-      setFinished(true)
-      return
-    }
-    setRestTotal(DEMO_REST_SECONDS)
-    setRestLeft(DEMO_REST_SECONDS)
+  const selectMode = (next) => {
+    setMode(next)
+    setSecondsLeft(DEMO_TARGET_SECONDS)
+    setTimeDraft('')
   }
 
   const exerciseIdx = Math.floor(setIndex / DEMO_SETS_PER_EXERCISE)
   const setNo = (setIndex % DEMO_SETS_PER_EXERCISE) + 1
   const progress = finished ? 100 : ((setIndex + 1) / totalSets) * 100
+  const displayValue = resting ? restLeft : isTime ? secondsLeft : reps
+  const displayLabel = resting
+    ? 'seconds of rest'
+    : isTime
+      ? `seconds left · target ${demoClock(DEMO_TARGET_SECONDS)}`
+      : `reps · target ${DEMO_TARGET_REPS}`
 
   return (
     <div className="space-y-3 p-3.5">
@@ -424,10 +469,21 @@ export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
               Set {setNo} of {DEMO_SETS_PER_EXERCISE}
             </p>
             <p className="mt-1 text-lg font-black leading-tight">{exercises[exerciseIdx]}</p>
-            <p className="mt-3 text-5xl font-black tabular-nums">{resting ? restLeft : reps}</p>
-            <p className="text-[9px] text-muted-foreground">
-              {resting ? 'seconds of rest' : `reps · target ${DEMO_TARGET_REPS}`}
+            <p className="mt-3 text-5xl font-black tabular-nums">
+              {isTime && !resting ? demoClock(displayValue) : displayValue}
             </p>
+            <p className="text-[9px] text-muted-foreground">{displayLabel}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary/50 p-1">
+            <button type="button" aria-pressed={!isTime} onClick={() => selectMode('reps')}
+              className={`flex min-h-[30px] items-center justify-center gap-1 rounded-lg text-[9px] font-bold transition-colors ${!isTime ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+              <Dumbbell className="h-3 w-3" /> Reps
+            </button>
+            <button type="button" aria-pressed={isTime} onClick={() => selectMode('time')}
+              className={`flex min-h-[30px] items-center justify-center gap-1 rounded-lg text-[9px] font-bold transition-colors ${isTime ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+              <Timer className="h-3 w-3" /> Time
+            </button>
           </div>
 
           {resting ? (
@@ -439,6 +495,36 @@ export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
               <button type="button" onClick={advance} disabled={restLeft > 0}
                 className="min-h-[40px] rounded-xl primary-gradient px-2 text-[10px] font-bold text-white disabled:opacity-40">
                 {restLeft > 0 ? 'Resting…' : 'Next set'}
+              </button>
+            </div>
+          ) : isTime ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-[36px_minmax(0,1fr)_36px] gap-2">
+                <button type="button" aria-label="Subtract five seconds"
+                  onClick={() => setSecondsLeft((n) => clampDemoSeconds(n - 5))}
+                  className="flex min-h-[42px] items-center justify-center rounded-xl border border-border bg-secondary/60">
+                  <Minus className="h-4 w-4" />
+                </button>
+                <form onSubmit={applyTime} className="flex min-w-0 items-center gap-1">
+                  <input
+                    value={timeDraft}
+                    onChange={(event) => setTimeDraft(event.target.value)}
+                    inputMode="numeric"
+                    aria-label="Demo time left"
+                    placeholder={demoClock(secondsLeft)}
+                    className="h-[42px] w-full min-w-0 rounded-xl border border-border bg-background/70 px-2 text-center text-xs font-bold tabular-nums outline-none focus:border-primary"
+                  />
+                  <button type="submit" className="h-[42px] shrink-0 rounded-xl border border-border bg-secondary/60 px-2 text-[9px] font-bold">Apply</button>
+                </form>
+                <button type="button" aria-label="Add five seconds"
+                  onClick={() => setSecondsLeft((n) => clampDemoSeconds(n + 5))}
+                  className="flex min-h-[42px] items-center justify-center rounded-xl border border-primary/30 bg-primary text-primary-foreground">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              <button type="button" onClick={completeSet}
+                className="min-h-[42px] w-full rounded-xl primary-gradient px-2 text-[10px] font-bold text-white">
+                {setIndex + 1 >= totalSets ? 'Finish set' : 'Complete set'}
               </button>
             </div>
           ) : (
@@ -458,7 +544,7 @@ export function WorkoutPlayerMock({ title = 'Core Crusher', onExit }) {
             </div>
           )}
           <p className="text-center text-[8px] text-muted-foreground">
-            Demo player · optional camera counting and voice cues live in the full app.
+            Demo player · typing 0:45 shows 45 seconds left. Camera counting and voice cues live in the full app.
           </p>
         </>
       )}

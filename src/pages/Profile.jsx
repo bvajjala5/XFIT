@@ -8,13 +8,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { clearAppCaches } from '@/lib/cache';
 import { getThemeMode, setThemeMode } from '@/lib/theme';
+import { getAccent, setAccent } from '@/lib/accent';
 import { localDateStr } from '@/lib/utils';
 import { buildUserDataExport, downloadJson, serializeDocument } from '@/lib/dataExport';
 import { avatarImageUrl } from '@/lib/avatarUrl';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GlassCard from '@/components/shared/GlassCard';
-import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Download, Database, FileSpreadsheet } from 'lucide-react';
+import { User, LogOut, Settings, Dumbbell, Clock, Flame, Trash2, Palette, Trophy, ChevronRight, Check, Moon, Sun, Layers, Download, Database, FileSpreadsheet } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { track } from '@/lib/usageAnalytics';
@@ -45,6 +46,13 @@ const THEME_OPTIONS = [
   { key: 'auto',      label: 'Auto mode', desc: 'Dark at night', icon: Clock },
 ];
 
+// Two restrained presets only: neutral ink, or one blueprint blue supported by
+// a quiet slate tone. Cards and body copy stay neutral in both.
+const ACCENT_OPTIONS = [
+  { key: 'neutral',   label: 'Neutral ink', desc: 'Greys + off-whites', swatch: 'neutral' },
+  { key: 'blueprint', label: 'Blueprint',   desc: 'Blue CTA · slate support', swatch: 'blueprint' },
+];
+
 // Tiny static swatches — no animation and no theme-dependent artwork.
 function ThemePreview({ mode }) {
   if (mode === 'auto') {
@@ -66,6 +74,18 @@ function ThemePreview({ mode }) {
   )
 }
 
+function AccentPreview({ preset }) {
+  const blueprint = preset === 'blueprint';
+  return (
+    <div className="relative h-11 w-full overflow-hidden rounded-xl border border-border/40 bg-secondary/60">
+      <span className="absolute left-2 top-2 h-1.5 w-9 rounded-full bg-muted-foreground/35" />
+      <span className="absolute left-2 top-5 h-1 w-6 rounded-full bg-muted-foreground/20" />
+      <span className={`absolute right-2 top-2 h-5 w-8 rounded-lg ${blueprint ? 'bg-[#3b82f6]' : 'bg-foreground/40'}`} />
+      <span className={`absolute bottom-1.5 right-2 h-2 w-5 rounded-full ${blueprint ? 'bg-[#64748b]' : 'bg-muted-foreground/30'}`} />
+    </div>
+  );
+}
+
 export default function Profile() {
   const { user, userData, updateUserData, logout } = useAuth();
   const location = useLocation();
@@ -78,10 +98,17 @@ export default function Profile() {
   const [exportProgress, setExportProgress] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [theme, setTheme] = useState(() => getThemeMode());
+  const [accent, setAccentPreset] = useState(() => getAccent());
 
   const handleWallpaper = (key) => {
     setThemeMode(key);
     setTheme(key);
+  };
+
+  const handleAccent = (key) => {
+    // Preference stays on this device; no account write and no analytics event.
+    setAccent(key);
+    setAccentPreset(key);
   };
 
   // Uttar AI can deep-link to a Profile card, e.g. /profile#profile-settings.
@@ -231,44 +258,93 @@ export default function Profile() {
           </div>
         )}
       </GlassCard>
-      <GlassCard id="app-theme" className={`space-y-3 scroll-mt-24 transition-shadow ${location.hash === '#app-theme' ? 'ring-2 ring-primary/60' : ''}`}>
-        <div className="flex items-center gap-2 mb-1">
+      <GlassCard id="app-theme" className={`space-y-4 scroll-mt-24 transition-shadow ${location.hash === '#app-theme' ? 'ring-2 ring-primary/60' : ''}`}>
+        <div className="flex items-center gap-2">
           <Palette className="w-4 h-4 text-primary" />
-          <div className="text-sm font-semibold">Wallpaper</div>
+          <div>
+            <div className="text-sm font-semibold">Customization</div>
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Wallpaper and accent stay on this device. Colour is reserved for what you can tap and what is active.
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
-            const selected = theme === key
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => handleWallpaper(key)}
-                aria-pressed={selected}
-                className={`relative rounded-2xl border p-2 text-left transition-all duration-200 ${
-                  selected
-                    ? 'border-primary/70 bg-primary/10 ring-2 ring-primary/25'
-                    : 'border-border/40 bg-secondary/40 hover:bg-secondary/70'
-                }`}
-              >
-                {selected && (
-                  <span className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                  </span>
-                )}
-                <ThemePreview mode={key} />
-                <div className="mt-2 flex items-center gap-1 px-0.5">
-                  <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="truncate text-[11px] font-semibold">{label}</span>
-                </div>
-                <div className="truncate px-0.5 text-[9px] text-muted-foreground">{desc}</div>
-              </button>
-            )
-          })}
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Moon className="h-3 w-3 text-muted-foreground" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Wallpaper</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {THEME_OPTIONS.map(({ key, label, desc, icon: Icon }) => {
+              const selected = theme === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleWallpaper(key)}
+                  aria-pressed={selected}
+                  className={`relative min-h-[104px] rounded-2xl border p-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                    selected
+                      ? 'border-primary/70 bg-primary/10 ring-2 ring-primary/25'
+                      : 'border-border/40 bg-secondary/40 hover:border-primary/30 hover:bg-secondary/70'
+                  }`}
+                >
+                  {selected && (
+                    <span className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  )}
+                  <ThemePreview mode={key} />
+                  <div className="mt-2 flex items-center gap-1 px-0.5">
+                    <Icon className={`h-3 w-3 shrink-0 ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className="truncate text-[11px] font-semibold">{label}</span>
+                  </div>
+                  <div className="truncate px-0.5 text-[9px] text-muted-foreground">{desc}</div>
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Dark and Light stay put. Auto switches to Light at 7am and Dark at 7pm, with a smooth fade.
+          </p>
         </div>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Dark and Light stay put. Auto switches to Light at 7am and Dark at 7pm, with a smooth fade.
-        </p>
+
+        <div className="border-t border-border/30 pt-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Layers className="h-3 w-3 text-muted-foreground" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Accent</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {ACCENT_OPTIONS.map(({ key, label, desc, swatch }) => {
+              const selected = accent === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleAccent(key)}
+                  aria-pressed={selected}
+                  className={`relative min-h-[104px] rounded-2xl border p-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                    selected
+                      ? 'border-primary/70 bg-primary/10 ring-2 ring-primary/25'
+                      : 'border-border/40 bg-secondary/40 hover:border-primary/30 hover:bg-secondary/70'
+                  }`}
+                >
+                  {selected && (
+                    <span className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  )}
+                  <AccentPreview preset={swatch} />
+                  <div className="mt-2 truncate px-0.5 text-[11px] font-semibold">{label}</div>
+                  <div className="truncate px-0.5 text-[9px] text-muted-foreground">{desc}</div>
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Blueprint uses one primary blue for CTAs and active states with a subtle slate support tone. Text, cards and borders stay neutral.
+          </p>
+        </div>
       </GlassCard>
           <GlassCard id="advanced-data" className="space-y-2 scroll-mt-24">
             <button

@@ -4,6 +4,18 @@ import usePageMeta from '@/hooks/usePageMeta';
 
 const RELEASES = [
   {
+    date: '2026-11-28',
+    title: 'Clearer controls and a calmer look',
+    items: [
+      'Buttons and navigation tiles now have visible surfaces, stronger spacing, and clearer active states so you can tell a control from a label at a glance.',
+      'The navigation rail floats away from the screen edges on desktop and mobile, with rounded transparent surfaces instead of a white bar.',
+      'Typing a duration in the workout timer now shows that exact time left. “0:45” means 45 seconds on the clock, not 15.',
+      'The interactive demo player has the same Time mode and typed-duration behaviour as the full workout player.',
+      'The run tracker now has a close control on every screen, including an active run. Leaving mid-run asks first and returns to the screen you came from.',
+      'Profile now has one Customization card for wallpaper and a restrained accent choice: Neutral ink or Blueprint, with colour kept for CTAs and active states.',
+    ],
+  },
+  {
     date: '2026-11-24',
     title: 'Trust tools and a calmer player',
     items: [

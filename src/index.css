@@ -92,6 +92,32 @@
     --radius: 0.875rem;
   }
 
+  /* ── ACCENT: Blueprint ──
+     One confident blue for active states and CTAs, plus a quiet slate support
+     tone. Backgrounds, cards, borders and body copy remain neutral so colour
+     stays high-value instead of turning every surface into a signal. */
+  html[data-accent='blueprint'] {
+    --primary: 214 76% 52%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 214 22% 42%;
+    --accent-foreground: 0 0% 100%;
+    --accent-text: 213 68% 70%;
+    --accent-solid: 214 72% 46%;
+    --ring: 214 76% 62%;
+    --card-glow: 214 22% 42%;
+    --brand-glow: 214 76% 52%;
+  }
+  html[data-accent='blueprint'].theme-alabaster {
+    --primary: 216 72% 42%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 214 22% 46%;
+    --accent-text: 216 68% 38%;
+    --accent-solid: 216 72% 40%;
+    --ring: 216 72% 46%;
+    --card-glow: 214 22% 46%;
+    --brand-glow: 216 72% 42%;
+  }
+
   * { @apply border-border; }
 
   /* Buttons must look touchable at a glance. The browser default arrow cursor

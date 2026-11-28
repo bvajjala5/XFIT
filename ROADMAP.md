@@ -1,6 +1,6 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-28 (closed test live; global availability live; website-only polish and 15-second exercise transition landed locally)._
+_Last updated: 2026-11-28 (closed test live; global availability live; second website-only polish pass landed locally)._
 
 ## Current gate: closed testing
 
@@ -91,6 +91,26 @@ Other website-only improvements:
 - Profile export opens a confirmation summary and shows collection progress;
   all-time totals are labelled. Admin Analytics distinguishes "No data yet"
   from "Unavailable" and adds denominators/hints to aggregate cards.
+
+Second website-only pass on 2026-11-28:
+
+- Typed workout durations now mean **time left on the clock**. `secondsLeftFromInput`
+  is a pure helper with tests; the player and interactive demo both apply `0:45`
+  as 45 seconds remaining instead of subtracting 45 from the exercise target.
+- The interactive demo player gained a Time mode with the same input, Apply
+  button, countdown, and `0:45` semantics as the full player.
+- The run tracker has a close button on idle, active and summary screens. A
+  running or finished run asks before exit so unsaved progress is not lost, then
+  returns to the referring screen (or Home for a direct visit). No run is started.
+- Navigation is now a floating rounded rail on desktop and a floating rounded bar
+  on mobile, with translucent surfaces instead of an attached white bar. Tabs
+  start near the top on desktop and are vertically centered on mobile; inactive
+  tiles get visible surfaces so buttons read as buttons.
+- Profile has one **Customization** card containing Wallpaper and Accent. Accent
+  is local-only: `Neutral ink` (default) or `Blueprint`, one primary blue plus a
+  quiet slate support tone. Cards, borders and body copy stay neutral; public
+  `/` and `/demo` keep the neutral preview while signed-in app pages use the
+  saved preset. The inline boot script and CSP hash were updated together.
 
 All of this is website-only. The installed closed-test build stays at version
 code 3 until an explicit v4 upload is approved. Deployed web changes also do

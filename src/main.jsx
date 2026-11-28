@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { applyResolvedTheme, getThemeMode, resolveTheme } from '@/lib/theme'
+import { applyAccent, getAccent } from '@/lib/accent'
 import { getPublicWallpaper } from '@/lib/publicWallpaper'
 import { registerSW } from 'virtual:pwa-register'
 
@@ -22,6 +23,9 @@ const initialTheme = publicPath === '/login'
   ? 'alabaster'
   : isDemoPage ? getPublicWallpaper() : resolveTheme(getThemeMode())
 applyResolvedTheme(initialTheme)
+// Public pages keep the neutral preview accent; the signed-in app uses the
+// saved preset. This matches the inline boot script before React mounts.
+applyAccent(isDemoPage || publicPath === '/login' ? 'neutral' : getAccent())
 
 // Register the PWA worker after the page has loaded so it never competes with
 // the critical rendering path. registerSW() is the plugin's own entry point:
