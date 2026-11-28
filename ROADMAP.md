@@ -29,11 +29,19 @@ members can access the test now.
 On 2026-11-27, Slovenia was added to `Closed testing - Alpha` and approved; the
 track listed India, Slovenia, and the United States. Later the same day, after a
 tester in Japan hit a country block, the track was switched to all countries and
-regions with explicit approval. Play Console shows 2 changes in review: adding 174
-named countries/regions plus “rest of world.” Quick checks were running with up to
-14 minutes remaining. This is country/region configuration only — no new app upload
-or version-code bump. Once approved, testers anywhere can opt in without further
-country edits. Google still counts only opted-in testers, not app sign-ins.
+regions with explicit approval. It is now live: the track shows **178 targeted
+countries/regions** and Publishing overview has no pending or in-review changes.
+This was country/region configuration only — no new app upload or version-code bump.
+Testers anywhere can now opt in without further country edits.
+
+Google's 14-day requirement is about 12 testers staying opted in continuously; app
+sign-ins are not counted. However, the production-access application asks about
+tester engagement and whether testers used the app's features, so low sign-in is
+still a real weakness. On 2026-11-28 (day 2) only 3 users appeared in the Admin
+Control Hub. That is expected for downloads without Google sign-in, but it means
+the next step is direct tester follow-up: confirm opt-ins, ask each tester to sign
+in with Google, use one core flow, and reply with feedback. Recruit extra testers
+above 12 to absorb dropouts.
 
 Important: internal-test users are not eligible for closed testing until they opt
 out of internal testing. Adding them to the Google Group or giving them the closed
