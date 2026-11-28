@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Sparkles, Send, Dumbbell, CalendarDays, MessageCircle, RotateCcw, X,
   Loader2, Check, Play, Clock, Flame, AlertCircle, Utensils, Activity, Compass, ArrowUpRight,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import GlassCard from '@/components/shared/GlassCard'
@@ -262,6 +263,7 @@ export default function UttarAI({ onClose }) {
   const [mode, setMode] = useState('chat')
   const [busy, setBusy] = useState(false)
   const [savingId, setSavingId] = useState(null)
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -443,6 +445,7 @@ export default function UttarAI({ onClose }) {
   function clearChat() {
     if (messages.length && !window.confirm('Clear this conversation?')) return
     setMessages([])
+    setShowAllSuggestions(false)
     if (storageKey) {
       try { localStorage.removeItem(storageKey) } catch { /* ignore */ }
     }
@@ -495,31 +498,40 @@ export default function UttarAI({ onClose }) {
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
         {messages.length === 0 && (
-          <div className="space-y-4 pt-2">
-            <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
+          <div className="space-y-3 pt-2">
+            <div className="rounded-2xl border border-border/60 bg-card/75 p-3.5">
               <p className="text-sm leading-relaxed">
                 Hey{userData?.full_name ? ` ${String(userData.full_name).split(/\s+/)[0]}` : ''} — I can answer health and nutrition
                 questions, build a single workout, or set up your whole week. What are we working on?
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {SUGGESTIONS.map((suggestion) => {
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {(showAllSuggestions ? SUGGESTIONS : SUGGESTIONS.slice(0, 3)).map((suggestion) => {
                 const Icon = suggestion.icon
                 return (
                   <button
                     key={suggestion.title}
                     onClick={() => chooseSuggestion(suggestion)}
                     disabled={busy}
-                    className="group rounded-2xl border border-border/50 bg-card/50 p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:opacity-60"
+                    className="group rounded-2xl border border-border/70 bg-card/80 p-3 text-left shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
                   >
                     <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                      <Icon className="h-3.5 w-3.5 text-primary" /> {suggestion.title}
+                      <Icon className="h-4 w-4 shrink-0 text-primary" /> {suggestion.title}
                     </span>
-                    <span className="mt-1 block text-[11px] leading-relaxed text-foreground/70">{suggestion.text}</span>
+                    <span className="mt-1.5 block text-[11px] leading-relaxed text-foreground/75">{suggestion.text}</span>
                   </button>
                 )
               })}
             </div>
+            <button
+              type="button"
+              onClick={() => setShowAllSuggestions((value) => !value)}
+              aria-expanded={showAllSuggestions}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {showAllSuggestions ? 'Show fewer ideas' : `Show ${SUGGESTIONS.length - 3} more ideas`}
+              {showAllSuggestions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
           </div>
         )}
 
@@ -584,7 +596,7 @@ export default function UttarAI({ onClose }) {
               key={id}
               onClick={() => { setMode(id); inputRef.current?.focus() }}
               className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors ${
-                mode === id ? 'bg-background text-foreground shadow-sm' : 'text-foreground/70 hover:text-foreground'
+                mode === id ? 'bg-background text-foreground shadow-sm' : 'text-foreground/80 hover:text-foreground'
               }`}
             >
               <Icon className={`h-3.5 w-3.5 shrink-0 ${mode === id ? 'text-primary' : 'text-foreground/60'}`} />
@@ -593,7 +605,7 @@ export default function UttarAI({ onClose }) {
           ))}
         </div>
 
-        <div className="mt-2 flex items-end gap-2">
+        <div className="mt-2.5 flex items-end gap-2.5">
           <Textarea
             ref={inputRef}
             value={input}
@@ -605,13 +617,13 @@ export default function UttarAI({ onClose }) {
               }
             }}
             placeholder={placeholder}
-            className="min-h-[52px] max-h-32 flex-1 resize-none border-white/10 bg-transparent text-sm"
+            className="min-h-[52px] max-h-32 flex-1 resize-none border-border/50 bg-background/60 text-sm"
             rows={1}
           />
           <Button
             onClick={() => send()}
             disabled={busy || !input.trim()}
-            className="h-[52px] shrink-0 gap-1.5 rounded-xl px-3.5"
+            className="h-[52px] shrink-0 gap-1.5 rounded-xl px-3.5 shadow-sm"
             aria-label={sendLabel}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === 'chat' ? <Send className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}

@@ -1,6 +1,6 @@
 # Uttar Fitness Roadmap
 
-_Last updated: 2026-11-27 (closed test live; Google Group tester change approved)._
+_Last updated: 2026-11-28 (closed test live; global availability live; tester UI fixes queued)._
 
 ## Current gate: closed testing
 
@@ -13,10 +13,11 @@ its latest release. Play shows it as **Available to selected testers**.
 - Google Group join link: `https://groups.google.com/g/uttar-fitness-closed-testers`
 - Google Group email: `uttar-fitness-closed-testers@googlegroups.com`
 - Feedback email: `bhanu.charan.vajjala@gmail.com`
-- Countries/regions: India and United States
+- Countries/regions: all countries/regions (178 targeted)
 - AAB SHA-256: `3f6b35046ab44f260f7cecfcfebe281b03fc19f47dcb4af176e02da69db75f1e`
 - Play requirement: at least **12 testers opted in continuously for 14 days**
-  before applying for production access. Play currently shows **2 opted-in**.
+  before applying for production access. The current Play opt-in count was not
+  rechecked on 2026-11-28; the Admin Control Hub showed 3 signed-in users.
 - No full rollout or production release has been started.
 
 The initial review submission covered 14 changes, including the closed-test
@@ -42,6 +43,27 @@ Control Hub. That is expected for downloads without Google sign-in, but it means
 the next step is direct tester follow-up: confirm opt-ins, ask each tester to sign
 in with Google, use one core flow, and reply with feedback. Recruit extra testers
 above 12 to absorb dropouts.
+
+## Tester UI feedback — 2026-11-28 (queued, not published)
+
+Closed testers reported that the Welcome/Login screen's **Workouts**, **Run
+tracking**, and **Nutrition** icons were too faint, that buttons needed clearer
+margins and boundaries, and that Uttar AI's six preloaded prompts covered too much
+of the screen.
+
+Code changes made locally:
+
+- Login feature icons and labels now use darker, higher-contrast colours inside
+  subtle bordered chips.
+- The Google sign-in and demo buttons now have stronger borders, shadows, and more
+  vertical spacing.
+- Uttar AI shows 3 compact suggestion cards by default, with a **Show 3 more
+  ideas** toggle so all six prompts remain reachable without filling the screen.
+- The AI composer textarea and send button now use clearer borders and spacing.
+
+These are UI-only changes. No new AAB/APK was uploaded, no version code was
+bumped, and no Play submission was made. Do not publish them as v4 until closed
+testing completes or the user explicitly approves a new upload.
 
 Important: internal-test users are not eligible for closed testing until they opt
 out of internal testing. Adding them to the Google Group or giving them the closed

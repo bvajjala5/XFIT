@@ -74,11 +74,18 @@ export default function Login() {
             <p style={{ color: isDark ? '#94a3b8' : '#78716c' }}>Direct Your Greatness, Live Uttar</p>
           </div>
 
-          <div className="flex justify-center gap-6 pt-2">
+          <div className="flex justify-center gap-2.5 pt-1">
             {[[Dumbbell, 'Workouts'], [Footprints, 'Run tracking'], [Utensils, 'Nutrition']].map(([Icon, label]) => (
-              <div key={label} className="text-center">
-                <Icon className="w-5 h-5 mx-auto" style={{ color: isDark ? '#94a3b8' : '#78716c' }} />
-                <div className="text-[10px] mt-1 font-medium" style={{ color: isDark ? '#64748b' : '#a8a29e' }}>{label}</div>
+              <div
+                key={label}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 shadow-sm"
+                style={{
+                  borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
+                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.62)',
+                }}
+              >
+                <Icon className="h-5 w-5" style={{ color: isDark ? '#cbd5e1' : '#57534e' }} />
+                <span className="text-[10px] font-semibold leading-tight" style={{ color: isDark ? '#cbd5e1' : '#57534e' }}>{label}</span>
               </div>
             ))}
           </div>
@@ -87,7 +94,7 @@ export default function Login() {
 
       {/* Bottom sheet */}
       <motion.div initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45, delay:0.1 }}
-        className="rounded-t-3xl px-6 pt-7 pb-10 space-y-4 relative z-10"
+        className="rounded-t-3xl px-6 pt-7 pb-10 space-y-5 relative z-10"
         style={{
           background: isDark ? 'rgba(10,10,25,0.92)' : 'rgba(255,255,255,0.88)',
           borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
@@ -103,7 +110,7 @@ export default function Login() {
         {(error || authError) && <div role="alert" className="bg-destructive/10 text-destructive text-sm rounded-2xl px-4 py-3 text-center">{error || authError}</div>}
 
         <button onClick={handleLogin} disabled={loading}
-          className="w-full h-14 rounded-2xl bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-60">
+          className="w-full h-14 rounded-2xl border border-black/10 bg-white text-gray-800 font-semibold text-base flex items-center justify-center gap-3 shadow-md hover:bg-gray-50 hover:shadow-lg active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-60">
           {loading
             ? <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             : <GoogleIcon />}
@@ -111,8 +118,8 @@ export default function Login() {
         </button>
 
         {!native && (
-          <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            style={{ borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.10)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)' }}>
+          <Link to="/demo" className="flex h-12 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold shadow-sm transition-colors hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            style={{ borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.16)', color: isDark ? '#e2e8f0' : '#44403c', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)' }}>
             Explore the demo first
           </Link>
         )}
