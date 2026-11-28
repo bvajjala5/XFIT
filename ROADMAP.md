@@ -26,12 +26,14 @@ is also approved: Publishing overview has no pending changes and the track lists
 `uttar-fitness-closed-testers@googlegroups.com` as the tester group. New group
 members can access the test now.
 
-On 2026-11-27, Slovenia was staged as an additional country/region for
-`Closed testing - Alpha` and submitted for review with explicit approval. It was
-approved quickly: Publishing overview has no pending or in-review changes, and the
-track now lists 3 targeted countries/regions — India, Slovenia, and United States.
-This was a country/region change only, with no new app upload or version-code bump.
-The Slovenian Reddit tester can now opt in through the closed-test link.
+On 2026-11-27, Slovenia was added to `Closed testing - Alpha` and approved; the
+track listed India, Slovenia, and the United States. Later the same day, after a
+tester in Japan hit a country block, the track was switched to all countries and
+regions with explicit approval. Play Console shows 2 changes in review: adding 174
+named countries/regions plus “rest of world.” Quick checks were running with up to
+14 minutes remaining. This is country/region configuration only — no new app upload
+or version-code bump. Once approved, testers anywhere can opt in without further
+country edits. Google still counts only opted-in testers, not app sign-ins.
 
 Important: internal-test users are not eligible for closed testing until they opt
 out of internal testing. Adding them to the Google Group or giving them the closed
